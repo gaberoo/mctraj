@@ -1,0 +1,88 @@
+#ifndef __EPISTATE_H__
+#define __EPISTATE_H__
+
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+using namespace std;
+
+#include <gsl/gsl_rng.h>
+
+#include "MCTraj.h"
+#include "BranchState.h"
+
+namespace MCTraj {
+  class EpiState {
+    public:
+      EpiState() {}
+      EpiState(size_t nstates) : state(nstates) {}
+      EpiState(size_t nstates, int x) : state(nstates,x) {}
+      EpiState(const vector<int>& es) : state(es) {}
+      EpiState(const EpiState& es) 
+        : state(es.state), branches(es.branches), curBranch(es.curBranch)
+      {}
+      virtual ~EpiState() {}
+
+      inline size_t numStates() const { return state.size(); }
+      inline int incease(size_t i) { return ++state[i]; }
+      inline int decrease(size_t i) { return --state[i]; }
+      inline int at(size_t i) const { return state.at(i); }
+      inline int& operator[](size_t i) { return state[i]; }
+      inline int operator[](size_t i) const { return state[i]; }
+
+      EpiState& apply(const vector<int>& change, int dir = 1) {
+        if (state.size() <= change.size()) {
+          for (size_t i(0); i < state.size(); ++i) {
+            state[i] += dir*change[i];
+          }
+        }
+        return *this;
+      }
+
+      const vector<int>& s() const { return state; }
+
+      EpiState& operator=(const EpiState& es) { 
+        state = es.state; 
+        branches = es.branches;
+        curBranch = es.curBranch;
+        return *this; 
+      }
+
+      EpiState& operator+=(const vector<int>& change) { return apply(change); }
+      EpiState& operator-=(const vector<int>& change) { return apply(change,-1); }
+
+      friend ostream& operator<<(ostream& out, const EpiState& es) {
+        for (size_t i(0); i < es.state.size(); ++i) {
+          out << setw(4) << es.state[i] << " ";
+        }
+        return out;
+      }
+
+      string to_json() const {
+        ostringstream out;
+        out << "{"
+            << "\"pop\":[";
+        for (size_t i(0); i < state.size(); ++i) {
+          out << state[i];
+          if (i < state.size()-1) out << ",";
+        }
+        out << "],\"branches\":" << branches.to_json()
+            << "}";
+        return out.str();
+      }
+
+      void init_branches(size_t n) { branches.resize(n); }
+
+
+    protected:
+      vector<int> state;
+
+    public:
+      BranchStates branches;
+      vector<int> curBranch;
+  };
+}
+
+#endif
+
