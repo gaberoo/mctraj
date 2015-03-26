@@ -103,6 +103,7 @@ namespace MCTraj {
 
     /* probability that the event happened */
     double dw = tt->applyRate(curState,pars);
+    // cout << " ]]]]]]] " << nextEvent << " " << model->mapType(nextEvent) << " " << dw << endl;
     tt->applyBranch(curState,rng,st,pars);
     addTransition(st);
     time = nextTime;

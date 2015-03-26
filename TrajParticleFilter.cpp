@@ -154,7 +154,7 @@ namespace MCTraj {
       id = omp_get_thread_num();
 
       if (vflag > 2) {
-        cerr << "|> " << particle(j).getState() << " " 
+        cerr << eventType << " |> " << particle(j).getState() << " " 
              << setw(12) << dw << " " 
              << setw(12) << particle(j).getWeight() << endl;
       }
@@ -163,7 +163,7 @@ namespace MCTraj {
       particle(j).updateWeight(dw);
 
       if (vflag > 2) {
-        cerr << " > " << particle(j).getState() << " " 
+        cerr << eventType << " > " << particle(j).getState() << " " 
              << setw(12) << dw << " " 
              << setw(12) << particle(j).getWeight() << endl;
       }

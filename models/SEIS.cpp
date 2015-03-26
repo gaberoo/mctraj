@@ -60,8 +60,8 @@ double MCTraj::SEISModel::treeObsInf(const EpiState& es, const void* pars)
   if (es.curBranch.size() > 0) {
     branch_color = es.branches.getCol(es.curBranch[0]);
     x = (branch_color == 1) ? lambda/(E+1.) : 0.0;
-//    cerr << "treeObsInf :: ES = " << es 
-//         << " | " << es.curBranch[0] << " -- " << branch_color << endl;
+    cerr << "treeObsInf :: ES = " << es 
+         << " | " << es.curBranch[0] << " -- " << branch_color << endl;
     return x;
   } else {
     cerr << "treeObsInf :: no node information! ES = " << es << endl;
