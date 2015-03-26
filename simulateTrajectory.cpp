@@ -50,14 +50,32 @@ int main(int argc, char** argv) {
 //  cout << "tree 'sampled_tree' = " << sample_newick << ";" << endl;
 //  cout << "end;" << endl;
 
+  cout << "# pars = {";
+  cout << " \"N\": " << seis_pars.N << ", ";
+  cout << " \"beta\": " << seis_pars.beta << ", ";
+  cout << " \"mu\": " << seis_pars.mu << ", ";
+  cout << " \"psi\": " << seis_pars.psi << ", ";
+  cout << " \"rho\": " << seis_pars.rho << ", ";
+  cout << " \"gamma\": " << seis_pars.gamma << " ";
+  cout << "}" << endl;
+
   only_sampled(tree,phylo,0);
-  cout << "[";
+  cout << "{" << endl;
+  cout << " \"full_tree\": [" << endl;
+  for (size_t i = 0; i < tree.size(); ++i) {
+    cout << tree[i];
+    if (i < tree.size()-1) cout << ",";
+    cout << endl;
+  }
+  cout << " ]," << endl;
+  cout << " \"sampled\": [" << endl;
   for (size_t i = 0; i < phylo.size(); ++i) {
     cout << phylo[i];
     if (i < phylo.size()-1) cout << ",";
     cout << endl;
   }
-  cout << "]" << endl;
+  cout << " ]" << endl;
+  cout << "}" << endl;
 
 //  cout << setw(5)  << "\"P\"" << " "
 //      << setw(5)  << "\"ID\"" << " "
