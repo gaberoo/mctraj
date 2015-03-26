@@ -92,7 +92,9 @@ int main(int argc, char** argv) {
       seis_pars.gamma = _gamma;
       mpt = new SEIS(&seis_pars);
       es = new EpiState(SEISModel::nstates);
-      (*es)[0] = (int) seis_pars.N;
+      (*es)[0] = ((int) seis_pars.N)-1;
+      (*es)[1] = 1;
+      (*es)[3] = 1;
       if (fullTree) {
         mpt->sim_event(0) = 0;
         mpt->sim_event(1) = 0;

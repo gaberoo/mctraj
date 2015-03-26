@@ -121,6 +121,7 @@ void MCTraj::SEISModel::branchInf(const EpiState& es, gsl_rng* rng,
   // double kE = es[3];
   double kI = es[4];
   double r = gsl_rng_uniform(rng);
+  printf(">>>  I = %.0f, kI = %.0f\n",I,kI);
   if (r < 0.5*kI/I) {
     int id = es.branches.random_color(rng,1);
     if (id >= 0) {
@@ -201,8 +202,12 @@ void MCTraj::SEISModel::obsBranchTrans(const EpiState& es, gsl_rng* rng,
   } else {
 //    cerr << ">> " << es.curBranch.at(0) << " () " 
 //         << es.branches.getCol(es.curBranch.at(0)) << endl;
-    st.branchTrans.push_back(BranchStateChange(es.curBranch.at(0),0,-1));
-    st.branchTrans.push_back(BranchStateChange(es.curBranch.at(1),-1,1));
+    if (es.curBranch.at(0) >= 0) {
+      st.branchTrans.push_back(BranchStateChange(es.curBranch.at(0),0,-1));
+    }
+    if (es.curBranch.at(1) >= 0) {
+      st.branchTrans.push_back(BranchStateChange(es.curBranch.at(1),-1,1));
+    }
   }
 }
 

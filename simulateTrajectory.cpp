@@ -9,19 +9,19 @@ using namespace MCTraj;
 
 int main(int argc, char** argv) {
   SEISModel::EpiPars seis_pars;
-  seis_pars.N     = 100;
+  seis_pars.N     = 20;
   seis_pars.beta  = 1.0;
   seis_pars.mu    = 0.1;
   seis_pars.psi   = 0.1;
   seis_pars.rho   = 0.0;
   seis_pars.gamma = 0.01;
 
-  double maxTime = 100.0;
+  double maxTime = 20.0;
 
   SEIS model(&seis_pars);
 
   EpiState init(SEISModel::nstates);
-  init[0] = 99;
+  init[0] = seis_pars.N-1;
   init[1] = 0;
   init[2] = 1;
   init[3] = 0;
