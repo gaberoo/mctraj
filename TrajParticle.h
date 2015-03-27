@@ -33,14 +33,16 @@ namespace MCTraj {
       virtual ~TrajParticle() {}
 
       const TrajParticle& copy(const TrajParticle& tp) {
+        /* this copies the final state of 'tp' into the initial state */
         Trajectory::copyState(tp);
         Particle::operator=(tp);
         init_time = tp.time;
-        ivals = tp.ivals;
+        // ivals = tp.ivals;
         return *this;
       }
 
       const TrajParticle& operator=(const TrajParticle& tp) { 
+        /* this duplicates 'tp' */
         Trajectory::operator=(tp);
         Particle::operator=(tp);
         init_time = tp.init_time;

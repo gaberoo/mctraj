@@ -70,7 +70,6 @@ namespace MCTraj {
 
     if (time+nextTime < maxTime) {
       const TransitionType* nextTrans = model->getTType(nextEvent);
-      // cerr << "S> " << nextTrans->getName() << endl;
       transitions.push_back(StateTransition(nextTime,*nextTrans,
                             curState,pars,nextEvent,time+nextTime));
       StateTransition& st = transitions.back();
@@ -85,6 +84,8 @@ namespace MCTraj {
 //        }
       }
       addTransition(st);
+//      cout << time+nextTime << "[" << transitions.size() << "]> " << nextTrans->getName() << " " 
+//           << nextTrans->applyProb(curState,model->getPars()) << endl;
       time += nextTime;
       ++num_events;
     } else {

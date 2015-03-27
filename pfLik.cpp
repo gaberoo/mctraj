@@ -57,13 +57,10 @@ namespace MCTraj {
     if (tree.extant > 0) {
       if (m->getRho() > 0.0) {
         // Sampling at present
-        double x = 0.0;
         for (size_t i = 0; i < num_particles; ++i) {
           double w = m->sample_rho(pf[i].getState(),rng[i]);
           pf[i].updateWeight(w);
-          x += w;
         }
-        cout << x/num_particles << endl;
 
         filterRet = pf.filter(rng);
 

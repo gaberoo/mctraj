@@ -206,6 +206,8 @@ namespace MCTraj {
 
       const TransitionType* tt;
 
+      // cout << j << " :: " << ntrans << " -> " << last << endl;
+
       // Events that were not included in the tree
       if (ntrans > 0) {
         for (int i = ntrans-1; i > last; --i) {
@@ -213,6 +215,11 @@ namespace MCTraj {
           w2 = tt->applyProb(curState,pars);
           dw *= w2;
           curState -= particle(j).getTrans(i).getTrans();
+//          cout << j << " % " 
+//               << particle(j).getTrans(i).realTime() 
+//               << "[" << i << "] >> " 
+//               << tt->getName() << " " 
+//               << tt->applyProb(curState,pars) << endl;
         }
       }
 

@@ -37,6 +37,8 @@ double MCTraj::SEISModel::recovRateFun(const EpiState& es, const void* pars)
   return (ep.mu+ep.psi)*I;
 }
 
+/************************************************************************/
+
 double MCTraj::SEISModel::treeProbRecov(const EpiState& es, const void* pars) 
 {
   EpiPars ep = *(EpiPars*) pars;
@@ -44,7 +46,11 @@ double MCTraj::SEISModel::treeProbRecov(const EpiState& es, const void* pars)
   double I = es[2]+1.0;
   double kI = es[4];
   double dw = (I > kI) ? (1.-s) : 0.0;
-  debug("treeProbRecov :: ES = (%d,%d,%d,%d,%d) | w = %f",es[0],es[1],es[2],es[3],es[4],dw);
+  if (es[2] < es[4] || es[1] < es[3]) dw = 0.0;
+  if (dw > 0.0) {
+    cerr << "treeProbRecov :: ES = " << es << " | w = " << dw 
+         << " >> " << I << " --> " << kI << endl;
+  }
   return dw;
 }
 
