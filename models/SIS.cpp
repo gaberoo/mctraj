@@ -69,3 +69,17 @@ double MCTraj::SISModel::treeObsRecov(const EpiState& es, const void* pars)
   return (ep.psi > 0) ? ep.psi*I : 1.0;
 }
 
+/************************************************************************/
+
+double MCTraj::SIS::sample_rho(const EpiState& es, gsl_rng* rng, void* pars) const {
+  int k = es[2];
+  int I = es[1];
+  double w = 0.0;
+  if (rho >= 1.0 && I == k) {
+    w = 1.0;
+  } else if (rho < 1.0 && I >= k) {
+    w = gsl_ran_binomial_pdf(k,rho,I);
+  }
+  return w;
+}
+

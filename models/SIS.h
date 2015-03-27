@@ -81,6 +81,8 @@ namespace MCTraj {
       }
 
       virtual ~SIS() {}
+
+      double sample_rho(const EpiState& es, gsl_rng* rng, void* pars = NULL) const;
   };
 }
 

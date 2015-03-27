@@ -5,8 +5,8 @@ namespace MCTraj {
     this->tree = tree; 
     // preallocate the space for the particles
     if (vflag > 1) cerr << "allocating..." << flush;
-    pf.reserve(tree->size());
-    for (size_t i = 0; i < tree->size(); ++i) {
+    pf.reserve(tree->size()+1);
+    for (size_t i = 0; i <= tree->size(); ++i) {
       pf.push_back(vector<TrajParticle>(size()));
     }
     if (vflag > 1) cerr << "done." << endl;
@@ -29,8 +29,9 @@ namespace MCTraj {
   // =========================================================================
 
   void TrajParticleFilter::inc() { 
-    // pf.push_back(vector<TrajParticle>(size()));
-    ++curStep;
+    if (size() <= ++curStep) {
+      pf.push_back(vector<TrajParticle>(size()));
+    }
   }
 
   // =========================================================================

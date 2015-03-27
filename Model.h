@@ -49,6 +49,8 @@ namespace MCTraj {
       inline int& sim_event(size_t i) { return simEvent.at(i); }
       inline int sim_event(size_t i) const { return simEvent.at(i); }
 
+      virtual double sample_rho(const EpiState& es, gsl_rng* rng, void* pars = NULL) const = 0;
+
       bool valid() const;
 
     protected:
