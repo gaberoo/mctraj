@@ -24,6 +24,7 @@ double MCTraj::SEISModel::treeProbInf(const EpiState& es, const void* pars)
   // double p = 1.0 - k*(k-1.)/(I*(I-1.));
   double p = 1.0 - kI*kE/(E*I);
 
+  // cerr << "treeProbInf :: ES = " << es << " | p = " << p << endl;
   return (I >= kI && E >= kE) ? p : 0.0;
 }
 
@@ -42,7 +43,9 @@ double MCTraj::SEISModel::treeProbRecov(const EpiState& es, const void* pars)
   double s = ep.psi/(ep.psi+ep.mu);
   double I = es[2]+1.0;
   double kI = es[4];
-  return (I > kI) ? (1.-s) : 0.0;
+  double dw = (I > kI) ? (1.-s) : 0.0;
+  debug("treeProbRecov :: ES = (%d,%d,%d,%d,%d) | w = %f",es[0],es[1],es[2],es[3],es[4],dw);
+  return dw;
 }
 
 /************************************************************************/
@@ -56,15 +59,24 @@ double MCTraj::SEISModel::treeObsInf(const EpiState& es, const void* pars)
   double lambda = ep.beta*S/ep.N;
   int branch_color = 0;
   double x = 0.0;
-  if (I <= 0.0) return 0.0;
+  if (I <= 0.0) {
+#ifdef DEBUG
+    cerr << "treeObsInf :: ES = " << es << " | no infecteds!" << endl;
+#endif
+    return 0.0;
+  }
   if (es.curBranch.size() > 0) {
     branch_color = es.branches.getCol(es.curBranch[0]);
-    x = (branch_color == 1) ? lambda/(E+1.) : 0.0;
+    x = (branch_color == 1) ? lambda/(E+1.) : 0.0; // prob of the particular branch
+#ifdef DEBUG
     cerr << "treeObsInf :: ES = " << es 
-         << " | " << es.curBranch[0] << " -- " << branch_color << endl;
+         << " | " << es.curBranch[0] << " -- " << branch_color << " (" << x << ")" << endl;
+#endif
     return x;
   } else {
+#ifdef DEBUG
     cerr << "treeObsInf :: no node information! ES = " << es << endl;
+#endif
     return 1.0;
   }
 }
@@ -79,9 +91,9 @@ double MCTraj::SEISModel::treeObsRecov(const EpiState& es, const void* pars)
   if (es.curBranch.size() > 0) {
     branch_color = es.branches.getCol(es.curBranch[0]);
     double x = (branch_color == 1) ? ep.psi*I : 0.0;
-//    cerr << "treeObsRecov :: ES = " << es 
-//         << " | " << es.curBranch[0] << " -- " << branch_color 
-//         << "(( " << x << endl;
+    cerr << "treeObsRecov :: ES = " << es 
+         << " | " << es.curBranch[0] << " -- " << branch_color 
+         << "(( " << x << endl;
     return x;
   } else {
     cerr << "treeObsRecov :: no node information! ES = " << es << endl;
@@ -108,20 +120,21 @@ double MCTraj::SEISModel::treeProbTrans(const EpiState& es, const void* pars)
 
 double MCTraj::SEISModel::treeObsTrans(const EpiState& es, const void* pars) 
 {
+  debug("treeObsTrans :: ES = (%d,%d,%d,%d,%d)",es[0],es[1],es[2],es[3],es[4]);
   return 1.0;
 }
 
 /************************************************************************/
 
-void MCTraj::SEISModel::branchInf(const EpiState& es, gsl_rng* rng, 
-                                  StateTransition& st, const void* pars)
+int MCTraj::SEISModel::branchInf(const EpiState& es, gsl_rng* rng, 
+                                 StateTransition& st, const void* pars)
 {
   // double E = es[1];
   double I = es[2];
   // double kE = es[3];
   double kI = es[4];
   double r = gsl_rng_uniform(rng);
-  printf(">>>  I = %.0f, kI = %.0f\n",I,kI);
+  // printf(">>>  I = %.0f, kI = %.0f\n",I,kI);
   if (r < 0.5*kI/I) {
     int id = es.branches.random_color(rng,1);
     if (id >= 0) {
@@ -129,13 +142,16 @@ void MCTraj::SEISModel::branchInf(const EpiState& es, gsl_rng* rng,
       st[3] = 1;
       st[4] = -1;
     } else {
-      cerr << "[I] Color doesn't exist (" << id << ") !" << endl;
+      // cerr << "[I] No branch of color 'I' exists! | ES = " << es << endl;
+      // cerr << es.branches.to_json() << endl;
+      return -1;
     }
   }
+  return 0;
 }
 
-void MCTraj::SEISModel::branchTrans(const EpiState& es, gsl_rng* rng, 
-                                    StateTransition& st, const void* pars)
+int MCTraj::SEISModel::branchTrans(const EpiState& es, gsl_rng* rng, 
+                                   StateTransition& st, const void* pars)
 {
   double E = es[1];
   double kE = es[3];
@@ -148,20 +164,24 @@ void MCTraj::SEISModel::branchTrans(const EpiState& es, gsl_rng* rng,
       st[3] = -1;
       st[4] = 1;
     } else {
-      cerr << "[T] Color doesn't exist (" << id << ") !" << endl;
+      // cerr << "[T] Color doesn't exist (" << id << ") !" << endl;
+      // cerr << es.branches.to_json() << endl;
+      return -1;
     }
   }
+  return 0;
 }
 
 /************************************************************************/
 
-void MCTraj::SEISModel::obsBranchInf(const EpiState& es, gsl_rng* rng, 
+int MCTraj::SEISModel::obsBranchInf(const EpiState& es, gsl_rng* rng, 
                                      StateTransition& st, const void* pars)
 {
   int r = gsl_rng_uniform_int(rng,2);
   int a, b;
-//  int branch_color = es.branches.getCol(es.curBranch.at(0));
   if (r) { a = 1; b = 2; } else { b = 1; a = 2; }
+  int acol = es.branches.getCol(es.curBranch.at(a));
+  int bcol = es.branches.getCol(es.curBranch.at(b));
   if (es.curBranch.size() < 3) {
     cerr << "Need node information to color tree!" << endl;
   } else {
@@ -173,17 +193,20 @@ void MCTraj::SEISModel::obsBranchInf(const EpiState& es, gsl_rng* rng,
       st[3] = 0;
       st[4] = 1;  /* kI + 1 */
     } else {
-//      cerr << es.curBranch.at(a) << " >> "
-//           << es.curBranch.at(b) << " || "
-//           << es.curBranch.at(0) << endl;
-      st.branchTrans.push_back(BranchStateChange(es.curBranch.at(a),-1,1));
-      st.branchTrans.push_back(BranchStateChange(es.curBranch.at(b),-1,0));
+      // cerr << es.curBranch.at(a) << " >> "
+      //      << es.curBranch.at(b) << " || "
+      //      << es.curBranch.at(0) << endl;
+      st.branchTrans.push_back(BranchStateChange(es.curBranch.at(a),acol,1));
+      st.branchTrans.push_back(BranchStateChange(es.curBranch.at(b),bcol,0));
       st.branchTrans.push_back(BranchStateChange(es.curBranch.at(0),1,-1));
     }
   }
+  return 0;
 }
 
-void MCTraj::SEISModel::obsBranchRecov(const EpiState& es, gsl_rng* rng, 
+/************************************************************************/
+
+int MCTraj::SEISModel::obsBranchRecov(const EpiState& es, gsl_rng* rng, 
                                        StateTransition& st, const void* pars)
 {
   if (es.curBranch.size() < 1) {
@@ -192,15 +215,21 @@ void MCTraj::SEISModel::obsBranchRecov(const EpiState& es, gsl_rng* rng,
 //    cerr << ">> " << es.curBranch.at(0) << endl;
     st.branchTrans.push_back(BranchStateChange(es.curBranch.at(0),1,-1));
   }
+  return 0;
 }
 
-void MCTraj::SEISModel::obsBranchTrans(const EpiState& es, gsl_rng* rng, 
+/************************************************************************/
+
+int MCTraj::SEISModel::obsBranchTrans(const EpiState& es, gsl_rng* rng, 
                                        StateTransition& st, const void* pars)
 {
   if (es.curBranch.size() < 1) {
     cerr << "Need node information to color tree!" << endl;
   } else {
-//    cerr << ">> " << es.curBranch.at(0) << " () " 
+//    cerr << ">> " 
+//         << es.curBranch.at(0) << ", "
+//         << es.curBranch.at(1) << ", "
+//         << es.curBranch.at(2) << " () " 
 //         << es.branches.getCol(es.curBranch.at(0)) << endl;
     if (es.curBranch.at(0) >= 0) {
       st.branchTrans.push_back(BranchStateChange(es.curBranch.at(0),0,-1));
@@ -208,7 +237,9 @@ void MCTraj::SEISModel::obsBranchTrans(const EpiState& es, gsl_rng* rng,
     if (es.curBranch.at(1) >= 0) {
       st.branchTrans.push_back(BranchStateChange(es.curBranch.at(1),-1,1));
     }
+    // cerr << st.to_json() << endl;
   }
+  return 0;
 }
 
 

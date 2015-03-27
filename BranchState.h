@@ -15,6 +15,8 @@ using namespace std;
 namespace MCTraj {
   class BranchState;
 
+  /**************************************************************************/
+
   class BranchStateChange {
     friend class BranchState;
 
@@ -38,10 +40,21 @@ namespace MCTraj {
         return *this;
       }
 
+      template<typename T>
+      void json(rapidjson::Writer<T>& json_w) const {
+        json_w.StartObject(); {
+          json_w.String("id"); json_w.Int(id);
+          json_w.String("old"); json_w.Int(old_color);
+          json_w.String("new"); json_w.Int(new_color);
+        } json_w.EndObject();
+      }
+
       int id;
       int old_color;
       int new_color;
   };
+
+  /**************************************************************************/
 
   class BranchStates {
     public:
@@ -112,10 +125,37 @@ namespace MCTraj {
       }
       int random_color(gsl_rng* rng, int col) const;
       inline size_t num_alive() const { return alive.size(); }
+      int countCol(int col) const;
       inline int getCol(size_t i) const { return colors[i]; }
+      inline void setCol(size_t i, int c) { colors[i] = c; }
+
+      /* JSON ***************************************************************/
+
+      template<typename T> 
+      void json(rapidjson::Writer<T>& json_w, bool aliveOnly = true) const {
+        json_w.StartArray();
+        if (aliveOnly) {
+          for (size_t i = 0; i < alive.size(); ++i) {
+            json_w.StartObject(); {
+              json_w.String("id");    json_w.Int(alive[i]); 
+              json_w.String("color"); json_w.Int(colors[alive[i]]);
+            } json_w.EndObject();
+          }
+        } else {
+          for (size_t i = 0; i < colors.size(); ++i) {
+            json_w.StartObject(); {
+              json_w.String("id");    json_w.Int(i); 
+              json_w.String("color"); json_w.Int(colors[i]);
+            } json_w.EndObject();
+          }
+        }
+        json_w.EndArray();
+      }
 
       string to_json() const;
 
+
+    public:
       vector<int> colors;
       vector<bool> isAlive;
       vector<int> alive;

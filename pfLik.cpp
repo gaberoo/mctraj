@@ -54,16 +54,16 @@ namespace MCTraj {
 
     double log_lik = pf.est();
 
-//    if (tree.extant > 0) {
-//      if (m->getRho() > 0.0) {
-//        // Sampling at present
-//        for (size_t i = 0; i < num_particles; ++i) {
+    if (tree.extant > 0) {
+      if (m->getRho() > 0.0) {
+        // Sampling at present
+        for (size_t i = 0; i < num_particles; ++i) {
 //          size_t k = pf[i].getState(2);
 //          size_t I = pf[i].getState(1);
-////          cerr << i << " " 
-////               << pf[i].getState(1) << " " << pf[i].getState(2) << " "
-////               << pf[i].getState(3) << " " << pf[i].getState(4) << " "
-////               << endl;
+//          cerr << i << " " 
+//               << pf[i].getState(1) << " " << pf[i].getState(2) << " "
+//               << pf[i].getState(3) << " " << pf[i].getState(4) << " "
+//               << endl;
 //          double w = 1.0;
 //          if (m->getRho() >= 1.0/* && I == k */) {
 //            w = 1.0;
@@ -83,16 +83,16 @@ namespace MCTraj {
 //          cerr << "Something went wrong with the sampling step at the end.";
 //          cerr << "\033[0m" << endl;
 //          return -INFINITY;
-//        }
+        }
 //
 //        log_lik = pf.est() + gsl_sf_lnfact(tree.extant);
-//     } else {
-//        cerr << "\033[1;31m";
-//        cerr << "Extant species but rho = 0 !";
-//        cerr << "\033[0m" << endl;
-//        return -INFINITY;
-//      }
-//    }
+      } else {
+        cerr << "\033[1;31m";
+        cerr << "Extant species but rho = 0 !";
+        cerr << "\033[0m" << endl;
+        return -INFINITY;
+      }
+    }
 
     // pf.printMeanTraj(cout);
     // pf.printFromFirst();

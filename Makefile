@@ -1,8 +1,6 @@
 include Make.inc
 #CPP = clang++
 
-CFLAGS += -std=c++0x
-
 TESTS  = testChooseTransition testParticleFilter testTrajParticle
 TESTS += testReadTrajectory
 
@@ -14,7 +12,7 @@ MODELS = $(MODELS_SRC:.cpp=.o)
 
 OBJS  = MCTraj.o Trajectory.o ParticleFilter.o TrajParticle.o 
 OBJS += StateTransition.o TransitionType.o TrajParticleFilter.o
-OBJS += pfLik.o Model.o BranchState.o TreeNode.o
+OBJS += pfLik.o Model.o EpiState.o BranchState.o TreeNode.o
 OBJS += $(MODELS)
 
 CFLAGS += -fopenmp -Imodels -I. -I.. -isystem ./include

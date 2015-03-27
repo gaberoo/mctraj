@@ -59,20 +59,21 @@ namespace MCTraj {
         return out;
       }
 
-      string to_json() const {
-        ostringstream out;
-        out << "{"
-            << "\"pop\":[";
-        for (size_t i(0); i < state.size(); ++i) {
-          out << state[i];
-          if (i < state.size()-1) out << ",";
-        }
-        out << "],\"branches\":" << branches.to_json()
-            << "}";
-        return out.str();
-      }
-
       void init_branches(size_t n) { branches.resize(n); }
+
+      /* JSON ***************************************************************/
+
+      template<typename T> 
+      void json(rapidjson::Writer<T>& json_w) const {
+        json_w.StartObject(); {
+          json_w.String("pop"); json_w.StartArray();
+          for (size_t i(0); i < state.size(); ++i) json_w.Int(state[i]);
+          json_w.EndArray();
+          json_w.String("branches");
+          branches.json(json_w);
+        } json_w.EndObject();
+      }
+      string to_json() const;
 
 
     protected:

@@ -55,16 +55,16 @@ namespace MCTraj {
 
     /************************************************************************/
 
-    void branchInf(const EpiState& es, gsl_rng* rng, 
+    int branchInf(const EpiState& es, gsl_rng* rng, 
                    StateTransition& st, const void* pars);
-    void branchTrans(const EpiState& es, gsl_rng* rng, 
+    int branchTrans(const EpiState& es, gsl_rng* rng, 
                      StateTransition& st, const void* pars);
 
-    void obsBranchInf(const EpiState& es, gsl_rng* rng, 
+    int obsBranchInf(const EpiState& es, gsl_rng* rng, 
                       StateTransition& st, const void* pars);
-    void obsBranchRecov(const EpiState& es, gsl_rng* rng, 
+    int obsBranchRecov(const EpiState& es, gsl_rng* rng, 
                         StateTransition& st, const void* pars);
-    void obsBranchTrans(const EpiState& es, gsl_rng* rng, 
+    int obsBranchTrans(const EpiState& es, gsl_rng* rng, 
                         StateTransition& st, const void* pars);
   }
 

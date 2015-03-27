@@ -34,9 +34,9 @@ namespace MCTraj {
       inline double applyProb(const EpiState& es, const void* pars) const 
       { if (prob != NULL && pars != NULL) { return prob(es,pars); } else { return 0.0; } }
 
-      inline void applyBranch(const EpiState& es, gsl_rng* rng, 
-                                StateTransition& st, const void* pars) const 
-      { if (bfun != NULL) bfun(es,rng,st,pars); }
+      inline int applyBranch(const EpiState& es, gsl_rng* rng, 
+                             StateTransition& st, const void* pars) const 
+      { return (bfun != NULL) ? bfun(es,rng,st,pars) : -100; }
 
       inline int alters(size_t i) const { return change.at(i); }
       inline int operator[](size_t i) const { return change[i]; }

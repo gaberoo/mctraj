@@ -76,7 +76,14 @@ namespace MCTraj {
       StateTransition& st = transitions.back();
 //      StateTransition st(nextTime,*nextTrans,
 //                         curState,pars,nextEvent,time+nextTime);
-      if (! noTree) nextTrans->applyBranch(curState,rng,st,pars);
+      if (! noTree) {
+        int ret = nextTrans->applyBranch(curState,rng,st,pars);
+//        if (ret == -1) {
+//          cerr << time+nextTime << " > " << nextTrans->getName() << " :: branch error" << endl;
+//          cerr << curState.branches.countCol(0) << " " << curState[3] << " | ";
+//          cerr << curState.branches.countCol(1) << " " << curState[4] << endl;
+//        }
+      }
       addTransition(st);
       time += nextTime;
       ++num_events;
@@ -103,7 +110,7 @@ namespace MCTraj {
 
     /* probability that the event happened */
     double dw = tt->applyRate(curState,pars);
-    // cout << " ]]]]]]] " << nextEvent << " " << model->mapType(nextEvent) << " " << dw << endl;
+    // cerr << " ]]]]]]] " << nextEvent << " " << model->mapType(nextEvent) << " " << dw << endl;
     tt->applyBranch(curState,rng,st,pars);
     addTransition(st);
     time = nextTime;

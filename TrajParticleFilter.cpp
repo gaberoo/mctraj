@@ -140,7 +140,6 @@ namespace MCTraj {
       for (size_t i(0); i < tree->ids[nextStep].size(); ++i) {
         cerr << tree->ids[nextStep][i] << " ";
       }
-      cerr << " :: " << particle(0).getState();
       cerr << endl;
     }
     if (modelType < 0) return tree->ttypes[nextStep];
@@ -163,7 +162,7 @@ namespace MCTraj {
       particle(j).updateWeight(dw);
 
       if (vflag > 2) {
-        cerr << eventType << " > " << particle(j).getState() << " " 
+        cerr << eventType << "  > " << particle(j).getState() << " " 
              << setw(12) << dw << " " 
              << setw(12) << particle(j).getWeight() << endl;
       }
@@ -216,6 +215,7 @@ namespace MCTraj {
         }
       }
 
+      // cerr << " [" << j << "]:" << dw;
       particle(j).updateWeight(dw);
       particle(j).updateProb(dw);
     }

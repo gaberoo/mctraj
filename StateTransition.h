@@ -71,6 +71,8 @@ namespace MCTraj {
 
       friend ostream& operator<<(ostream& out, const StateTransition& trans);
 
+      string to_json() const;
+
     protected:
       double time;
       double prob;

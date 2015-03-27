@@ -2,7 +2,7 @@ CC = gcc
 CPP = g++
 FC = gfortran
 LD = g++
-CFLAGS += -DDLAGTM #-DDEBUG
+CFLAGS += -std=c++0x #-DDEBUG
 #CFLAGS += -DUNROLL
 CFLAGS += -g -m64 -Wall -O3
 FFLAGS += -g -m64 -Wall -O3

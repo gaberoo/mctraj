@@ -28,16 +28,19 @@ namespace MCTraj {
     }
   }
 
-  string BranchStates::to_json() const {
-    ostringstream out;
-    size_t i;
-    out << "{";
-    for (i = 0; i < alive.size(); ++i) {
-      out << alive[i] << ":" << colors[alive[i]];
-      if (i < alive.size()-1) out << ",";
+  int BranchStates::countCol(int col) const {
+    int cnt = 0;
+    for (size_t i(0); i < alive.size(); ++i) {
+      if (colors[alive[i]] == col) ++cnt;
     }
-    out << "}";
-    return out.str();
+    return cnt;
+  }
+
+  string BranchStates::to_json() const {
+    rapidjson::StringBuffer buf;
+    rapidjson::Writer<rapidjson::StringBuffer> json_w(buf);
+    json(json_w,true);
+    return buf.GetString();
   }
 }
 

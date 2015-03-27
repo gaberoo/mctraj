@@ -94,7 +94,9 @@ int main(int argc, char** argv) {
       es = new EpiState(SEISModel::nstates);
       (*es)[0] = ((int) seis_pars.N)-1;
       (*es)[1] = 1;
+      (*es)[2] = 0;
       (*es)[3] = 1;
+      (*es)[4] = 0;
       if (fullTree) {
         mpt->sim_event(0) = 0;
         mpt->sim_event(1) = 0;
@@ -106,6 +108,9 @@ int main(int argc, char** argv) {
 
   tree.reverse();
   es->init_branches(tree.max_id()+1);
+  es->branches.wake(0);
+  es->branches.setCol(0,0);
+  // cout << es->to_json() << endl;
 
   Trajectory* traj = NULL;
   if (printTraj) traj = new Trajectory(*es,mpt);
