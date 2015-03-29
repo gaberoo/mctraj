@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   seis_pars.rho   = 0.0;
   seis_pars.gamma = 0.01;
 
-  double maxTime = 20.0;
+  double maxTime = 50.0;
 
   SEIS model(&seis_pars);
 

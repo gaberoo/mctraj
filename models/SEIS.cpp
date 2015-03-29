@@ -48,8 +48,8 @@ double MCTraj::SEISModel::treeProbRecov(const EpiState& es, const void* pars)
   double dw = (I > kI) ? (1.-s) : 0.0;
   if (es[2] < es[4] || es[1] < es[3]) dw = 0.0;
   if (dw > 0.0) {
-    cerr << "treeProbRecov :: ES = " << es << " | w = " << dw 
-         << " >> " << I << " --> " << kI << endl;
+//    cerr << "treeProbRecov :: ES = " << es << " | w = " << dw 
+//         << " >> " << I << " --> " << kI << endl;
   }
   return dw;
 }
@@ -97,9 +97,9 @@ double MCTraj::SEISModel::treeObsRecov(const EpiState& es, const void* pars)
   if (es.curBranch.size() > 0) {
     branch_color = es.branches.getCol(es.curBranch[0]);
     double x = (branch_color == 1) ? ep.psi*I : 0.0;
-    cerr << "treeObsRecov :: ES = " << es 
-         << " | " << es.curBranch[0] << " -- " << branch_color 
-         << "(( " << x << endl;
+//    cerr << "treeObsRecov :: ES = " << es 
+//         << " | " << es.curBranch[0] << " -- " << branch_color 
+//         << "(( " << x << endl;
     return x;
   } else {
     cerr << "treeObsRecov :: no node information! ES = " << es << endl;
