@@ -58,10 +58,8 @@ namespace MCTraj {
 
       int lastType(int type) const;
 
-      void resetWeight() {
-        Particle::resetWeight();
-        prob = 1.0;
-      }
+      double calcWeight(const void* pars);
+      void resetWeight() { Particle::resetWeight(); prob = 1.0; }
 
       void print_from_last(ostream& out, string prefix = "", const void* pars = NULL, int offset = 0) const;
       void print_from_first(ostream& out, string prefix = "", const void* pars = NULL) const;

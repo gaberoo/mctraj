@@ -98,7 +98,7 @@ namespace MCTraj {
       Trajectory& operator+=(const Trajectory& T);
 
       double allRates(const EpiState& es, void* pars) const;
-      double trajProb(const EpiState& s0, void* pars) const;
+      double trajProb(const void* pars, int last = -1) const;
 
       inline double getProb() const { return exp(prob); }
       inline void setProb(double p) { prob = log(p); }

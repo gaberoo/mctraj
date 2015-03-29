@@ -14,6 +14,14 @@ namespace MCTraj {
 
   // =========================================================================
 
+  double TrajParticle::calcWeight(const void* pars) {
+    double dw = trajProb(pars,getLast());
+    weight *= dw;
+    return weight;
+  }
+
+  // =========================================================================
+
   void TrajParticle::print_from_last(ostream& out, string prefix, 
                                      const void* pars, int offset) const {
     EpiState curState = getState();

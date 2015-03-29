@@ -197,34 +197,7 @@ namespace MCTraj {
     size_t j;
 #pragma omp parallel for default(shared) private(j)
     for (j = 0; j < size(); ++j) {
-      double dw = 1.0;
-      double w2;
-
-      EpiState curState(particle(j).getState());
-      int ntrans = particle(j).transitionCount();
-      int last = particle(j).getLast();
-
-      const TransitionType* tt;
-
-      // cout << j << " :: " << ntrans << " -> " << last << endl;
-
-      // Events that were not included in the tree
-      if (ntrans > 0) {
-        for (int i = ntrans-1; i > last; --i) {
-          tt = particle(j).getTrans(i).getType();
-          w2 = tt->applyProb(curState,pars);
-          dw *= w2;
-          curState -= particle(j).getTrans(i).getTrans();
-//          cout << j << " % " 
-//               << particle(j).getTrans(i).realTime() 
-//               << "[" << i << "] >> " 
-//               << tt->getName() << " " 
-//               << tt->applyProb(curState,pars) << endl;
-        }
-      }
-
-      // cerr << " [" << j << "]:" << dw;
-      particle(j).updateWeight(dw);
+      double dw = particle(j).calcWeight(pars);
       particle(j).updateProb(dw);
     }
   }

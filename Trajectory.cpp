@@ -134,6 +134,37 @@ namespace MCTraj {
 
   // =========================================================================
 
+  double Trajectory::trajProb(const void* pars, int last) const {
+    double w2;
+    double dw = 1.0;
+
+    EpiState x(curState);
+    const TransitionType* tt;
+    int ntrans = transitionCount();
+    // cout << j << " :: " << ntrans << " -> " << last << endl;
+    
+    if (ntrans <= last) return 0.0;
+
+    // Events that were not included in the tree
+    if (ntrans > 0) {
+      for (int i = ntrans-1; i > last; --i) {
+      tt = getTrans(i).getType();
+      w2 = tt->applyProb(x,pars);
+      dw *= w2;
+      x -= getTrans(i).getTrans();
+//    cout << j << " % " 
+//         << particle(j).getTrans(i).realTime() 
+//         << "[" << i << "] >> " 
+//         << tt->getName() << " " 
+//         << tt->applyProb(curState,pars) << endl;
+      }
+    }
+
+    return dw;
+  }
+
+  // =========================================================================
+
   ostream& operator<<(ostream& out, const Trajectory& traj) {
     EpiState x(traj.initialState);
     double time(0.0);

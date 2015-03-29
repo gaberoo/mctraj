@@ -45,7 +45,7 @@ namespace MCTraj {
             cerr << pf[0].getTime() << "/" << pf.maxTime() 
                  << ": Particle collapse !";
             cerr << "\033[0m" << endl;
-            if (vflag > 1) pf.printFromLast(m->getPars(),1);
+            if (vflag > 2) pf.printFromLast(m->getPars(),1);
           }
           return -INFINITY;
         }
