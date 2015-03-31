@@ -11,12 +11,12 @@ namespace MCTraj {
       Particle() {}
 
       Particle(string n, double w) 
-        : name(n), weight(w), cum_weight(0.0), id(0), parent(0)
+        : name(n), weight(w), cum_weight(0.0), id(0), parent(0), msg("")
       {}
 
       Particle(const Particle& p) 
         : name(p.name), weight(p.weight), cum_weight(p.cum_weight), 
-          id(p.id), parent(p.parent)
+          id(p.id), parent(p.parent), msg(p.msg)
       {}
 
       virtual ~Particle() {}
@@ -39,6 +39,7 @@ namespace MCTraj {
         cum_weight = p.cum_weight;
         id = p.id;
         parent = p.parent;
+        msg = p.msg;
         return *this;
       }
 
@@ -55,6 +56,7 @@ namespace MCTraj {
       double cum_weight;
       int id;
       int parent;
+      string msg;
   };
 }
 

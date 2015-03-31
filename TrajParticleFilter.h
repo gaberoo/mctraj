@@ -37,6 +37,8 @@ namespace MCTraj {
       void setTree(const Tree* tree, int skip = 0, gsl_rng** rng = NULL);
 
       size_t stepTree(const void* pars, gsl_rng** rng, double dt = INFINITY);
+      int stepAddTP(size_t j, const void* pars, gsl_rng* rng);
+      size_t stepAdd(const void* pars, gsl_rng** rng);
 
       void calcWeights(const void* pars);
       int addTreeEvent(const void* pars, gsl_rng** rng, int noProb = 0);

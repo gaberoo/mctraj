@@ -15,6 +15,15 @@ void MCTraj::TreeNode::operator=(const TreeNode& t) {
 
 /****************************************************************************/
 
+string MCTraj::TreeNode::to_json() const {
+  rapidjson::StringBuffer buf;
+  rapidjson::Writer<rapidjson::StringBuffer> json_w(buf);
+  json(json_w);
+  return buf.GetString();
+}
+
+/****************************************************************************/
+
 ostream& MCTraj::operator<<(ostream& out, const TreeNode& tn) {
   out << "{"
       << "\"parent\": "     << tn.parent       << ","
@@ -36,9 +45,9 @@ int MCTraj::only_sampled(const vector<TreeNode>& tree, vector<TreeNode>& sample,
   if (root < 0 || root >= n) {
     return 0;
   } else {
-    if (tree[root].off.size() == 0) {
-      if (tree[root].extant_off > 0) {
-        sample.push_back(tree[root]);
+    if (tree[root].off.size() == 0) {     // no offspring, ...
+      if (tree[root].extant_off > 0) {    // ... but there are extant offspring ...
+        sample.push_back(tree[root]);     // ... then add the node to the tree
         return 1;
       } else {
         return 0;
@@ -132,4 +141,12 @@ string MCTraj::to_newick(const vector<TreeNode>& tree, int root) {
 
 /****************************************************************************/
 
+int MCTraj::add_extant(vector<TreeNode>& tree, int node) {
+  if (node >= 0 && node < tree.size()) {
+    tree[node].extant_off++;
+    return add_extant(tree,tree[node].parent) + 1;
+  } else {
+    return 0;
+  }
+}
 

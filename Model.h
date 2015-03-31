@@ -9,6 +9,14 @@
 namespace MCTraj {
   inline double oneProb(const EpiState& es, const void* pars) { return 1.0; }
 
+  class Pars {
+    public:
+      Pars() {}
+      virtual ~Pars() {}
+
+      template<typename T> void json(rapidjson::Writer<T>&) const;
+  };
+
   class Model {
     public:
       Model() : nstates(0), pars(NULL), rho(0.0) {
@@ -37,6 +45,7 @@ namespace MCTraj {
       size_t mapType(size_t i) const { return typeMap[i]; }
 
       double calculateTransRates(const EpiState& state, vector<double>& transRates) const;
+      double delTransRate(vector<double>& transRates, size_t i) const;
 
       inline const void* getPars() const { return pars; }
       inline void setPars(const void* p) { pars = p; }

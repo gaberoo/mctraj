@@ -9,7 +9,24 @@
 
 namespace MCTraj {
   namespace SEISModel {
-    struct EpiPars {
+    class EpiPars : public Pars {
+    public:
+      EpiPars() {}
+      virtual ~EpiPars() {}
+
+      template<typename T> 
+      void json(rapidjson::Writer<T>& w) const {
+        w.StartObject(); {
+          w.String("name");  w.String("SEIS");
+          w.String("N");     w.Double(N);
+          w.String("beta");  w.Double(beta);
+          w.String("mu");    w.Double(mu);
+          w.String("psi");   w.Double(psi);
+          w.String("rho");   w.Double(rho);
+          w.String("gamma"); w.Double(gamma);
+        } w.EndObject();
+      }
+
       double N;
       double beta;
       double mu;

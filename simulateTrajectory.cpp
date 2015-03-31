@@ -3,20 +3,20 @@ using namespace std;
 
 #include <gsl/gsl_rng.h>
 
+#include "MCTraj.h"
 #include "Model.h"
 #include "models/SEIS.h"
 using namespace MCTraj;
 
 int main(int argc, char** argv) {
   SEISModel::EpiPars seis_pars;
-  seis_pars.N     = 20;
+  seis_pars.N     = 100;
   seis_pars.beta  = 1.0;
   seis_pars.mu    = 0.1;
-  seis_pars.psi   = 0.1;
+  seis_pars.psi   = 0.4;
   seis_pars.rho   = 0.0;
   seis_pars.gamma = 0.01;
-
-  double maxTime = 50.0;
+  double maxTime = 2000.0;
 
   SEIS model(&seis_pars);
 
@@ -38,7 +38,9 @@ int main(int argc, char** argv) {
 
   vector<TreeNode> tree;
   vector<TreeNode> phylo;
-  traj.toTree(rng,tree);
+
+  int lineageStates[] = { 0, 1, 1, 0, 0 };
+  traj.toTree(rng,tree,lineageStates);
 
   // for (size_t i = 0; i < tree.size(); ++i) cout << tree[i] << endl;
 
@@ -50,47 +52,21 @@ int main(int argc, char** argv) {
 //  cout << "tree 'sampled_tree' = " << sample_newick << ";" << endl;
 //  cout << "end;" << endl;
 
-  cout << "# pars = {";
-  cout << " \"N\": " << seis_pars.N << ", ";
-  cout << " \"beta\": " << seis_pars.beta << ", ";
-  cout << " \"mu\": " << seis_pars.mu << ", ";
-  cout << " \"psi\": " << seis_pars.psi << ", ";
-  cout << " \"rho\": " << seis_pars.rho << ", ";
-  cout << " \"gamma\": " << seis_pars.gamma << " ";
-  cout << "}" << endl;
-
   only_sampled(tree,phylo,0);
-  cout << "{" << endl;
-  cout << " \"full_tree\": [" << endl;
-  for (size_t i = 0; i < tree.size(); ++i) {
-    cout << tree[i];
-    if (i < tree.size()-1) cout << ",";
-    cout << endl;
-  }
-  cout << " ]," << endl;
-  cout << " \"sampled\": [" << endl;
-  for (size_t i = 0; i < phylo.size(); ++i) {
-    cout << phylo[i];
-    if (i < phylo.size()-1) cout << ",";
-    cout << endl;
-  }
-  cout << " ]" << endl;
-  cout << "}" << endl;
 
-//  cout << setw(5)  << "\"P\"" << " "
-//      << setw(5)  << "\"ID\"" << " "
-//      << setw(12) << "\"age\"" << " "
-//      << setw(5)  << "\"n_off\"" << " "
-//      << setw(5)  << "\"exoff\"" << " "
-//      << setw(12) << "\"P_age\"" << " "
-//      << setw(5)  << "\"eID\"" << " "
-//      << setw(5)  << "\"state\"" << endl;
-//
-//  vector<TreeNode> sample;
-//  only_sampled(tree,sample,0);
-//  for (size_t i = 0; i < sample.size(); ++i) {
-//    cout << sample[i] << endl;
-//  }
+  rapidjson::StringBuffer buf;
+  rapidjson::Writer<rapidjson::StringBuffer> json_w(buf);
+  json_w.StartObject(); {
+    json_w.String("model"); seis_pars.json(json_w);
+    json_w.String("full_tree"); json_w.StartArray(); {
+      for (size_t i = 0; i < tree.size(); ++i) tree[i].json(json_w);
+    } json_w.EndArray();
+    json_w.String("sampled"); json_w.StartArray(); {
+      for (size_t i = 0; i < phylo.size(); ++i) phylo[i].json(json_w);
+    } json_w.EndArray();
+  } json_w.EndObject();
+
+  cout << buf.GetString() << endl;
 
   gsl_rng_free(rng);
 

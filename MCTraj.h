@@ -6,6 +6,7 @@
 #include <iostream>
 using namespace std;
 
+//#include "Rng.h"
 #include <gsl/gsl_rng.h>
 
 #include "ParticleFilter.h"
@@ -16,9 +17,10 @@ using namespace std;
 #define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/stringbuffer.h>
 
 namespace MCTraj {
   class EpiState;

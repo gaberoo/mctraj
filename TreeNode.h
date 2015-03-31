@@ -8,6 +8,8 @@
 #include <sstream>
 using namespace std;
 
+#include "MCTraj.h"
+
 namespace MCTraj {
   class TreeNode {
     public:
@@ -30,6 +32,25 @@ namespace MCTraj {
 
       inline void add_off(int id) { off.push_back(id); }
 
+      // =====================================================================
+
+      template<typename T> 
+      void json(rapidjson::Writer<T>& json_w) const {
+        json_w.StartObject(); {
+          json_w.String("parent");     json_w.Int(parent);
+          json_w.String("code");       json_w.Int(code);
+          json_w.String("age");        json_w.Double(age);
+          json_w.String("n_off");      json_w.Int(n_off);
+          json_w.String("extant_off"); json_w.Int(extant_off);
+          json_w.String("parent_age"); json_w.Double(ancestor_age);
+          json_w.String("epi_id");     json_w.Int(epi_id);
+          json_w.String("epi_state");  json_w.Int(epi_state);
+        } json_w.EndObject();
+      }
+      string to_json() const;
+
+      // =====================================================================
+
       int code;
       int parent;
       double age;
@@ -46,6 +67,8 @@ namespace MCTraj {
   string to_newick(const vector<TreeNode>& tree, int root);
   int only_sampled(const vector<TreeNode>& tree, vector<TreeNode>& sample, int root);
   int only_sampled(const vector<TreeNode>& tree, string& newick, int root);
+
+  int add_extant(vector<TreeNode>& tree, int node);
 }
 
 #endif

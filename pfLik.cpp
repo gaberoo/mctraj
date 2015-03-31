@@ -2,8 +2,9 @@
 
 namespace MCTraj {
   double pfLik(const Model* m, const EpiState& init, const Tree& tree,
-               size_t num_particles, gsl_rng** rng, int vflag,
-               Trajectory* out, int skip, int print_particles) 
+               size_t num_particles, gsl_rng** rng, 
+               double filter_time, int vflag, Trajectory* out, 
+               int skip, int print_particles) 
   {
     Trajectory T(init,m);
     TrajParticleFilter pf(m);
@@ -21,13 +22,15 @@ namespace MCTraj {
     int ret = 1;
     int filterRet = 0;
 
+    double time = 0.0;
+
     while (ret >= 0) {
       if (vflag > 1) cerr << "Advancing tree..." << endl;
+//      ret = pf.stepAdd(m->getPars(),rng);
       ret = pf.stepTree(m->getPars(),rng);
-
       if (ret >= 0) {
-        if (vflag > 1) cerr << "Calculating weights..." << endl;
-        pf.calcWeights(m->getPars());
+//        if (vflag > 1) cerr << "Calculating weights..." << endl;
+//        pf.calcWeights(m->getPars());
 
         if (vflag > 1) cerr << "Adding tree event..." << endl;
         pf.addTreeEvent(m->getPars(),rng,1);
@@ -36,8 +39,13 @@ namespace MCTraj {
 
         pf.setLast();
 
-        if (vflag > 1) cerr << "Filter particles..." << endl;
-        filterRet = pf.filter(rng);
+        if (pf[0].getTime() >= time + filter_time) {
+          if (vflag > 1) cerr << "Filter particles..." << endl;
+          filterRet = pf.filter(rng);
+          time += filter_time;
+        } else {
+          filterRet = pf.filter(rng,'c');
+        }
 
         if (filterRet < 0) {
           if (vflag > 0) {

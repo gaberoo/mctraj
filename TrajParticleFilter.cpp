@@ -42,45 +42,59 @@ namespace MCTraj {
 
     vector<double> w(n,0.0);
     double totalW = w_vec(w);
-    if (vflag > 1) cerr << "FIL :: Sum = " << totalW << endl;
+    if (vflag > 1) cerr << "FIL (" << filter_type << ") :: Sum = " << totalW << endl;
 
     if (totalW <= 0.0) {
       logw = -INFINITY;
       return -1;
     }
 
-    logw += log(totalW/n);
-
-    size_t i;
-    for (i = 0; i < n; ++i) {
-      w[i] /= totalW;
-      pf[curStep][i].setWeight(w[i]);
-      if (i > 0) w[i] += w[i-1];
-    }
-
     // allocate space for new generation of particles
+    if (vflag > 1) cerr << "Increasing array size..." << flush;
     inc();
+    if (vflag > 1) cerr << "done." << endl;
 
-    // sampling with replacement
+    if (filter_type == 'c') {
+      size_t i;
 #pragma omp parallel for default(shared) private(i)
-    for (i = 0; i < n; ++i) {
-      size_t id = omp_get_thread_num();
-      double ran = gsl_rng_uniform(rng[id]);
-      int p = (int) (n*ran);
-      if (ran > w[p]) {
-        // find the first element that's larger than ran
-        while (ran > w[p] && p < (int) n) ++p;
-      } else {
-        // find the first element that's smaller than ran
-        while (ran <= w[p] && p >= 0) --p;
-        ++p;
+      for (i = 0; i < n; ++i) {
+        particle(i).copy(pf[curStep-1][i]);
+        particle(i).setId(i);
+        particle(i).setParent(i);
       }
-      particle(i).copy(pf[curStep-1][p]);
-      particle(i).setId(i);
-      particle(i).setParent(p);
-      particle(i).resetWeight();
-      particle(i).setProb(1.0);
+    } else {
+      logw += log(totalW/n);
+
+      size_t i;
+      for (i = 0; i < n; ++i) {
+        w[i] /= totalW;
+        pf[curStep][i].setWeight(w[i]);
+        if (i > 0) w[i] += w[i-1];
+      }
+
+#pragma omp parallel for default(shared) private(i)
+      for (i = 0; i < n; ++i) {
+        // sampling with replacement
+        size_t id = omp_get_thread_num();
+        double ran = gsl_rng_uniform(rng[id]);
+        int p = (int) (n*ran);
+        if (ran > w[p]) {
+          // find the first element that's larger than ran
+          while (ran > w[p] && p < (int) n) ++p;
+        } else {
+          // find the first element that's smaller than ran
+          while (ran <= w[p] && p >= 0) --p;
+          ++p;
+        }
+        particle(i).copy(pf[curStep-1][p]);
+        particle(i).setId(i);
+        particle(i).setParent(p);
+        particle(i).resetWeight();
+        particle(i).setProb(1.0);
+      }
     }
+
+    if (vflag > 1) cerr << "Done filtering." << endl;
 
     return 1;
   }
@@ -154,8 +168,8 @@ namespace MCTraj {
       id = omp_get_thread_num();
 
       if (vflag > 2) {
-        cerr << eventType << " |> " << particle(j).getState() << " " 
-             << setw(12) << dw << " " 
+        cerr << setw(5) << j << " |> " << particle(j).getState() << " " 
+             << setw(12) << "-" << " " 
              << setw(12) << particle(j).getWeight() << endl;
       }
 
@@ -163,7 +177,7 @@ namespace MCTraj {
       particle(j).updateWeight(dw);
 
       if (vflag > 2) {
-        cerr << eventType << "  > " << particle(j).getState() << " " 
+        cerr << setw(5) << j << "  > " << particle(j).getState() << " " 
              << setw(12) << dw << " " 
              << setw(12) << particle(j).getWeight() << endl;
       }
@@ -198,6 +212,7 @@ namespace MCTraj {
 #pragma omp parallel for default(shared) private(j)
     for (j = 0; j < size(); ++j) {
       double dw = particle(j).calcWeight(pars);
+//      cerr << j << " " << particle(j).getProb() << " --> " << dw << endl;
       particle(j).updateProb(dw);
     }
   }
@@ -258,19 +273,84 @@ namespace MCTraj {
 #pragma omp parallel for default(shared) private(j,id)
         for (j = 0; j < size(); ++j) {
           id = omp_get_thread_num();
+          particle(j).resetProb();
           int ret = particle(j).simulateTrajectory(step_time,pars,rng[id]);
           if (ret < 0) {
             particle(j).setWeight(0.0);
           } else {
-            particle(j).setWeight(1.0);
+            particle(j).setWeight(particle(j).getProb());
           }
         }
-
         if (step_time < time) sampleInPlace(rng[0]);
       }
       return nextStep;
     } else {
       return -1;
+    }
+  }
+
+  // ========================================================================
+
+  size_t TrajParticleFilter::stepAdd(const void* pars, gsl_rng** rng) {
+    size_t j;
+    size_t zeros = 0;
+    size_t nextStep = curStep;
+    if (nextStep < tree->times.size()) {
+#pragma omp parallel for default(shared) private(j) reduction(+:zeros)
+      for (j = 0; j < size(); ++j) {
+        size_t id = omp_get_thread_num();
+        int ret = 3;
+        size_t lz = 0;
+        while (ret > 0) {
+          ret = stepAddTP(j,pars,rng[id]);
+          cerr << j << " > " << ret << ": " << particle(j).getWeight() << endl;
+          if (ret > 0) {
+            ++lz;
+            cerr << "Ilegal simulation: " << particle(j).getState() << endl;
+            cerr << (Trajectory) particle(j) << endl;
+            cerr << " :: Retrying (" << lz << ")..." << endl;
+          } else break;
+        }
+        if (ret < 0) {
+          cerr << "There was an error in step-adding particle '" << j << "'." << endl;
+        }
+        zeros += lz;
+      }
+      return zeros;
+    } else {
+      return -1;
+    }
+  }
+
+  // ========================================================================
+
+  int TrajParticleFilter::stepAddTP(size_t j, const void* pars, gsl_rng* rng) {
+    // size_t nextStep = curStep + 1;
+    size_t nextStep = curStep;
+    if (nextStep < tree->times.size()) {
+      double eventTime = tree->times[nextStep];
+
+      // Simulate to next event
+      int ret = particle(j).simulateTrajectory(eventTime,pars,rng);
+      if (ret < 0) { particle(j).setWeight(0.0); return ret; }
+
+      double dw = particle(j).calcWeight(pars);
+
+      if (dw <= 0.0) return 1;  // simulated illegal event
+
+      // Add observed event
+      int eventType = tree->ttypes[nextStep];
+      int modelType = model->mapType(eventType);
+      if (modelType < 0) return -102;
+
+      dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],rng,pars);
+      particle(j).updateWeight(dw);
+
+      if (dw <= 0.0) return 2;  // forced illegal event
+
+      return 0;
+    } else {
+      return -101;
     }
   }
 

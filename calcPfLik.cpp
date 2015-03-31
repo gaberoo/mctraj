@@ -9,56 +9,76 @@ using namespace std;
 #include "models/SIS.h"
 #include "models/SIR.h"
 #include "models/SEIS.h"
-
 using namespace MCTraj;
 
+#include <tclap/CmdLine.h>
+
 int main(int argc, char** argv) {
-  SISModel::EpiPars pars = { 100.0, 1.0, 0.1, 0.1, 1.0 };
-  SEISModel::EpiPars seis_pars;
-  double _gamma = 0.0;
+  TCLAP::CmdLine cmd("Particle filter approximation for marginal tree likelihood", ' ', "0.9");
 
-  size_t num_particles = 1;
-  int reps = 1;
-  int modelType = 1;
-  int printTraj = 0;
-  int printParticles = 0;
-  int fullTree = 0;
-  long unsigned seed = time(NULL);
-  int skip = 1;
+  TCLAP::ValueArg<double> _N("N","popSize","Total population size",true,100.0,"double",cmd);
+  TCLAP::ValueArg<double> _beta("b","beta","Transmission rate",true,1.0,"double",cmd);
+  TCLAP::ValueArg<double> _mu("u","mu","Recovery rate",true,0.1,"double",cmd);
+  TCLAP::ValueArg<double> _psi("s","psi","Sequential sampling rate",true,0.1,"double",cmd);
+  TCLAP::ValueArg<double> _rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
+  TCLAP::ValueArg<double> _gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
+  TCLAP::ValueArg<int> _numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
+  TCLAP::ValueArg<int> _reps("r","nreps","Number of repetitions",false,1,"int",cmd);
+  TCLAP::ValueArg<int> _seed("S","seed","Random number seed",false,-1,"int",cmd);
+  TCLAP::ValueArg<int> _type("T","model","Model type",false,1,"int",cmd);
+  TCLAP::ValueArg<string> _branchfn("B","branchFn","Filename for branch colors",false,"","string",cmd);
+  TCLAP::ValueArg<string> _trajfn("C","trajFn","Filename for trajectory",false,"","string",cmd);
+  TCLAP::ValueArg<int> _skip("x","skip","Skip lines of times files",false,0,"string",cmd);
+  TCLAP::ValueArg<double> filterTime("f","filter","Min time between filters",false,0.0,"double",cmd);
 
-  string branch_file = "";
-  string traj_file = "";
+  TCLAP::SwitchArg _printTraj("O","printTraj","Output trajectory",cmd,false);
+  TCLAP::SwitchArg _printParticles("P","printParticles","Output particles",cmd,false);
+  TCLAP::SwitchArg _fullTree("F","fullTree","Full tree",cmd,false);
+  TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
 
-  int vflag = 0;
-  int c;
-  opterr = 0;
-  while ((c = getopt(argc,argv,"N:b:u:s:o:g:vn:r:ROPS:T:B:C:Fx:")) != -1) {
-    switch (c) {
-      case 'N': pars.N = atof(optarg); break;
-      case 'b': pars.beta = atof(optarg); break;
-      case 'u': pars.mu = atof(optarg); break;
-      case 's': pars.psi = atof(optarg); break;
-      case 'o': pars.rho = atof(optarg); break;
-      case 'v': ++vflag; break;
-      case 'n': num_particles = atoi(optarg); break;
-      case 'r': reps = atoi(optarg); break;
-      case 'O': printTraj = ! printTraj; break;
-      case 'P': printParticles = ! printParticles; break;
-      case 'S': seed = atoi(optarg); break;
-      case 'T': modelType = atoi(optarg); break;
-      case 'g': _gamma = atof(optarg); break;
-      case 'B': branch_file = optarg; break;
-      case 'C': traj_file = optarg; break;
-      case 'F': fullTree = ! fullTree; break;
-      case 'x': skip = atoi(optarg); break;
-    }
+  TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",false);
+  cmd.add(multi);
+
+  try {
+    cmd.parse(argc,argv);
+  } catch (TCLAP::ArgException &e) { 
+    cerr << "error: " << e.error() << " for arg " << e.argId() << endl; 
   }
 
   if (optind == argc) {
     cout << "Please supply a tree file." << endl;
     return 0;
   }
-  Tree tree(*(argv+optind));
+
+  vector<string> fileNames = multi.getValue();
+  Tree tree(fileNames.front().c_str());
+
+  // =========================================================================
+
+  SISModel::EpiPars pars;
+  pars.N    = _N.getValue();
+  pars.beta = _beta.getValue();
+  pars.mu   = _mu.getValue();
+  pars.psi  = _psi.getValue();
+  pars.rho  = _rho.getValue();
+
+  SEISModel::EpiPars seis_pars;
+
+  size_t num_particles = _numParticles.getValue();
+  int reps = _reps.getValue();
+  int modelType = _type.getValue();
+  int printTraj = _printTraj.getValue();
+  int printParticles = _printParticles.getValue();
+  int fullTree = _fullTree.getValue();
+  long unsigned seed = (_seed.getValue() > 0) ? _seed.getValue() : time(NULL);
+  int skip = _skip.getValue();
+
+  string branch_file = _branchfn.getValue();
+  string traj_file = _trajfn.getValue();
+
+  // =========================================================================
+  
+  // if (vflag.getValue() > 0) cerr << "# seed = " << seed << endl;
 
   // Setup random number generators
   int max_threads = omp_get_max_threads();
@@ -89,7 +109,7 @@ int main(int argc, char** argv) {
       seis_pars.mu = pars.mu;
       seis_pars.psi = pars.psi;
       seis_pars.rho = pars.rho;
-      seis_pars.gamma = _gamma;
+      seis_pars.gamma = _gamma.getValue();
       mpt = new SEIS(&seis_pars);
       es = new EpiState(SEISModel::nstates);
       (*es)[0] = ((int) seis_pars.N)-1;
@@ -122,7 +142,8 @@ int main(int argc, char** argv) {
   if (traj_file != "") traj_out = new ofstream(traj_file.c_str());
 
   for (int r = 0; r < reps; ++r) {
-    lik = pfLik(mpt,*es,tree,num_particles,rng,vflag,traj,skip,printParticles);
+    lik = pfLik(mpt,*es,tree,num_particles,rng,filterTime.getValue(),
+                vflag.getValue(),traj,skip,printParticles);
     cout << lik << endl;
     if (branch_out != NULL) traj->printBranches(*branch_out) << endl;
     if (traj_out != NULL) traj->printFromFirst(*traj_out) << endl;

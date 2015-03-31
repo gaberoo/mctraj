@@ -7,6 +7,8 @@ double MCTraj::SEISModel::infRateFun(const EpiState& es, const void* pars)
   return (lambdaI > 0.0) ? lambdaI : 0.0;
 }
 
+/************************************************************************/
+
 double MCTraj::SEISModel::treeProbInf(const EpiState& es, const void* pars) 
 {
   /* Three possibilities upon infection:
@@ -24,7 +26,9 @@ double MCTraj::SEISModel::treeProbInf(const EpiState& es, const void* pars)
   // double p = 1.0 - k*(k-1.)/(I*(I-1.));
   double p = 1.0 - kI*kE/(E*I);
 
-  // cerr << "treeProbInf :: ES = " << es << " | p = " << p << endl;
+#ifdef DEBUG
+  cerr << "treeProbInf   :: ES = " << es << " | p = " << p << endl;
+#endif
   return (I >= kI && E >= kE) ? p : 0.0;
 }
 
@@ -33,8 +37,7 @@ double MCTraj::SEISModel::treeProbInf(const EpiState& es, const void* pars)
 double MCTraj::SEISModel::recovRateFun(const EpiState& es, const void* pars) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[2];
-  return (ep.mu+ep.psi)*I;
+  return (ep.mu+ep.psi)*es[2];
 }
 
 /************************************************************************/
@@ -47,10 +50,10 @@ double MCTraj::SEISModel::treeProbRecov(const EpiState& es, const void* pars)
   double kI = es[4];
   double dw = (I > kI) ? (1.-s) : 0.0;
   if (es[2] < es[4] || es[1] < es[3]) dw = 0.0;
-  if (dw > 0.0) {
-//    cerr << "treeProbRecov :: ES = " << es << " | w = " << dw 
-//         << " >> " << I << " --> " << kI << endl;
-  }
+#ifdef DEBUG
+  cerr << "treeProbRecov :: ES = " << es << " | w = " << dw 
+       << " >> " << I << " --> " << kI << endl;
+#endif
   return dw;
 }
 
@@ -67,7 +70,7 @@ double MCTraj::SEISModel::treeObsInf(const EpiState& es, const void* pars)
   double x = 0.0;
   if (I <= 0.0) {
 #ifdef DEBUG
-    cerr << "treeObsInf :: ES = " << es << " | no infecteds!" << endl;
+    cerr << "treeObsInf    :: ES = " << es << " | no infecteds!" << endl;
 #endif
     return 0.0;
   }
@@ -75,13 +78,15 @@ double MCTraj::SEISModel::treeObsInf(const EpiState& es, const void* pars)
     branch_color = es.branches.getCol(es.curBranch[0]);
     x = (branch_color == 1) ? lambda/(E+1.) : 0.0; // prob of the particular branch
 #ifdef DEBUG
-    cerr << "treeObsInf :: ES = " << es 
-         << " | " << es.curBranch[0] << " -- " << branch_color << " (" << x << ")" << endl;
+    if (x <= 0.0) {
+      cerr << "treeObsInf    :: ES = " << es 
+           << " | " << es.curBranch[0] << " -- " << branch_color << endl;
+    }
 #endif
     return x;
   } else {
 #ifdef DEBUG
-    cerr << "treeObsInf :: no node information! ES = " << es << endl;
+    cerr << "treeObsInf    :: no node information! ES = " << es << endl;
 #endif
     return 1.0;
   }
@@ -97,9 +102,12 @@ double MCTraj::SEISModel::treeObsRecov(const EpiState& es, const void* pars)
   if (es.curBranch.size() > 0) {
     branch_color = es.branches.getCol(es.curBranch[0]);
     double x = (branch_color == 1) ? ep.psi*I : 0.0;
-//    cerr << "treeObsRecov :: ES = " << es 
-//         << " | " << es.curBranch[0] << " -- " << branch_color 
-//         << "(( " << x << endl;
+#ifdef DEBUG
+    if (x <= 0.0) {
+      cerr << "treeObsRecov :: ES = " << es 
+           << " | " << es.curBranch[0] << " -- " << branch_color << endl;
+    }
+#endif
     return x;
   } else {
     cerr << "treeObsRecov :: no node information! ES = " << es << endl;

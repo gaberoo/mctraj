@@ -24,6 +24,12 @@ namespace MCTraj {
     return i;
   }
 
+  double Model::delTransRate(vector<double>& transRates, size_t i) const {
+    double rate = transRates[i] - ((i>0) ? transRates[i-1] : 0.0);
+    for (size_t j = i; j < transRates.size(); ++j) transRates[j] -= rate;
+    return rate;
+  }
+
   bool Model::valid() const {
     if (transTypes.size() < nstates) return false;
     if (obsTypes.size() < nstates) return false;

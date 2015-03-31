@@ -55,42 +55,93 @@ namespace MCTraj {
     int nextEvent = 0;
     int num_events = 0;
 
-    // cerr << curState << " -- " << totalRate << endl;
+    double dw = 0.0;
+    double rate = 0.0;
+    double unrate = 0.0;
+
+    int ret = 0;
+
+    const TransitionType* nextTrans;
+
+    // calculate all rates
     totalRate = model->calculateTransRates(curState,transRates);
 
-    if (totalRate < 0.0) {
-      return -1;
-    } else if (totalRate == 0.0) {
-      return 0;
-    }
+    while (ret <= 0) {
+      if (totalRate <= 0.0) break;
 
-    r = gsl_rng_uniform(rng);
-    nextTime =  -1.0/totalRate * log(r);
-    nextEvent = model->chooseTransition(rng,transRates);
+      // sample next event time
+      r = gsl_rng_uniform(rng);
+      nextTime =  -1.0/totalRate * log(r);
 
-    if (time+nextTime < maxTime) {
-      const TransitionType* nextTrans = model->getTType(nextEvent);
-      transitions.push_back(StateTransition(nextTime,*nextTrans,
-                            curState,pars,nextEvent,time+nextTime));
-      StateTransition& st = transitions.back();
-//      StateTransition st(nextTime,*nextTrans,
-//                         curState,pars,nextEvent,time+nextTime);
-      if (! noTree) {
-        int ret = nextTrans->applyBranch(curState,rng,st,pars);
-//        if (ret == -1) {
-//          cerr << time+nextTime << " > " << nextTrans->getName() << " :: branch error" << endl;
-//          cerr << curState.branches.countCol(0) << " " << curState[3] << " | ";
-//          cerr << curState.branches.countCol(1) << " " << curState[4] << endl;
+      if (time+nextTime < maxTime) {
+        // sample next event type and calculate rate of the event
+        nextEvent = model->chooseTransition(rng,transRates);
+        rate = transRates[nextEvent] - ((nextEvent>0) ? transRates[nextEvent-1] : 0.0);
+
+        // get the appropriate transition
+        nextTrans = model->getTType(nextEvent);
+        StateTransition st(nextTime,*nextTrans,curState,pars,nextEvent,time+nextTime);
+
+        // get potential new state
+        EpiState newState = curState;
+        newState += st.trans;
+
+        // check if new state is allowed
+        dw = nextTrans->applyProb(newState,model->getPars());
+
+        if (dw > 0.0) {
+          // add transition to list
+          transitions.push_back(st);
+
+          // add branch transformations
+          if (! noTree) nextTrans->applyBranch(curState,rng,st,pars);
+
+          // adapt state
+          addTransition(st);
+
+          // multiply probability
+          updateProb(dw);
+
+          // advance time
+          time += nextTime;
+          ++num_events;
+
+//          if (ret < 0) {
+//            cerr << "Legal event (" << nextEvent << ")."
+//                 << " w = " << dw << ", penalty = " << rate 
+//                 << ", total rate = " << totalRate << "." << endl;
+//          }
+//
+          ret = 1; // exit loop
+        } else {
+          // make this transition illegal
+//          cerr << "Illegal event (" << nextEvent << ")."
+//               << " w = " << dw << ", penalty = " << rate 
+//               << ", total rate = " << totalRate << "." << endl;
+          for (size_t i = nextEvent; i < transRates.size(); ++i) {
+            transRates[i] -= rate;
+          }
+          totalRate = transRates.back();
+          unrate += rate;
+          ret = -1; // redo loop with modified rates
+        }
+      } else {
+//        if (ret < 0) {
+//          cerr << "No event. Total rate = " << totalRate << "." << endl;
 //        }
+
+        nextTime = maxTime - time;
+        time = maxTime;
+        ret = 2; // exit loop
       }
-      addTransition(st);
-//      cout << time+nextTime << "[" << transitions.size() << "]> " << nextTrans->getName() << " " 
-//           << nextTrans->applyProb(curState,model->getPars()) << endl;
-      time += nextTime;
-      ++num_events;
-    } else {
-      time = maxTime;
     }
+    
+    if (totalRate < 0.0) {
+      cerr << "Negative rate!!" << endl;
+      return -1;
+    }
+
+    if (unrate > 0.0) prob -= unrate*nextTime;
 
     return num_events;
   }
@@ -141,22 +192,21 @@ namespace MCTraj {
     EpiState x(curState);
     const TransitionType* tt;
     int ntrans = transitionCount();
-    // cout << j << " :: " << ntrans << " -> " << last << endl;
-    
     if (ntrans <= last) return 0.0;
 
     // Events that were not included in the tree
     if (ntrans > 0) {
       for (int i = ntrans-1; i > last; --i) {
-      tt = getTrans(i).getType();
-      w2 = tt->applyProb(x,pars);
-      dw *= w2;
-      x -= getTrans(i).getTrans();
-//    cout << j << " % " 
-//         << particle(j).getTrans(i).realTime() 
-//         << "[" << i << "] >> " 
-//         << tt->getName() << " " 
-//         << tt->applyProb(curState,pars) << endl;
+        tt = getTrans(i).getType();
+        w2 = tt->applyProb(x,pars);
+        dw *= w2;
+        x -= getTrans(i).getTrans();
+//        if (w2 <= 0.0) {
+//          cerr << getTrans(i).realTime() 
+//               << "[" << i << "] >> " 
+//               << tt->getName() << " " 
+//               << tt->applyProb(curState,pars) << endl;
+//        }
       }
     }
 
@@ -335,7 +385,9 @@ namespace MCTraj {
 
   // =========================================================================
 
-  void Trajectory::toTree(gsl_rng* rng, vector<TreeNode>& tree) const {
+  void Trajectory::toTree(gsl_rng* rng, vector<TreeNode>& tree,
+                          const int lineageStates[]) const 
+  {
     EpiState x(initialState);
     size_t ntrans = transitionCount();
     double time = 0.0;
@@ -347,14 +399,11 @@ namespace MCTraj {
     int epi_id = 0;
 
     // Initialize
-    int lineageStates[] = { 0, 1, 1, 0, 0 };
-
     for (i = 0; i < x.numStates(); ++i) {
       if (lineageStates[i]) {
         for (j = 0; j < (size_t) x[i]; ++j) {
           tree.push_back(TreeNode());
           branch_id = tree.size()-1;
-          tree.back().code = branch_id;
           tree.back().code = branch_id;
           tree.back().epi_id = epi_id++;
           tree.back().epi_state = i;
@@ -421,11 +470,15 @@ namespace MCTraj {
           parent = states[2][rand];
           states[2].erase(states[2].begin()+rand);
           tree[parent].age = time;
+          tree[parent].n_off = 0;
 
           p = st.getType()->applyProb(x,model->getPars());
           r = gsl_rng_uniform(rng);
 
-          if (r < p) tree[parent].extant_off = 2;
+          if (r < p) {
+            add_extant(tree,parent);
+            // tree[parent].extant_off = 2;
+          }
 
           break;
 
@@ -434,6 +487,7 @@ namespace MCTraj {
           parent = states[1][rand];
           states[1].erase(states[1].begin()+rand);
           tree[parent].age = time;
+          tree[parent].n_off = 1;
 
           tree.push_back(TreeNode());
           branch_id = tree.size()-1;

@@ -103,6 +103,7 @@ namespace MCTraj {
       inline double getProb() const { return exp(prob); }
       inline void setProb(double p) { prob = log(p); }
       inline void updateProb(double p) { prob += log(p); }
+      inline void resetProb() { prob = 0.0; }
 
       void printFromLast(size_t last = 0) const;
 
@@ -110,7 +111,7 @@ namespace MCTraj {
       ostream& printBranches(ostream& out = cout) const;
       ostream& printTxt(ostream& out = cout) const;
 
-      void toTree(gsl_rng* rng, vector<TreeNode>& tree) const;
+      void toTree(gsl_rng* rng, vector<TreeNode>& tree, const int lineageStates[]) const;
 
    protected:
       double time;                              /* current process time */
