@@ -77,6 +77,9 @@ clockPfLik: clockPfLik.cpp mctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expo
 	$(CPP) $(CFLAGS) -o clockPfLik clockPfLik.cpp mctraj.a \
 		../expoTreeSIR.o ../expoTree.o $(EXPOMV) ../Tree.o -lgsl $(LDFLAGS)
 
+testRng: testRng.cpp
+	$(CPP) $(CFLAGS) -o $@ $< -lgsl $(LDFLAGS)
+
 ##############################################################################
 
 .c.o: $<

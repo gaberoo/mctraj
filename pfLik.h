@@ -15,6 +15,6 @@ using namespace std;
 
 namespace MCTraj {
   double pfLik(const Model* m, const EpiState& init, const Tree& tree,
-               const PFPars& pars, gsl_rng** rng, Trajectory* out = NULL);
+               const PFPars& pars, Rng* rng, Trajectory* out = NULL);
 }
 

@@ -2,7 +2,7 @@
 
 namespace MCTraj {
   double pfLik(const Model* m, const EpiState& init, const Tree& tree,
-               const PFPars& pars, gsl_rng** rng, Trajectory* out) 
+               const PFPars& pars, Rng* rng, Trajectory* out) 
   {
     Trajectory T(init,m);
     TrajParticleFilter pf(m);

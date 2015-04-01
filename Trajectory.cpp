@@ -152,7 +152,7 @@ namespace MCTraj {
 
   double Trajectory::force(double nextTime, int nextEvent, 
                            const vector<int>& ids, 
-                           gsl_rng* rng,
+                           Rng* rng,
                            const void* pars) 
   {
     curState.curBranch = ids;

@@ -3,8 +3,7 @@
 #include <string>
 using namespace std;
 
-#include <gsl/gsl_rng.h>
-
+#include "Rng.h"
 #include "pfLik.h"
 #include "models/SIS.h"
 #include "models/SIR.h"
@@ -87,11 +86,14 @@ int main(int argc, char** argv) {
 
   // Setup random number generators
   int max_threads = omp_get_max_threads();
-  gsl_rng** rng = (gsl_rng**) malloc(max_threads*sizeof(gsl_rng*));
-  for (int i = 0; i < max_threads; ++i) {
-    rng[i] = gsl_rng_alloc(gsl_rng_taus2);
-    gsl_rng_set(rng[i],pf_pars.seed+i);
-  }
+  Rng* rng = NULL;
+#ifdef MKLRNG
+  rng = new MKLRng;
+#else
+  rng = new GSLRng(max_threads);
+#endif
+  rng->set_seed(pf_pars.seed);
+  rng->alloc();
 
   EpiState* es = NULL;
   Model* mpt = NULL;
@@ -159,8 +161,6 @@ int main(int argc, char** argv) {
   if (pf_pars.print_traj) cout << *traj << endl;
 
   delete traj;
-  for (int i = 0; i < max_threads; ++i) gsl_rng_free(rng[i]);
-  free(rng);
   delete mpt;
   delete es;
 

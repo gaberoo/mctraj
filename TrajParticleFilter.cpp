@@ -1,7 +1,7 @@
 #include "TrajParticleFilter.h"
 
 namespace MCTraj {
-  void TrajParticleFilter::setTree(const Tree* tree, int skip, gsl_rng** rng) { 
+  void TrajParticleFilter::setTree(const Tree* tree, int skip, Rng* rng) { 
     this->tree = tree; 
     // preallocate the space for the particles
     if (vflag > 1) cerr << "allocating..." << flush;
@@ -152,7 +152,7 @@ namespace MCTraj {
 
   // ========================================================================
 
-  int TrajParticleFilter::addTreeEvent(const void* pars, gsl_rng** rng, int noProb) {
+  int TrajParticleFilter::addTreeEvent(const void* pars, Rng* rng, int noProb) {
     size_t nextStep = curStep;
 
     double eventTime = tree->times[nextStep];
@@ -172,6 +172,10 @@ namespace MCTraj {
     size_t j;
     int id;
     double dw;
+
+    double* rand = (double*) malloc(size()*sizeof(double));
+    rng->uniform(size(),rand,0.0,1.0);
+
 #pragma omp parallel for default(shared) private(j,id,dw)
     for (j = 0; j < size(); ++j) {
       dw = -1.0;
@@ -201,6 +205,7 @@ namespace MCTraj {
 //        particle(j).updateProb(dw);
 //      }
     }
+    free(rand);
 
     return tree->ttypes[nextStep];
   }

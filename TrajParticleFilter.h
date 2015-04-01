@@ -1,6 +1,7 @@
 #ifndef __TRAJPARTICLEFILTER_H__
 #define __TRAJPARTICLEFILTER_H__
 
+#include "Rng.h"
 #include "EpiState.h"
 #include "TrajParticle.h"
 #include "Model.h"
@@ -34,14 +35,14 @@ namespace MCTraj {
       virtual ~TrajParticleFilter() {}
 
       void push_back(const TrajParticle& tp) { pf[curStep].push_back(tp); }
-      void setTree(const Tree* tree, int skip = 0, gsl_rng** rng = NULL);
+      void setTree(const Tree* tree, int skip = 0, Rng* rng = NULL);
 
       size_t stepTree(const void* pars, gsl_rng** rng, bool adjZero = true, double dt = INFINITY);
       int stepAddTP(size_t j, const void* pars, gsl_rng* rng);
       size_t stepAdd(const void* pars, gsl_rng** rng);
 
       void calcWeights(const void* pars);
-      int addTreeEvent(const void* pars, gsl_rng** rng, int noProb = 0);
+      int addTreeEvent(const void* pars, Rng* rng, int noProb = 0);
       void setLast();
 
       int filter(gsl_rng** rng, char filter_type = 'w');
