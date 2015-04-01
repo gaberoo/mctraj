@@ -15,9 +15,6 @@ using namespace std;
 
 namespace MCTraj {
   double pfLik(const Model* m, const EpiState& init, const Tree& tree,
-               size_t num_particles, gsl_rng** rng, 
-               double filter_time = 0.0,
-               int vflag = 0, Trajectory* out = NULL, 
-               int skip = 1, int print_particles = 0);
+               const PFPars& pars, gsl_rng** rng, Trajectory* out = NULL);
 }
 

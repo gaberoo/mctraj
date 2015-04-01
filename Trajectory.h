@@ -75,7 +75,8 @@ namespace MCTraj {
         return model->chooseTransition(rng,transRates);
       }
 
-      int step(double maxTime, const void* pars, gsl_rng* rng, bool noTree = false);
+      int step(double maxTime, const void* pars, gsl_rng* rng, 
+               bool noTree = false, bool adjZero = true);
       double force(double nextTime, int nextEvent, const vector<int>& ids, gsl_rng* rng, const void* pars);
       int simulateTrajectory(double endTime, const void* pars, gsl_rng* rng);
       EpiState initState() const { return initialState; }

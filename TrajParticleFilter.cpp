@@ -66,31 +66,41 @@ namespace MCTraj {
       logw += log(totalW/n);
 
       size_t i;
+
+      if (vflag > 1) cerr << "Preparing weight vector..." << flush;
       for (i = 0; i < n; ++i) {
         w[i] /= totalW;
         pf[curStep][i].setWeight(w[i]);
         if (i > 0) w[i] += w[i-1];
       }
+      if (vflag > 1) cerr << "done." << endl;
 
 #pragma omp parallel for default(shared) private(i)
       for (i = 0; i < n; ++i) {
-        // sampling with replacement
-        size_t id = omp_get_thread_num();
-        double ran = gsl_rng_uniform(rng[id]);
-        int p = (int) (n*ran);
-        if (ran > w[p]) {
-          // find the first element that's larger than ran
-          while (ran > w[p] && p < (int) n) ++p;
-        } else {
-          // find the first element that's smaller than ran
-          while (ran <= w[p] && p >= 0) --p;
-          ++p;
+        try {
+          // sampling with replacement
+          size_t id = omp_get_thread_num();
+//          if (id == 0 && vflag > 1) cerr << "Getting random number..." << flush;
+          double ran = gsl_rng_uniform(rng[id]);
+//          if (id == 0 && vflag > 1) cerr << "done." << endl;
+          int p = (int) (n*ran);
+          if (ran > w[p]) {
+            // find the first element that's larger than ran
+            while (ran > w[p] && p < (int) n) ++p;
+          } else {
+            // find the first element that's smaller than ran
+            while (ran <= w[p] && p >= 0) --p;
+            ++p;
+          }
+          particle(i).copy(pf[curStep-1][p]);
+          particle(i).setId(i);
+          particle(i).setParent(p);
+          particle(i).resetWeight();
+          particle(i).setProb(1.0);
+        } catch (std::exception& e) {
+          cerr << "Exception caught: " << e.what() << endl;
+          abort();
         }
-        particle(i).copy(pf[curStep-1][p]);
-        particle(i).setId(i);
-        particle(i).setParent(p);
-        particle(i).resetWeight();
-        particle(i).setProb(1.0);
       }
     }
 
@@ -257,7 +267,7 @@ namespace MCTraj {
 
   // ========================================================================
 
-  size_t TrajParticleFilter::stepTree(const void* pars, gsl_rng** rng, double dt) 
+  size_t TrajParticleFilter::stepTree(const void* pars, gsl_rng** rng, bool adjZero, double dt) 
   {
     // size_t nextStep = curStep + 1;
     size_t nextStep = curStep;

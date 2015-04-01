@@ -33,6 +33,20 @@ namespace MCTraj {
   typedef double (*ProbFun)(const EpiState&, const void* pars);
   typedef int (*BranchFun)(const EpiState& es, gsl_rng* rng, 
                            StateTransition& st, const void* pars);
+
+  typedef struct {
+    int num_particles;
+    int print_particles;
+    int vflag;
+    int skip;
+    int reps;
+    int model_type;
+    int print_traj;
+    int full_tree;
+    long unsigned seed;
+    double filter_time;
+    bool adj_zero;
+  } PFPars;
 }
 
 #endif // __MCTRAJ__

@@ -47,7 +47,9 @@ namespace MCTraj {
 
   // =========================================================================
 
-  int Trajectory::step(double maxTime, const void* pars, gsl_rng* rng, bool noTree) {
+  int Trajectory::step(double maxTime, const void* pars, gsl_rng* rng, 
+                       bool noTree, bool adjZero) 
+  {
     // get array of next event rates
     double nextTime = 0.0;
     double totalRate = 0.0;
@@ -89,7 +91,7 @@ namespace MCTraj {
         // check if new state is allowed
         dw = nextTrans->applyProb(newState,model->getPars());
 
-        if (dw > 0.0) {
+        if (dw > 0.0 || ! adjZero) {
           // add transition to list
           transitions.push_back(st);
 

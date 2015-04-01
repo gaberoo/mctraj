@@ -16,24 +16,25 @@ using namespace MCTraj;
 int main(int argc, char** argv) {
   TCLAP::CmdLine cmd("Particle filter approximation for marginal tree likelihood", ' ', "0.9");
 
-  TCLAP::ValueArg<double> _N("N","popSize","Total population size",true,100.0,"double",cmd);
-  TCLAP::ValueArg<double> _beta("b","beta","Transmission rate",true,1.0,"double",cmd);
-  TCLAP::ValueArg<double> _mu("u","mu","Recovery rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> _psi("s","psi","Sequential sampling rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> _rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
-  TCLAP::ValueArg<double> _gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
-  TCLAP::ValueArg<int> _numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
-  TCLAP::ValueArg<int> _reps("r","nreps","Number of repetitions",false,1,"int",cmd);
-  TCLAP::ValueArg<int> _seed("S","seed","Random number seed",false,-1,"int",cmd);
-  TCLAP::ValueArg<int> _type("T","model","Model type",false,1,"int",cmd);
+  TCLAP::ValueArg<double> N("N","popSize","Total population size",true,100.0,"double",cmd);
+  TCLAP::ValueArg<double> beta("b","beta","Transmission rate",true,1.0,"double",cmd);
+  TCLAP::ValueArg<double> mu("u","mu","Recovery rate",true,0.1,"double",cmd);
+  TCLAP::ValueArg<double> psi("s","psi","Sequential sampling rate",true,0.1,"double",cmd);
+  TCLAP::ValueArg<double> rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
+  TCLAP::ValueArg<double> gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
+  TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
+  TCLAP::ValueArg<int> reps("r","nreps","Number of repetitions",false,1,"int",cmd);
+  TCLAP::ValueArg<int> seed("S","seed","Random number seed",false,-1,"int",cmd);
+  TCLAP::ValueArg<int> type("T","model","Model type",false,1,"int",cmd);
   TCLAP::ValueArg<string> _branchfn("B","branchFn","Filename for branch colors",false,"","string",cmd);
   TCLAP::ValueArg<string> _trajfn("C","trajFn","Filename for trajectory",false,"","string",cmd);
-  TCLAP::ValueArg<int> _skip("x","skip","Skip lines of times files",false,0,"string",cmd);
+  TCLAP::ValueArg<int> skip("x","skip","Skip lines of times files",false,0,"string",cmd);
   TCLAP::ValueArg<double> filterTime("f","filter","Min time between filters",false,0.0,"double",cmd);
 
   TCLAP::SwitchArg _printTraj("O","printTraj","Output trajectory",cmd,false);
-  TCLAP::SwitchArg _printParticles("P","printParticles","Output particles",cmd,false);
+  TCLAP::SwitchArg printParticles("P","printParticles","Output particles",cmd,false);
   TCLAP::SwitchArg _fullTree("F","fullTree","Full tree",cmd,false);
+  TCLAP::SwitchArg adjZero("z","adjZero","Adjust zero-weight trajectory",cmd,false);
   TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
 
   TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",false);
@@ -56,22 +57,26 @@ int main(int argc, char** argv) {
   // =========================================================================
 
   SISModel::EpiPars pars;
-  pars.N    = _N.getValue();
-  pars.beta = _beta.getValue();
-  pars.mu   = _mu.getValue();
-  pars.psi  = _psi.getValue();
-  pars.rho  = _rho.getValue();
+  pars.N    = N.getValue();
+  pars.beta = beta.getValue();
+  pars.mu   = mu.getValue();
+  pars.psi  = psi.getValue();
+  pars.rho  = rho.getValue();
 
   SEISModel::EpiPars seis_pars;
 
-  size_t num_particles = _numParticles.getValue();
-  int reps = _reps.getValue();
-  int modelType = _type.getValue();
-  int printTraj = _printTraj.getValue();
-  int printParticles = _printParticles.getValue();
-  int fullTree = _fullTree.getValue();
-  long unsigned seed = (_seed.getValue() > 0) ? _seed.getValue() : time(NULL);
-  int skip = _skip.getValue();
+  PFPars pf_pars;
+  pf_pars.num_particles = numParticles.getValue();
+  pf_pars.print_particles = printParticles.getValue();
+  pf_pars.skip = skip.getValue();
+  pf_pars.vflag = vflag.getValue();
+  pf_pars.filter_time = filterTime.getValue();
+  pf_pars.reps = reps.getValue();
+  pf_pars.model_type = type.getValue();
+  pf_pars.print_traj = _printTraj.getValue();
+  pf_pars.full_tree = _fullTree.getValue();
+  pf_pars.seed = (seed.getValue() > 0) ? seed.getValue() : time(NULL);
+  pf_pars.adj_zero = adjZero.getValue();
 
   string branch_file = _branchfn.getValue();
   string traj_file = _trajfn.getValue();
@@ -85,13 +90,13 @@ int main(int argc, char** argv) {
   gsl_rng** rng = (gsl_rng**) malloc(max_threads*sizeof(gsl_rng*));
   for (int i = 0; i < max_threads; ++i) {
     rng[i] = gsl_rng_alloc(gsl_rng_taus2);
-    gsl_rng_set(rng[i],seed+i);
+    gsl_rng_set(rng[i],pf_pars.seed+i);
   }
 
   EpiState* es = NULL;
   Model* mpt = NULL;
 
-  switch (modelType) {
+  switch (pf_pars.model_type) {
     case 1:
     default:
       mpt = new SIS(&pars);
@@ -109,7 +114,7 @@ int main(int argc, char** argv) {
       seis_pars.mu = pars.mu;
       seis_pars.psi = pars.psi;
       seis_pars.rho = pars.rho;
-      seis_pars.gamma = _gamma.getValue();
+      seis_pars.gamma = gamma.getValue();
       mpt = new SEIS(&seis_pars);
       es = new EpiState(SEISModel::nstates);
       (*es)[0] = ((int) seis_pars.N)-1;
@@ -117,7 +122,7 @@ int main(int argc, char** argv) {
       (*es)[2] = 0;
       (*es)[3] = 1;
       (*es)[4] = 0;
-      if (fullTree) {
+      if (pf_pars.full_tree) {
         mpt->sim_event(0) = 0;
         mpt->sim_event(1) = 0;
       }
@@ -133,7 +138,7 @@ int main(int argc, char** argv) {
   // cout << es->to_json() << endl;
 
   Trajectory* traj = NULL;
-  if (printTraj) traj = new Trajectory(*es,mpt);
+  if (pf_pars.print_traj) traj = new Trajectory(*es,mpt);
 
   ofstream* branch_out = NULL;
   ofstream* traj_out = NULL;
@@ -141,9 +146,8 @@ int main(int argc, char** argv) {
   if (branch_file != "") branch_out = new ofstream(branch_file.c_str());
   if (traj_file != "") traj_out = new ofstream(traj_file.c_str());
 
-  for (int r = 0; r < reps; ++r) {
-    lik = pfLik(mpt,*es,tree,num_particles,rng,filterTime.getValue(),
-                vflag.getValue(),traj,skip,printParticles);
+  for (int r = 0; r < pf_pars.reps; ++r) {
+    lik = pfLik(mpt,*es,tree,pf_pars,rng,traj);
     cout << lik << endl;
     if (branch_out != NULL) traj->printBranches(*branch_out) << endl;
     if (traj_out != NULL) traj->printFromFirst(*traj_out) << endl;
@@ -152,7 +156,7 @@ int main(int argc, char** argv) {
   if (branch_out != NULL) { branch_out->close(); delete branch_out; }
   if (traj_out != NULL) { traj_out->close(); delete traj_out; }
 
-  if (printTraj) cout << *traj << endl;
+  if (pf_pars.print_traj) cout << *traj << endl;
 
   delete traj;
   for (int i = 0; i < max_threads; ++i) gsl_rng_free(rng[i]);
