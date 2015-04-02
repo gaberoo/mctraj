@@ -140,14 +140,15 @@ double MCTraj::SEISModel::treeObsTrans(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
-int MCTraj::SEISModel::branchInf(const EpiState& es, RngStream* rng, 
+int MCTraj::SEISModel::branchInf(const EpiState& es, rng::RngStream* rng, 
                                  StateTransition& st, const void* pars)
 {
   // double E = es[1];
   double I = es[2];
   // double kE = es[3];
   double kI = es[4];
-  double r; rng->uniform(1,&r);
+  double r; 
+  rng->uniform(1,&r);
   // printf(">>>  I = %.0f, kI = %.0f\n",I,kI);
   if (r < 0.5*kI/I) {
     int id = es.branches.random_color(rng,1);
@@ -164,12 +165,15 @@ int MCTraj::SEISModel::branchInf(const EpiState& es, RngStream* rng,
   return 0;
 }
 
-int MCTraj::SEISModel::branchTrans(const EpiState& es, RngStream* rng, 
+/************************************************************************/
+
+int MCTraj::SEISModel::branchTrans(const EpiState& es, rng::RngStream* rng, 
                                    StateTransition& st, const void* pars)
 {
   double E = es[1];
   double kE = es[3];
-  double r = RngStream_uniform(rng);
+  double r;
+  rng->uniform(1,&r);
   if (r < kE/E) {
     int id = es.branches.random_color(rng,0);
     // cerr << "Trans on branch. " << r << "/" << id << " " << es << endl;
@@ -188,10 +192,11 @@ int MCTraj::SEISModel::branchTrans(const EpiState& es, RngStream* rng,
 
 /************************************************************************/
 
-int MCTraj::SEISModel::obsBranchInf(const EpiState& es, RngStream* rng, 
+int MCTraj::SEISModel::obsBranchInf(const EpiState& es, rng::RngStream* rng, 
                                      StateTransition& st, const void* pars)
 {
-  int r = RngStream_uniform_int(rng,2);
+  int r;
+  rng->uniform_int(1,&r,0,2);
   int a, b;
   if (r) { a = 1; b = 2; } else { b = 1; a = 2; }
   int acol = es.branches.getCol(es.curBranch.at(a));
@@ -220,7 +225,7 @@ int MCTraj::SEISModel::obsBranchInf(const EpiState& es, RngStream* rng,
 
 /************************************************************************/
 
-int MCTraj::SEISModel::obsBranchRecov(const EpiState& es, RngStream* rng, 
+int MCTraj::SEISModel::obsBranchRecov(const EpiState& es, rng::RngStream* rng, 
                                        StateTransition& st, const void* pars)
 {
   if (es.curBranch.size() < 1) {
@@ -234,7 +239,7 @@ int MCTraj::SEISModel::obsBranchRecov(const EpiState& es, RngStream* rng,
 
 /************************************************************************/
 
-int MCTraj::SEISModel::obsBranchTrans(const EpiState& es, RngStream* rng, 
+int MCTraj::SEISModel::obsBranchTrans(const EpiState& es, rng::RngStream* rng, 
                                        StateTransition& st, const void* pars)
 {
   if (es.curBranch.size() < 1) {
@@ -258,7 +263,7 @@ int MCTraj::SEISModel::obsBranchTrans(const EpiState& es, RngStream* rng,
 
 /************************************************************************/
 
-double MCTraj::SEIS::sample_rho(const EpiState& es, RngStream* rng, void* pars) const {
+double MCTraj::SEIS::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars) const {
   int k = es[3]+es[4];
   int I = es[1]+es[2];
   double w = 0.0;

@@ -1,6 +1,7 @@
 #ifndef __TRANSITIONTYPE_H__
 #define __TRANSITIONTYPE_H__
 
+#include <rng/Rng.h>
 #include "MCTraj.h"
 #include "EpiState.h"
 
@@ -34,7 +35,7 @@ namespace MCTraj {
       inline double applyProb(const EpiState& es, const void* pars) const 
       { if (prob != NULL && pars != NULL) { return prob(es,pars); } else { return 0.0; } }
 
-      inline int applyBranch(const EpiState& es, gsl_rng* rng, 
+      inline int applyBranch(const EpiState& es, rng::RngStream* rng, 
                              StateTransition& st, const void* pars) const 
       { return (bfun != NULL) ? bfun(es,rng,st,pars) : -100; }
 

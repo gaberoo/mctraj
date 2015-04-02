@@ -1,7 +1,7 @@
 #ifndef __SISMODEL_H__
 #define __SISMODEL_H__
 
-#include <gsl/gsl_math.h>
+#include <rng/Rng.h>
 #include "../Model.h"
 #include "../EpiState.h"
 
@@ -82,7 +82,7 @@ namespace MCTraj {
 
       virtual ~SIS() {}
 
-      double sample_rho(const EpiState& es, gsl_rng* rng, void* pars = NULL) const;
+      double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
   };
 }
 

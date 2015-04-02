@@ -3,7 +3,7 @@
 #include <string>
 using namespace std;
 
-#include "Rng.h"
+#include <rng/Rng.h>
 #include "pfLik.h"
 #include "models/SIS.h"
 #include "models/SIR.h"

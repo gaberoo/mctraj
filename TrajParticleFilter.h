@@ -1,7 +1,7 @@
 #ifndef __TRAJPARTICLEFILTER_H__
 #define __TRAJPARTICLEFILTER_H__
 
-#include "Rng.h"
+#include <rng/Rng.h>
 #include "EpiState.h"
 #include "TrajParticle.h"
 #include "Model.h"
@@ -35,18 +35,18 @@ namespace MCTraj {
       virtual ~TrajParticleFilter() {}
 
       void push_back(const TrajParticle& tp) { pf[curStep].push_back(tp); }
-      void setTree(const Tree* tree, int skip = 0, Rng* rng = NULL);
+      void setTree(const Tree* tree, int skip = 0, rng::Rng* rng = NULL);
 
-      size_t stepTree(const void* pars, gsl_rng** rng, bool adjZero = true, double dt = INFINITY);
-      int stepAddTP(size_t j, const void* pars, gsl_rng* rng);
-      size_t stepAdd(const void* pars, gsl_rng** rng);
+      size_t stepTree(const void* pars, rng::Rng* rng, bool adjZero = true, double dt = INFINITY);
+      int stepAddTP(size_t j, const void* pars, rng::RngStream* rng);
+      size_t stepAdd(const void* pars, rng::Rng* rng);
 
       void calcWeights(const void* pars);
-      int addTreeEvent(const void* pars, Rng* rng, int noProb = 0);
+      int addTreeEvent(const void* pars, rng::Rng* rng, int noProb = 0);
       void setLast();
 
-      int filter(gsl_rng** rng, char filter_type = 'w');
-      int sampleInPlace(gsl_rng* rng);
+      int filter(rng::Rng* rng, char filter_type = 'w');
+      int sampleInPlace(rng::RngStream* rng);
 
       double meanWeight() const;
       void resetWeights();
@@ -56,7 +56,7 @@ namespace MCTraj {
       double meanProb() const;
       double p_vec(vector<double>& p) const;
 
-      TrajParticle sample(gsl_rng* rng) const;
+      TrajParticle sample(rng::RngStream* rng) const;
 
       size_t size() const { return pf[curStep].size(); }
       size_t curGen() const { return pf.size()-1; }
@@ -87,7 +87,7 @@ namespace MCTraj {
 
       void printMeanTraj(ostream& out) const;
 
-      Trajectory singleTraj(gsl_rng* rng) const;
+      Trajectory singleTraj(rng::RngStream* rng) const;
 
       size_t getCurStep() const { return curStep; }
       size_t getCurLin() const { return curLin; }

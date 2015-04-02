@@ -6,9 +6,7 @@
 #include <iostream>
 using namespace std;
 
-//#include "Rng.h"
-#include <gsl/gsl_rng.h>
-
+#include <rng/Rng.h>
 #include "ParticleFilter.h"
 
 #ifndef DEBUG
@@ -31,7 +29,7 @@ namespace MCTraj {
 
   typedef double (*RateFun)(const EpiState&, const void* pars);
   typedef double (*ProbFun)(const EpiState&, const void* pars);
-  typedef int (*BranchFun)(const EpiState& es, gsl_rng* rng, 
+  typedef int (*BranchFun)(const EpiState& es, rng::RngStream* rng, 
                            StateTransition& st, const void* pars);
 
   typedef struct {

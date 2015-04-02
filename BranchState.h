@@ -8,7 +8,7 @@
 #include <sstream>
 using namespace std;
 
-#include <gsl/gsl_rng.h>
+#include <rng/Rng.h>
 
 #include "MCTraj.h"
 
@@ -119,11 +119,12 @@ namespace MCTraj {
         }
       }
 
-      inline int random_alive(gsl_rng* rng) const {
-        int id = gsl_rng_uniform_int(rng,alive.size());
+      inline int random_alive(rng::RngStream* rng) const {
+        int id; 
+        rng->uniform_int(1,&id,0,alive.size());
         return alive[id];
       }
-      int random_color(gsl_rng* rng, int col) const;
+      int random_color(rng::RngStream* rng, int col) const;
       inline size_t num_alive() const { return alive.size(); }
       int countCol(int col) const;
       inline int getCol(size_t i) const { return colors[i]; }

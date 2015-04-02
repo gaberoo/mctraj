@@ -16,8 +16,9 @@ namespace MCTraj {
     return transRates[i-1];
   }
 
-  size_t Model::chooseTransition(gsl_rng* rng, const vector<double>& transRates) const {
-    double r = gsl_rng_uniform(rng)*transRates.back();
+  size_t Model::chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const {
+    double r;
+    rng->uniform(1,&r,0,transRates.back());
     int i = 0;
     int n = transRates.size();
     while (r > transRates[i] && i < n) ++i;

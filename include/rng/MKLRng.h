@@ -4,10 +4,12 @@
 #include "Rng.h"
 #include "MKLStream.h"
 
+#include <iostream>
+
 namespace rng {
   class MKLRng : public Rng {
     public:
-      MKLRng() {}
+      MKLRng() { /* std::cout << "Using MKL." << std::endl; */ }
       virtual ~MKLRng() { free(); }
 
       inline void alloc(size_t n) {

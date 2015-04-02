@@ -21,6 +21,8 @@ namespace rng {
         }
       }
 
+      inline unsigned long getSeed() const { return seed; }
+
     protected:
       std::vector<RngStream*> streams;
       unsigned long seed;

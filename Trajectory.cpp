@@ -47,7 +47,7 @@ namespace MCTraj {
 
   // =========================================================================
 
-  int Trajectory::step(double maxTime, const void* pars, gsl_rng* rng, 
+  int Trajectory::step(double maxTime, const void* pars, rng::RngStream* rng, 
                        bool noTree, bool adjZero) 
   {
     // get array of next event rates
@@ -72,7 +72,7 @@ namespace MCTraj {
       if (totalRate <= 0.0) break;
 
       // sample next event time
-      r = gsl_rng_uniform(rng);
+      rng->uniform(1,&r);
       nextTime =  -1.0/totalRate * log(r);
 
       if (time+nextTime < maxTime) {
@@ -151,8 +151,7 @@ namespace MCTraj {
   // =========================================================================
 
   double Trajectory::force(double nextTime, int nextEvent, 
-                           const vector<int>& ids, 
-                           Rng* rng,
+                           const vector<int>& ids, rng::RngStream* rng,
                            const void* pars) 
   {
     curState.curBranch = ids;
@@ -175,7 +174,7 @@ namespace MCTraj {
   // =========================================================================
 
   int Trajectory::simulateTrajectory(double endTime, const void* pars, 
-                                     gsl_rng* rng) 
+                                     rng::RngStream* rng) 
   {
     int ret = 1;
     // cerr << " SIM :: time " << " " << endTime << endl;
@@ -387,7 +386,7 @@ namespace MCTraj {
 
   // =========================================================================
 
-  void Trajectory::toTree(gsl_rng* rng, vector<TreeNode>& tree,
+  void Trajectory::toTree(rng::RngStream* rng, vector<TreeNode>& tree,
                           const int lineageStates[]) const 
   {
     EpiState x(initialState);
@@ -429,7 +428,7 @@ namespace MCTraj {
       switch (st.etype()) {
         case 1:
           // choose a parent
-          rand = gsl_rng_uniform_int(rng,states[2].size());
+          rng->uniform_int(1,&rand,0,states[2].size());
 
           parent = states[2][rand];
           states[2].erase(states[2].begin()+rand);
@@ -468,14 +467,14 @@ namespace MCTraj {
           break;
 
         case 0:
-          rand = gsl_rng_uniform_int(rng,states[2].size());
+          rng->uniform_int(1,&rand,0,states[2].size());
           parent = states[2][rand];
           states[2].erase(states[2].begin()+rand);
           tree[parent].age = time;
           tree[parent].n_off = 0;
 
           p = st.getType()->applyProb(x,model->getPars());
-          r = gsl_rng_uniform(rng);
+          rng->uniform(1,&r);
 
           if (r < p) {
             add_extant(tree,parent);
@@ -485,7 +484,7 @@ namespace MCTraj {
           break;
 
         case 2:
-          rand = gsl_rng_uniform_int(rng,states[1].size());
+          rng->uniform_int(1,&rand,0,states[1].size());
           parent = states[1][rand];
           states[1].erase(states[1].begin()+rand);
           tree[parent].age = time;

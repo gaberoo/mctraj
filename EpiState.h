@@ -7,8 +7,6 @@
 #include <sstream>
 using namespace std;
 
-#include <gsl/gsl_rng.h>
-
 #include "MCTraj.h"
 #include "BranchState.h"
 

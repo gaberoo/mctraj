@@ -30,12 +30,16 @@ namespace rng {
         is_alloc = 1;
       }
 
-      inline void leapfrog(const MKL_INT k, const MKL_INT n) {
+      inline void leapfrog(size_t k, size_t n) {
         vslLeapfrogStream(stream,k,n); 
       }
 
       inline void uniform(size_t n, double* r, double a = 0.0, double b = 1.0) {
         vdRngUniform(VSL_RNG_METHOD_UNIFORM_STD,stream,n,r,a,b);
+      }
+
+      inline void uniform_int(size_t n, int* r, int a = 0, int b = 10) {
+        viRngUniform(VSL_RNG_METHOD_UNIFORM_STD,stream,n,r,a,b);
       }
 
       inline void set_type(const MKL_INT type) { brng = type; }

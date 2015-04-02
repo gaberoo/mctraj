@@ -73,16 +73,16 @@ namespace MCTraj {
 
     /************************************************************************/
 
-    int branchInf(const EpiState& es, RngStream* rng, 
+    int branchInf(const EpiState& es, rng::RngStream* rng, 
                    StateTransition& st, const void* pars);
-    int branchTrans(const EpiState& es, RngStream* rng, 
+    int branchTrans(const EpiState& es, rng::RngStream* rng, 
                      StateTransition& st, const void* pars);
 
-    int obsBranchInf(const EpiState& es, RngStream* rng, 
+    int obsBranchInf(const EpiState& es, rng::RngStream* rng, 
                       StateTransition& st, const void* pars);
-    int obsBranchRecov(const EpiState& es, RngStream* rng, 
+    int obsBranchRecov(const EpiState& es, rng::RngStream* rng, 
                         StateTransition& st, const void* pars);
-    int obsBranchTrans(const EpiState& es, RngStream* rng, 
+    int obsBranchTrans(const EpiState& es, rng::RngStream* rng, 
                         StateTransition& st, const void* pars);
   }
 
@@ -148,7 +148,7 @@ namespace MCTraj {
 
       virtual ~SEIS() {}
 
-      double sample_rho(const EpiState& es, RngStream* rng, void* pars = NULL) const;
+      double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
   };
 }
 

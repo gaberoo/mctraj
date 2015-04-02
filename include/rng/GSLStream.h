@@ -31,6 +31,13 @@ namespace Rng {
         }
       }
 
+      inline void uniform_int(size_t n, int* r, int a = 0, int b = 10) {
+        for (size_t i = 0; i < n; ++i) {
+          r[i] = a + gsl_rng_uniform_int(rng,b-a);
+        }
+      }
+
+
     protected:
       const gsl_rng_type* type;
       gsl_rng* rng;

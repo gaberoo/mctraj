@@ -6,7 +6,7 @@
 #include <sstream>
 using namespace std;
 
-#include <gsl/gsl_rng.h>
+#include <rng/Rng.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -71,14 +71,14 @@ namespace MCTraj {
 
       double lastEventTime() const { return last_event_time; }
 
-      inline size_t chooseTransition(gsl_rng* rng) const {
+      inline size_t chooseTransition(rng::RngStream* rng) const {
         return model->chooseTransition(rng,transRates);
       }
 
-      int step(double maxTime, const void* pars, gsl_rng* rng, 
+      int step(double maxTime, const void* pars, rng::RngStream* rng, 
                bool noTree = false, bool adjZero = true);
-      double force(double nextTime, int nextEvent, const vector<int>& ids, gsl_rng* rng, const void* pars);
-      int simulateTrajectory(double endTime, const void* pars, gsl_rng* rng);
+      double force(double nextTime, int nextEvent, const vector<int>& ids, rng::RngStream* rng, const void* pars);
+      int simulateTrajectory(double endTime, const void* pars, rng::RngStream* rng);
       EpiState initState() const { return initialState; }
 
       size_t transitionCount() const { return transitions.size(); }
@@ -112,7 +112,7 @@ namespace MCTraj {
       ostream& printBranches(ostream& out = cout) const;
       ostream& printTxt(ostream& out = cout) const;
 
-      void toTree(gsl_rng* rng, vector<TreeNode>& tree, const int lineageStates[]) const;
+      void toTree(rng::RngStream* rng, vector<TreeNode>& tree, const int lineageStates[]) const;
 
    protected:
       double time;                              /* current process time */

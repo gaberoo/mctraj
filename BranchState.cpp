@@ -13,7 +13,7 @@ namespace MCTraj {
     return *this;
   }
 
-  int BranchStates::random_color(gsl_rng* rng, int col) const {
+  int BranchStates::random_color(rng::RngStream* rng, int col) const {
     vector<int> col_alive;
     for (size_t i(0); i < alive.size(); ++i) {
       if (colors[alive[i]] == col) col_alive.push_back(alive[i]);
@@ -21,7 +21,9 @@ namespace MCTraj {
     }
     // cerr << endl;
     if (col_alive.size() > 0) {
-      int r = gsl_rng_uniform_int(rng,col_alive.size());
+      int r;
+      rng->uniform_int(1,&r,0,col_alive.size());
+      // cerr << r << " " << col_alive.size() << endl;
       return col_alive[r];
     } else {
       return -1;

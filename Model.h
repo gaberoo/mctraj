@@ -1,6 +1,8 @@
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#include <rng/Rng.h>
+
 #include "MCTraj.h"
 #include "EpiState.h"
 #include "TransitionType.h"
@@ -53,12 +55,12 @@ namespace MCTraj {
       inline double getRho() const { return rho; }
       inline void setRho(double x) { rho = x; }
 
-      size_t chooseTransition(gsl_rng* rng, const vector<double>& transRates) const;
+      size_t chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const;
 
       inline int& sim_event(size_t i) { return simEvent.at(i); }
       inline int sim_event(size_t i) const { return simEvent.at(i); }
 
-      virtual double sample_rho(const EpiState& es, gsl_rng* rng, void* pars = NULL) const = 0;
+      virtual double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const = 0;
 
       bool valid() const;
 

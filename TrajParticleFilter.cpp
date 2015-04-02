@@ -1,7 +1,7 @@
 #include "TrajParticleFilter.h"
 
 namespace MCTraj {
-  void TrajParticleFilter::setTree(const Tree* tree, int skip, Rng* rng) { 
+  void TrajParticleFilter::setTree(const Tree* tree, int skip, rng::Rng* rng) { 
     this->tree = tree; 
     // preallocate the space for the particles
     if (vflag > 1) cerr << "allocating..." << flush;
@@ -36,7 +36,7 @@ namespace MCTraj {
 
   // =========================================================================
 
-  int TrajParticleFilter::filter(gsl_rng** rng, char filter_type) 
+  int TrajParticleFilter::filter(rng::Rng* rng, char filter_type) 
   {
     size_t n(size());
 
@@ -81,7 +81,8 @@ namespace MCTraj {
           // sampling with replacement
           size_t id = omp_get_thread_num();
 //          if (id == 0 && vflag > 1) cerr << "Getting random number..." << flush;
-          double ran = gsl_rng_uniform(rng[id]);
+          double ran;
+          (*rng)[id]->uniform(1,&ran);
 //          if (id == 0 && vflag > 1) cerr << "done." << endl;
           int p = (int) (n*ran);
           if (ran > w[p]) {
@@ -140,19 +141,17 @@ namespace MCTraj {
 
   // ========================================================================
 
-  TrajParticle TrajParticleFilter::sample(gsl_rng* rng) const {
+  TrajParticle TrajParticleFilter::sample(rng::RngStream* rng) const {
     size_t n(size());
     vector<double> w(n);
     w_vec(w);
-    gsl_ran_discrete_t* pp = gsl_ran_discrete_preproc(n,w.data());
-    size_t j = gsl_ran_discrete(rng,pp);
-    gsl_ran_discrete_free(pp);
+    size_t j = rng->discrete(n,w.data());
     return particle(j);
   }
 
   // ========================================================================
 
-  int TrajParticleFilter::addTreeEvent(const void* pars, Rng* rng, int noProb) {
+  int TrajParticleFilter::addTreeEvent(const void* pars, rng::Rng* rng, int noProb) {
     size_t nextStep = curStep;
 
     double eventTime = tree->times[nextStep];
@@ -173,9 +172,6 @@ namespace MCTraj {
     int id;
     double dw;
 
-    double* rand = (double*) malloc(size()*sizeof(double));
-    rng->uniform(size(),rand,0.0,1.0);
-
 #pragma omp parallel for default(shared) private(j,id,dw)
     for (j = 0; j < size(); ++j) {
       dw = -1.0;
@@ -187,7 +183,7 @@ namespace MCTraj {
              << setw(12) << particle(j).getWeight() << endl;
       }
 
-      dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],rng[id],pars);
+      dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[id],pars);
       particle(j).updateWeight(dw);
 
       if (vflag > 2) {
@@ -205,7 +201,6 @@ namespace MCTraj {
 //        particle(j).updateProb(dw);
 //      }
     }
-    free(rand);
 
     return tree->ttypes[nextStep];
   }
@@ -272,7 +267,7 @@ namespace MCTraj {
 
   // ========================================================================
 
-  size_t TrajParticleFilter::stepTree(const void* pars, gsl_rng** rng, bool adjZero, double dt) 
+  size_t TrajParticleFilter::stepTree(const void* pars, rng::Rng* rng, bool adjZero, double dt) 
   {
     // size_t nextStep = curStep + 1;
     size_t nextStep = curStep;
@@ -289,14 +284,14 @@ namespace MCTraj {
         for (j = 0; j < size(); ++j) {
           id = omp_get_thread_num();
           particle(j).resetProb();
-          int ret = particle(j).simulateTrajectory(step_time,pars,rng[id]);
+          int ret = particle(j).simulateTrajectory(step_time,pars,(*rng)[id]);
           if (ret < 0) {
             particle(j).setWeight(0.0);
           } else {
             particle(j).setWeight(particle(j).getProb());
           }
         }
-        if (step_time < time) sampleInPlace(rng[0]);
+        if (step_time < time) sampleInPlace((*rng)[0]);
       }
       return nextStep;
     } else {
@@ -306,7 +301,7 @@ namespace MCTraj {
 
   // ========================================================================
 
-  size_t TrajParticleFilter::stepAdd(const void* pars, gsl_rng** rng) {
+  size_t TrajParticleFilter::stepAdd(const void* pars, rng::Rng* rng) {
     size_t j;
     size_t zeros = 0;
     size_t nextStep = curStep;
@@ -317,7 +312,7 @@ namespace MCTraj {
         int ret = 3;
         size_t lz = 0;
         while (ret > 0) {
-          ret = stepAddTP(j,pars,rng[id]);
+          ret = stepAddTP(j,pars,(*rng)[id]);
           cerr << j << " > " << ret << ": " << particle(j).getWeight() << endl;
           if (ret > 0) {
             ++lz;
@@ -339,7 +334,7 @@ namespace MCTraj {
 
   // ========================================================================
 
-  int TrajParticleFilter::stepAddTP(size_t j, const void* pars, gsl_rng* rng) {
+  int TrajParticleFilter::stepAddTP(size_t j, const void* pars, rng::RngStream* rng) {
     // size_t nextStep = curStep + 1;
     size_t nextStep = curStep;
     if (nextStep < tree->times.size()) {
@@ -470,11 +465,12 @@ namespace MCTraj {
 
   // =========================================================================
 
-  Trajectory TrajParticleFilter::singleTraj(gsl_rng* rng) const {
+  Trajectory TrajParticleFilter::singleTraj(rng::RngStream* rng) const {
     vector<const TrajParticle*> traj;
     traj.reserve(pf.size());
     vector< vector<TrajParticle> >::const_reverse_iterator t;
-    int parent = gsl_rng_uniform_int(rng,pf.size());
+    int parent;
+    rng->uniform_int(1,&parent,0,pf.size());
     const TrajParticle* tp;
     for (t = pf.rbegin(); t != pf.rend(); ++t) {
       tp = &((*t)[parent]);
@@ -490,7 +486,7 @@ namespace MCTraj {
 
   // =========================================================================
 
-  int TrajParticleFilter::sampleInPlace(gsl_rng* rng) {
+  int TrajParticleFilter::sampleInPlace(rng::RngStream* rng) {
     size_t n = size();
     size_t i;
 
@@ -507,7 +503,11 @@ namespace MCTraj {
     logw += log(totalW/n);
 
     vector<unsigned int> samples(n);
-    gsl_ran_multinomial(rng,n,n,w.data(),samples.data());
+    vector<double> w0(n,0.0);
+    double wmax = rng::make_discrete(n,w.data(),w0.data());
+    for (i = 0; i < n; ++i) {
+      samples[i] = rng->discrete_x(n,w0.data(),wmax);
+    }
 
     vector<int> counts(n,0);
     for (i = 0; i < n; ++i) ++counts[samples[i]];

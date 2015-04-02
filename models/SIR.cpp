@@ -69,7 +69,7 @@ double MCTraj::SIRModel::treeObsRecov(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
-double MCTraj::SIR::sample_rho(const EpiState& es, gsl_rng* rng, void* pars) const {
+double MCTraj::SIR::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars) const {
   int k = es[2];
   int I = es[1];
   double w = 0.0;

@@ -71,7 +71,7 @@ double MCTraj::SISModel::treeObsRecov(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
-double MCTraj::SIS::sample_rho(const EpiState& es, gsl_rng* rng, void* pars) const {
+double MCTraj::SIS::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars) const {
   int k = es[2];
   int I = es[1];
   double w = 0.0;

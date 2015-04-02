@@ -1,7 +1,7 @@
 #ifndef __SIRMODEL_H__
 #define __SIRMODEL_H__
 
-#include <gsl/gsl_math.h>
+#include <rng/Rng.h>
 #include "../Model.h"
 #include "SIS.h"
 #include "../EpiState.h"
@@ -79,7 +79,7 @@ namespace MCTraj {
 
       virtual ~SIR() {}
 
-      double sample_rho(const EpiState& es, gsl_rng* rng, void* pars = NULL) const;
+      double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
   };
 }
 
