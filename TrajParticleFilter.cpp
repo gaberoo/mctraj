@@ -68,36 +68,35 @@ namespace MCTraj {
       size_t i;
 
       if (vflag > 1) cerr << "Preparing weight vector..." << flush;
-      for (i = 0; i < n; ++i) {
-        w[i] /= totalW;
-        pf[curStep][i].setWeight(w[i]);
-        if (i > 0) w[i] += w[i-1];
-      }
+      vector<double> x(n+1,0.0);
+      rng::make_discrete(n,w.data(),x.data());
       if (vflag > 1) cerr << "done." << endl;
 
-#pragma omp parallel for default(shared) private(i)
+      size_t id;
+      int p;
+#pragma omp parallel for default(shared) private(i,id,p)
       for (i = 0; i < n; ++i) {
         try {
           // sampling with replacement
-          size_t id = omp_get_thread_num();
-//          if (id == 0 && vflag > 1) cerr << "Getting random number..." << flush;
-          double ran;
-          (*rng)[id]->uniform(1,&ran);
-//          if (id == 0 && vflag > 1) cerr << "done." << endl;
-          int p = (int) (n*ran);
-          if (ran > w[p]) {
-            // find the first element that's larger than ran
-            while (ran > w[p] && p < (int) n) ++p;
-          } else {
-            // find the first element that's smaller than ran
-            while (ran <= w[p] && p >= 0) --p;
-            ++p;
-          }
+          id = omp_get_thread_num();
+          p = (*rng)[id]->discrete_x(n,x.data());
+//          if (w[p] <= 0.0) {
+//            cerr << " !!! Filtered a particle with weight zero!" 
+//                 << " p = " << p << "; ";
+//            size_t start = r/x.back()*n;
+//            cerr << " start = " << start << " "; 
+//            if (p > 0) cerr << "(p-1) = " << x[p-1] << " ";
+//            else cerr << "--- ";
+//            cerr << "p = " << x[p] << " ";
+//            if (p < n-1) cerr << "(p+1) = " << x[p+1] << " ";
+//            else cerr << "--- ";
+//            cerr << x.back() << " " << r << endl;
+//          }
           particle(i).copy(pf[curStep-1][p]);
           particle(i).setId(i);
           particle(i).setParent(p);
           particle(i).resetWeight();
-          particle(i).setProb(1.0);
+          particle(i).resetProb();
         } catch (std::exception& e) {
           cerr << "Exception caught: " << e.what() << endl;
           abort();
@@ -120,7 +119,6 @@ namespace MCTraj {
     for (i = 0; i < n; ++i) {
       w[i] = particle(i).getWeight();
       totalW += w[i];
-      // cerr << i << " " << w[i] << endl;
     }
     return totalW;
   }
@@ -503,11 +501,9 @@ namespace MCTraj {
     logw += log(totalW/n);
 
     vector<unsigned int> samples(n);
-    vector<double> w0(n,0.0);
-    double wmax = rng::make_discrete(n,w.data(),w0.data());
-    for (i = 0; i < n; ++i) {
-      samples[i] = rng->discrete_x(n,w0.data(),wmax);
-    }
+    vector<double> w0(n+1,0.0);
+    rng::make_discrete(n,w.data(),w0.data());
+    for (i = 0; i < n; ++i) samples[i] = rng->discrete_x(n,w0.data());
 
     vector<int> counts(n,0);
     for (i = 0; i < n; ++i) ++counts[samples[i]];

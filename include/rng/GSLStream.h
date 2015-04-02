@@ -4,7 +4,7 @@
 #include "RngStream.h"
 #include <gsl/gsl_rng.h>
 
-namespace Rng {
+namespace rng {
   class GSLStream : public RngStream {
     public:
       GSLStream() : type(gsl_rng_taus2) {}
@@ -42,7 +42,6 @@ namespace Rng {
       const gsl_rng_type* type;
       gsl_rng* rng;
   };
-
 }
 
 #endif

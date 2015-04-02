@@ -8,7 +8,7 @@ namespace MCTraj {
     TrajParticleFilter pf(m);
     pf.setVerbosity(pars.vflag);
 
-    for (size_t i(0); i < pars.num_particles; ++i) {
+    for (size_t i = 0; i < pars.num_particles; ++i) {
       char name[32];
       sprintf(name,"P%lu",i);
       // cerr << name << endl;
@@ -64,7 +64,7 @@ namespace MCTraj {
       if (m->getRho() > 0.0) {
         // Sampling at present
         for (size_t i = 0; i < pars.num_particles; ++i) {
-          double w = m->sample_rho(pf[i].getState(),rng[i]);
+          double w = m->sample_rho(pf[i].getState(),(*rng)[i]);
           pf[i].updateWeight(w);
         }
 
@@ -88,7 +88,7 @@ namespace MCTraj {
 
     // pf.printMeanTraj(cout);
     // pf.printFromFirst();
-    if (out != NULL) *out = pf.singleTraj(rng[0]);
+    if (out != NULL) *out = pf.singleTraj((*rng)[0]);
 
     return log_lik;
   }

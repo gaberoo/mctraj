@@ -69,7 +69,10 @@ namespace MCTraj {
     totalRate = model->calculateTransRates(curState,transRates);
 
     while (ret <= 0) {
-      if (totalRate <= 0.0) break;
+      if (totalRate <= 0.0) {
+        ret = 4;
+        break;
+      }
 
       // sample next event time
       rng->uniform(1,&r);
@@ -113,7 +116,7 @@ namespace MCTraj {
 //                 << " w = " << dw << ", penalty = " << rate 
 //                 << ", total rate = " << totalRate << "." << endl;
 //          }
-//
+
           ret = 1; // exit loop
         } else {
           // make this transition illegal
@@ -139,7 +142,10 @@ namespace MCTraj {
     }
     
     if (totalRate < 0.0) {
-      cerr << "Negative rate!!" << endl;
+      cerr << "\033[1;31m";
+      cerr << "Negative rate (" << ret << "): " << totalRate
+           << "  ES = " << curState;
+      cerr << "\033[0m" << endl;
       return -1;
     }
 

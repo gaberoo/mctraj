@@ -4,7 +4,7 @@
 #include "Rng.h"
 #include "GSLStream.h"
 
-namespace Rng {
+namespace rng {
   class GSLRng : public Rng {
     public:
       GSLRng() {}

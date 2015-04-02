@@ -5,10 +5,10 @@
 #include <ctime>
 
 namespace rng {
-  double make_discrete(size_t n, const double* w, double* x) {
+  inline void make_discrete(size_t n, const double* w, double* x) {
     x[0] = 0.0;
     for (size_t i = 1; i < n; ++i) x[i] = x[i-1] + w[i-1];
-    return x[n-1]+w[n-1];
+    x[n] = x[n-1]+w[n-1];
   }
 
   class RngStream {
@@ -24,21 +24,21 @@ namespace rng {
       virtual void uniform_int(size_t n, int* r, int a = 0, int b = 100) = 0;
 
       int discrete(size_t n, const double* w) {
-        double* w0 = new double[n];
-        double wmax = make_discrete(n,w,w0);
-        size_t j = discrete_x(n,w0,wmax);
+        double* w0 = new double[n+1];
+        make_discrete(n,w,w0);
+        size_t j = discrete_x(n,w0);
         delete[] w0;
         return j;
       }
 
-      int discrete_x(size_t n, const double* w0, double wmax) {
+      int discrete_x(size_t n, const double* w) {
         double r;
-        uniform(1,&r,0,wmax);
-        size_t j = r/wmax*n;
-        while (j >= 0 && j < n-1) {
-          if (r >= w0[j] && r < w0[j+1]) break;
-          else if (r < w0[j]) --j;
-          else if (r >= w0[j+1]) ++j;
+        uniform(1,&r,0,w[n]);
+        size_t j = r/w[n]*n;
+        while (j >= 0 && j < n) {
+          if (r < w[j]) --j;
+          else if (r >= w[j+1]) ++j;
+          else break;
         }
         return j;
       }

@@ -33,7 +33,7 @@ namespace MCTraj {
                            StateTransition& st, const void* pars);
 
   typedef struct {
-    int num_particles;
+    size_t num_particles;
     int print_particles;
     int vflag;
     int skip;

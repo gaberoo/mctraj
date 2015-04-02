@@ -142,7 +142,8 @@ string MCTraj::to_newick(const vector<TreeNode>& tree, int root) {
 /****************************************************************************/
 
 int MCTraj::add_extant(vector<TreeNode>& tree, int node) {
-  if (node >= 0 && node < tree.size()) {
+  int n = tree.size();
+  if (node >= 0 && node < n) {
     tree[node].extant_off++;
     return add_extant(tree,tree[node].parent) + 1;
   } else {

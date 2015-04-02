@@ -3,7 +3,12 @@
 #include <string>
 using namespace std;
 
-#include <rng/Rng.h>
+#ifdef MKLRNG
+#include <rng/MKLRng.h>
+#else
+#include <rng/GSLRng.h>
+#endif
+
 #include "pfLik.h"
 #include "models/SIS.h"
 #include "models/SIR.h"
@@ -86,14 +91,14 @@ int main(int argc, char** argv) {
 
   // Setup random number generators
   int max_threads = omp_get_max_threads();
-  Rng* rng = NULL;
+  rng::Rng* rng = NULL;
 #ifdef MKLRNG
-  rng = new MKLRng;
+  rng = new rng::MKLRng;
 #else
-  rng = new GSLRng(max_threads);
+  rng = new rng::GSLRng;
 #endif
   rng->set_seed(pf_pars.seed);
-  rng->alloc();
+  rng->alloc(max_threads);
 
   EpiState* es = NULL;
   Model* mpt = NULL;
