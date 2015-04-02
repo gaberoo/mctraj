@@ -4,7 +4,7 @@
 #include "Rng.h"
 #include "MKLStream.h"
 
-namespace Rng {
+namespace rng {
   class MKLRng : public Rng {
     public:
       MKLRng() {}

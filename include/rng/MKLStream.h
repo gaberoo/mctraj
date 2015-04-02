@@ -4,7 +4,7 @@
 #include <mkl_vsl.h>
 #include "RngStream.h"
 
-namespace Rng {
+namespace rng {
   class MKLStream : public RngStream {
     public:
       MKLStream() : brng(VSL_BRNG_MCG31) {}

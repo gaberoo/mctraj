@@ -4,7 +4,7 @@
 #include "RngStream.h"
 #include <vector>
 
-namespace Rng {
+namespace rng {
   class Rng {
     public:
       Rng() : seed(time(NULL)) {}

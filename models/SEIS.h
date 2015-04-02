@@ -1,8 +1,9 @@
 #ifndef __SEISMODEL_H__
 #define __SEISMODEL_H__
 
+#include <rng/RngStream.h>
+
 #include <gsl/gsl_math.h>
-#include <gsl/gsl_rng.h>
 #include "../Model.h"
 #include "../EpiState.h"
 #include "../StateTransition.h"
@@ -72,16 +73,16 @@ namespace MCTraj {
 
     /************************************************************************/
 
-    int branchInf(const EpiState& es, gsl_rng* rng, 
+    int branchInf(const EpiState& es, RngStream* rng, 
                    StateTransition& st, const void* pars);
-    int branchTrans(const EpiState& es, gsl_rng* rng, 
+    int branchTrans(const EpiState& es, RngStream* rng, 
                      StateTransition& st, const void* pars);
 
-    int obsBranchInf(const EpiState& es, gsl_rng* rng, 
+    int obsBranchInf(const EpiState& es, RngStream* rng, 
                       StateTransition& st, const void* pars);
-    int obsBranchRecov(const EpiState& es, gsl_rng* rng, 
+    int obsBranchRecov(const EpiState& es, RngStream* rng, 
                         StateTransition& st, const void* pars);
-    int obsBranchTrans(const EpiState& es, gsl_rng* rng, 
+    int obsBranchTrans(const EpiState& es, RngStream* rng, 
                         StateTransition& st, const void* pars);
   }
 
@@ -147,7 +148,7 @@ namespace MCTraj {
 
       virtual ~SEIS() {}
 
-      double sample_rho(const EpiState& es, gsl_rng* rng, void* pars = NULL) const;
+      double sample_rho(const EpiState& es, RngStream* rng, void* pars = NULL) const;
   };
 }
 
