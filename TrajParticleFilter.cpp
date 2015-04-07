@@ -42,7 +42,11 @@ namespace MCTraj {
 
     vector<double> w(n,0.0);
     double totalW = w_vec(w);
-    if (vflag > 1) cerr << "FIL (" << filter_type << ") :: Sum = " << totalW << endl;
+    if (vflag > 1) {
+      double s2 = gsl_stats_variance(w.data(),1,w.size());
+      cerr << "FIL (" << filter_type << ") :: Sum = " << totalW 
+           << ", var(w) = " << sqrt(s2)/(totalW/n) << endl;
+    }
 
     if (totalW <= 0.0) {
       logw = -INFINITY;
@@ -125,6 +129,29 @@ namespace MCTraj {
 
   // ========================================================================
 
+  void TrajParticleFilter::weights(vector<double>& mu, vector<double>& s2) const {
+    mu.clear();
+    s2.clear();
+    mu.reserve(pf.size());
+    s2.reserve(pf.size());
+    double wtot;
+    size_t n = pf[0].size();
+    vector<double> w(n);
+    for (size_t m = 0; m < pf.size() && m <= curStep; ++m) {
+      n = pf[m].size();
+      w.resize(n);
+      wtot = 0.0;
+      for (size_t i = 0; i < n; ++i) {
+        w[i] = pf[m][i].getWeight();
+        wtot += w[i];
+      }
+      mu.push_back(wtot/n);
+      s2.push_back(gsl_stats_variance_m(w.data(),1,n,mu.back()));
+    }
+  }
+
+  // ========================================================================
+
   double TrajParticleFilter::p_vec(vector<double>& p) const {
     size_t n(size());
     double totalP(0.0);
@@ -182,6 +209,13 @@ namespace MCTraj {
       }
 
       dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[id],pars);
+//      if (dw == 0.0) {
+//        const TransitionType* tt = model->getObsType(model->mapType(eventType));
+//        char* str = new char[512];
+//        sprintf(str,"Forced weight is zero is event '%s'.",tt->getName().c_str());
+//        particle(j).msg(str);
+//        delete[] str;
+//      }
       particle(j).updateWeight(dw);
 
       if (vflag > 2) {

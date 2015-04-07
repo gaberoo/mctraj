@@ -49,8 +49,21 @@ namespace MCTraj {
           if (pars.vflag > 0) {
             cerr << "\033[1;31m";
             cerr << pf[0].getTime() << "/" << pf.maxTime() 
-                 << ": Particle collapse !";
-            cerr << "\033[0m" << endl;
+                 << ": Particle collapse => " << pf.getCurType()->getName() << " !";
+            cerr << endl;
+            vector<double> mu;
+            vector<double> s2;
+            pf.weights(mu,s2);
+            cerr << "MU  [" << mu.size() << "]: ";
+            for (size_t i = 0; i < mu.size(); ++i) cerr << setw(10) << mu[i] << " ";
+            cerr << endl;
+            cerr << "VAR [" << s2.size() << "]: ";
+            for (size_t i = 0; i < s2.size(); ++i) cerr << setw(10) << s2[i] << " ";
+            cerr << endl;
+            cerr << "\033[0m" << flush;
+//            for (size_t i = 0; i < pars.num_particles; ++i) {
+//              cerr << pf[i].msg() << endl;
+//            }
             if (pars.vflag > 2) pf.printFromLast(m->getPars(),1);
           }
           return -INFINITY;
@@ -89,6 +102,18 @@ namespace MCTraj {
     // pf.printMeanTraj(cout);
     // pf.printFromFirst();
     if (out != NULL) *out = pf.singleTraj((*rng)[0]);
+
+//    {
+//      vector<double> mu;
+//      vector<double> s2;
+//      pf.weights(mu,s2);
+//      cerr << "MU  [" << mu.size() << "]: ";
+//      for (size_t i = 0; i < mu.size(); ++i) cerr << setw(10) << mu[i] << " ";
+//      cerr << endl;
+//      cerr << "VAR [" << s2.size() << "]: ";
+//      for (size_t i = 0; i < s2.size(); ++i) cerr << setw(10) << s2[i] << " ";
+//      cerr << endl;
+//    }
 
     return log_lik;
   }

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <string>
 using namespace std;
 
 namespace MCTraj {
@@ -11,12 +12,12 @@ namespace MCTraj {
       Particle() {}
 
       Particle(string n, double w) 
-        : name(n), weight(w), cum_weight(0.0), id(0), parent(0), msg("")
+        : name(n), weight(w), cum_weight(0.0), id(0), parent(0), _msg("")
       {}
 
       Particle(const Particle& p) 
         : name(p.name), weight(p.weight), cum_weight(p.cum_weight), 
-          id(p.id), parent(p.parent), msg(p.msg)
+          id(p.id), parent(p.parent), _msg(p._msg)
       {}
 
       virtual ~Particle() {}
@@ -39,7 +40,7 @@ namespace MCTraj {
         cum_weight = p.cum_weight;
         id = p.id;
         parent = p.parent;
-        msg = p.msg;
+        _msg = p._msg;
         return *this;
       }
 
@@ -50,13 +51,16 @@ namespace MCTraj {
 
       inline double cw() const { return cum_weight + log(weight); }
 
+      string msg() const { return _msg; }
+      void msg(string s) { _msg = s; }
+
     protected:
       string name;
       double weight;
       double cum_weight;
       int id;
       int parent;
-      string msg;
+      string _msg;
   };
 }
 

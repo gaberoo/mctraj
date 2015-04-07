@@ -11,6 +11,8 @@
 #include <set>
 using namespace std;
 
+#include <gsl/gsl_statistics.h>
+
 namespace MCTraj {
   typedef double (*TreeProbFun)(TrajParticle* traj, const vector<int>& nlin, 
                                 double eventTime, void* pars);
@@ -89,10 +91,15 @@ namespace MCTraj {
 
       Trajectory singleTraj(rng::RngStream* rng) const;
 
-      size_t getCurStep() const { return curStep; }
-      size_t getCurLin() const { return curLin; }
+      inline size_t getCurStep() const { return curStep; }
+      inline size_t getCurLin() const { return curLin; }
+      inline const TransitionType* getCurType() const {
+        return model->getObsType(model->mapType(tree_ttype()));
+      }
 
       void setVerbosity(int v) { vflag = v; }
+
+      void weights(vector<double>& mean, vector<double>& var) const;
 
     protected:
       const Model* model;
