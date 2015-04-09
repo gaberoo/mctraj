@@ -209,46 +209,14 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
     // =========================================================================
     // read previous state
 
-    int prevLines = 0;
-    if (p->appendFile && (p->out_fn != "" || p->out_fn != "-")) {
-      if (p->vflag) cerr << "Restoring previous state... ";
-      prevLines = p->maxEvals;
-      for (int i = 0; i < p->numChains; ++i) {
-        if (p->vflag) cerr << i << " ";
-        int line(0);
-        ostringstream chain_fn("");
-        chain_fn << p->out_fn << "." << i << ".txt";
-        ifstream ifile(chain_fn.str().c_str());
-        if (! ifile) {
-          prevLines = 0;
-          cerr << "files don't exists: " << chain_fn.str() << endl;
-          break;
-        } else {
-          string input;
-          while (! getline(ifile,input).eof()) {
-            if (line >= p->maxEvals) break;
-            if (input.length() == 0) continue;
-            if (input[0] == '#') continue;
-            istringstream istr(input);
-            for (int j = 0; j < p->nvar; ++j) istr >> state(line,i,j); 
-            istr >> lik(line,i) >> inBurnIn >> genNumber;
-            for (int j(0); j < p->nCR; ++j) istr >> pCR[j];
-            ++line;
-          }
-          ifile.close();
-          if (prevLines > line) prevLines = line-1;
-        }
-        for (int j(0); j < p->nCR; ++j) cerr << pCR[j] << " ";
-        if (p->vflag) cerr << endl;
-      }
-    }
+    int prevLines = dream_restore_state(p,state,lik,pCR,inBurnIn);
 
     // =========================================================================
     // open output file
 
     ostringstream chain_fn;
-    vector<ostream*> oout(numChains,&cout);
-    ios_base::openmode fmode = (appendFile) ? (ios_base::out | ios_base::app) : ios_base::out;
+    vector<ostream*> oout(p->numChains,&cout);
+    ios_base::openmode fmode = (p->appendFile) ? (ios_base::out | ios_base::app) : ios_base::out;
 
 #ifdef PF
     if (saveTraj) {
@@ -257,17 +225,17 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
     }
 #endif
 
-    if (out_fn != "" && out_fn != "-") {
-      for (int i(0); i < numChains; ++i) {
+    if (p->out_fn != "" && p->out_fn != "-") {
+      for (int i = 0; i < p->numChains; ++i) {
         cerr << "opening output file " << i << "...";
 
         chain_fn.str("");
-        chain_fn << out_fn << "." << i << ".txt";
+        chain_fn << p->out_fn << "." << i << ".txt";
         oout[i] = new ofstream(chain_fn.str().c_str(),fmode);
         oout[i]->setf(ios::scientific,ios::floatfield);
         oout[i]->precision(12);
         cerr << "done." << endl;
-        if (appendFile) *oout[i] << "# --- Resuming DREAM ---" << endl;
+        if (p->appendFile) *oout[i] << "# --- Resuming DREAM ---" << endl;
 
 #ifdef PF
         // =====================================================================
@@ -292,99 +260,16 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
 
     int do_calc(1);
 
-    if (! appendFile) {
-      cerr << "Latin hypercube sampling..." << endl;
-
-      vector< vector<int> > samples(numPars,vector<int>(numChains,0));
-      // Array2D<int> samples(numPars,numChains);
-      for (int j(0); j < numPars; ++j) {
-        for (int i(0); i < numChains; ++i) samples[j][i] = i;
-        gsl_ran_shuffle(rng,samples[j].data(),numChains,sizeof(int));
-      }
-
-      double randPos;
-      double intervalSize;
-      for (int i(0); i < numChains; ++i) {
-        for (int j(0); j < numPars; ++j) {
-          if (lockVar[j]) randPos = varLo[j];
-          else {
-            intervalSize = (varHi[j]-varLo[j])/numChains;
-            randPos = varLo[j] + samples[j][i]*(varHi[j]-varLo[j])/numChains
-                        + intervalSize*gsl_rng_uniform(rng);
-          }
-          if (randPos < varLo[j]) randPos = varLo[j];
-          else if (randPos > varHi[j]) randPos = varHi[j];
-          state(0,i,j) = randPos;
-        }
-        if (fixedRatio >= 0.0) state(0,i,1) = state(0,i,2)*(1./fixedRatio-1.);
-      }
-
-      for (int i(0); i < numChains; ++i) {
-        do_calc = 1;
-        for (int j(0); j < numPars; ++j) {
-          if (state(0,i,j) < varLo[j] || state(0,i,j) > varHi[j]) {
-            do_calc = 0;
-            break;
-          }
-        }
-        if (do_calc) {
-          vector<double> vars(numPars);
-          for (int j(0); j < numPars; ++j) vars[j] = state(0,i,j);
-#ifdef USE_MPI
-          lik(0,i) = lik_master(trees,vars,SImodel,vflag,rescale);
-#else
-#ifdef PF
-          lik(0,i) = 0.0;
-          for (size_t ii(0); ii < trees.size(); ++ii) {
-            double x = pfLikelihood(*trees[ii],vars,num_particles,_rng,&traj[i]);
-            lik(0,i) += x;
-          }
-#else
-          lik(0,i) = trees.jointLikelihood(vars,SImodel,vflag,rescale,survival);
-#endif
-#endif
-          if (vflag) cout << "Chain " << i << " likelihood = " << lik(0,i) << endl;
-        } else lik(0,i) = -INFINITY;
-      }
-
-      // replace chains with infinite likelihood with random samples
-      for (int i(0); i < numChains; ++i) {
-        while (lik(0,i) == -INFINITY || lik(0,i) != lik(0,i)) {
-          cerr << "Likelihood of chain = INF. Resampling intial parameters..." << endl;
-          // choose random parameters
-          for (int j(0); j < numPars; ++j) {
-            if (lockVar[j]) randPos = varLo[j];
-            else {
-              randPos = varLo[j] + (varHi[j]-varLo[j])*gsl_rng_uniform(rng);
-            }
-            if (randPos < varLo[j]) randPos = varLo[j];
-            else if (randPos > varHi[j]) randPos = varHi[j];
-            state(0,i,j) = randPos;
-          }
-          if (fixedRatio >= 0.0) state(0,i,1) = state(0,i,2)*(1./fixedRatio-1.);
-          vector<double> vars(numPars);
-          for (int j(0); j < numPars; ++j) vars[j] = state(0,i,j);
-#ifdef USE_MPI
-          lik(0,i) = lik_master(trees,vars,SImodel,vflag,rescale);
-#else
-#ifdef PF
-          lik(0,i) = 0.0;
-          for (size_t ii(0); ii < trees.size(); ++ii) {
-            lik(0,i) += pfLikelihood(*trees[ii],vars,num_particles,_rng,&traj[i]);
-          }
-#else
-          lik(0,i) = trees.jointLikelihood(vars,SImodel,vflag,rescale,survival);
-#endif
-#endif
-          cerr << "New likelihood = " << lik(0,i) << endl;
-        }
-      }
+    if (! p->appendFile) {
+      Array2DView<double> initVar(state.n_y(),state.n_z(),state.pt(0,0,0));
+      ArrayView<double> initLik(lik.n_y(),lik.pt(0,0));
+      dream_initialize(p,rng,initVar,initLik);
 
       // save initial state of each chain
-      for (int i(0); i < numChains; ++i) {
-        for (int j = 0; j < numPars; ++j) *oout[i] << state(0,i,j) << " ";
+      for (int i = 0; i < p->numChains; ++i) {
+        for (int j = 0; j < p->nvar; ++j) *oout[i] << state(0,i,j) << " ";
         *oout[i]  << lik(0,i) << " " << inBurnIn << " " << 0 << " ";
-        for (int j(0); j < nCR; ++j) *oout[i] << pCR[j] << " ";
+        for (int j = 0; j < p->nCR; ++j) *oout[i] << pCR[j] << " ";
         *oout[i] << endl;
       }
     }
@@ -399,46 +284,48 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
     int delta;
     int numAccepted(0);
     int ireport(0);
-    vector<int> acceptStep(numChains,0);
 
-    vector<double> pairDiff(numPars);
-    vector<double> e(numPars);
-    vector<double> epsilon(numPars);
-    vector<bool>   updatePar(numPars,false);
-    vector<int>    updateDim(numChains,realPars);
-    vector<double> step(numPars);
+    vector<int> acceptStep(p->numChains,0);
 
-    vector<double> bstar(numPars,bstar_zero);
+    vector<double> pairDiff(p->nvar);
+    vector<double> e(p->nvar);
+    vector<double> epsilon(p->nvar);
+    vector<bool>   updatePar(p->nvar,false);
+    vector<int>    updateDim(p->numChains,p->nfree);
+    vector<double> step(p->nvar);
+
+    vector<double> bstar(p->nvar,p->bstar_zero);
     bstar[4] = 1;
 
     // ======================================================================
     // RUN MCMC
     // ======================================================================
     
-    vector<unsigned> L(nCR,0);      // candidates for crossover
-    vector<unsigned> totalSteps(nCR,0);
-    Array2D<int> CRm(numChains,loopSteps);
-    vector<double> delta_tot(nCR,1.0);
-    vector<double> sd(numPars,0.0);
-    vector<double> delta_normX(numChains,0.0);
+    vector<unsigned> L(p->nCR,0);      // candidates for crossover
+    vector<unsigned> totalSteps(p->nCR,0);
+    Array2D<int> CRm(p->numChains,p->loopSteps);
+    vector<double> delta_tot(p->nCR,1.0);
+    vector<double> sd(p->nvar,0.0);
+    vector<double> delta_normX(p->numChains,0.0);
+
     double delta_sum(0.0);
     double pCR_sum(0.0);
 
-    for (int t(prevLines+1); t < maxEvals; ++t) {
+    for (int t = prevLines+1; t < p->maxEvals; ++t) {
       // beginning of loop, generate crossover probabilities
       if (genNumber == 0) { 
         gen_CR(rng,pCR,CRm,L); 
         numAccepted = 0;
       }
 
-      for (int i(0); i < numChains; ++i) {
+      for (int i = 0; i < p->numChains; ++i) {
         if (deltaMax > 1) delta = gsl_rng_uniform_int(rng,deltaMax)+1;
         else delta = 1;
 
         // generate proposal
-        for (int j(0); j < numPars; ++j) proposal[i][j] = state(t-1,i,j);
+        for (int j(0); j < p->nvar; ++j) proposal[i][j] = state(t-1,i,j);
         if (gammaGeneration++ == 5) {
-          for (int j(0); j < numPars; ++j) {
+          for (int j(0); j < p->nvar; ++j) {
             if (lockVar[j]) continue;
             gammaGeneration = 0;
             do {
@@ -464,7 +351,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
             }
           }
           updateDim[i] = realPars;
-          for (int j(0); j < numPars; ++j) {
+          for (int j(0); j < p->nvar; ++j) {
             if (! lockVar[j]) {
               updatePar[j] = true;
               // calculate random values
@@ -488,7 +375,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
           }
           if (updateDim[i] > 0) {
             gamma = 2.38/sqrt(2.0*updateDim[i]*delta)/sqrt(trees.size());
-            for (int j(0); j < numPars; ++j) {
+            for (int j(0); j < p->nvar; ++j) {
               if (updatePar[j]) {
                 // calculate step for this dimension
                 step[j] = (1+e[j])*gamma*pairDiff[j] + epsilon[j];
@@ -499,7 +386,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
               }
             }
           } else {
-            for (int j(0); j < numPars; ++j) proposal[i][j] = state(t-1,i,j);
+            for (int j(0); j < p->nvar; ++j) proposal[i][j] = state(t-1,i,j);
           }
         }
       }
@@ -512,7 +399,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
       for (int i(0); i < numChains; ++i) {
         if (updateDim[i] > 0) {
           do_calc = 1;
-          for (int j(0); j < numPars; ++j) {
+          for (int j(0); j < p->nvar; ++j) {
             if (!lockVar[j]) {
               if (proposal[i][j] < varLo[j] || proposal[i][j] > varHi[j]) {
                 do_calc = 0;
@@ -549,7 +436,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
             if (vflag) cout << ". Likelihood = " << lik(t,i) << endl;
           } else lik(t,i) = -INFINITY;
         } else {
-          for (int j(0); j < numPars; ++j) proposal[i][j] = state(t-1,i,j);
+          for (int j(0); j < p->nvar; ++j) proposal[i][j] = state(t-1,i,j);
           lik(t,i) = lik(t-1,i);
         }
       }
@@ -563,12 +450,12 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
         }
         if (acceptStep[i]) {
           ++numAccepted;
-          for (int j(0); j < numPars; ++j) state(t,i,j) = proposal[i][j];
+          for (int j(0); j < p->nvar; ++j) state(t,i,j) = proposal[i][j];
 #ifdef PF
           traj[i] = traj_proposal[i];
 #endif
         } else {
-          for (int j(0); j < numPars; ++j) state(t,i,j) = state(t-1,i,j);
+          for (int j(0); j < p->nvar; ++j) state(t,i,j) = state(t-1,i,j);
           lik(t,i) = lik(t-1,i);
         }
       }
@@ -576,8 +463,8 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
       // update pCR if in burn-in phase
       if (inBurnIn && pCR_update) {
         // get standard deviations between the chains
-        for (int j(0); j < numPars; ++j) {
-          sd[j] = gsl_stats_sd(state.pt(t,0,j),numPars,numChains);
+        for (int j(0); j < p->nvar; ++j) {
+          sd[j] = gsl_stats_sd(state.pt(t,0,j),p->nvar,numChains);
 //          if (! lockVar[j] && sd[j] == 0.0) {
 //            bstar[j] *= 2;
 //            cerr << "Variable " << j << " has collapsed. Increasing stochasticity to " << bstar[j] << "." << endl;
@@ -587,7 +474,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
           if (acceptStep[i]) {
             // get Euclidian distance
             delta_normX[i] = 0.0;
-            for (int j(0); j < numPars; ++j) {
+            for (int j(0); j < p->nvar; ++j) {
               if (! lockVar[j] && sd[j] > 0.0) {
                 delta_normX[i] += gsl_pow_2((state(t,i,j)-state(t-1,i,j))/sd[j]);
               }
@@ -629,7 +516,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
             if (outliers[i] && i != best_chain) {
               // chain is an outlier
               lik(t,i) = lik(t,best_chain);
-              for (int j(0); j < numPars; ++j) state(t,i,j) = state(t,best_chain,j);
+              for (int j(0); j < p->nvar; ++j) state(t,i,j) = state(t,best_chain,j);
               if (! inBurnIn && burnIn > 0) {
                 cerr << "[" << t << "] Outlier chain detected [" << i << "] outside of burn in."
                      << " Moving to chain " << best_chain << " and re-entering burn in." << endl;
@@ -648,9 +535,9 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
             cout << "[" << t << "] performing convergence diagnostics:";
             gelman_rubin(state,scaleReduction,lockVar,burnInStart+burnIn,t);
             // estimate variance
-            int exitLoop(numPars);
+            int exitLoop(p->nvar);
             cout << " GR (it " << t << "): ";
-            for (int j(0); j < numPars; ++j) {
+            for (int j(0); j < p->nvar; ++j) {
               if (! lockVar[j]) {
                 // scale reduction factor
                 if (scaleReduction[j] < scaleReductionCrit) --exitLoop;
@@ -676,7 +563,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
       if (ireport >= report_interval) {
         ireport = 0;
         for (int i(0); i < numChains; ++i) {
-          for (int j = 0; j < numPars; ++j) *oout[i] << state(t,i,j) << " ";
+          for (int j = 0; j < p->nvar; ++j) *oout[i] << state(t,i,j) << " ";
           *oout[i] << lik(t,i) << " " << (t < burnInStart+burnIn) << " " << genNumber << " ";
           for (int j(0); j < nCR; ++j) *oout[i] << pCR[j] << " ";
           *oout[i] << endl;
@@ -721,7 +608,7 @@ int run_dream(const dream_pars* p, rng::RngStream* rng) {
 #endif
   } else {
 #ifdef USE_MPI
-    vector<double> newVar(numPars,0.0);
+    vector<double> newVar(p->nvar,0.0);
     lik_slave(trees,newVar,SImodel,0,rescale,survival);
 #endif
   }

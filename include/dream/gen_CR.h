@@ -5,12 +5,10 @@
 #include <iostream>
 using namespace std;
 
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-
+#include "dream.h"
 #include "array.h"
 
-void gen_CR(const gsl_rng* rng, const vector<double>& pCR, 
+void gen_CR(rng::RngStream* rng, const vector<double>& pCR, 
             Array2D<int>& CRm, vector<unsigned>& L);
 
 #endif

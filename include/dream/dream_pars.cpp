@@ -22,6 +22,8 @@ void dream_pars_default(dream_pars* p) {
   p->pCR_update = 1;
   p->nCR = 3;
   p->reenterBurnin = 0.2;
+  p->fun = NULL;
+  p->funPars = NULL;
 }
 
 void dream_pars_init_vars(dream_pars* p, size_t n) {

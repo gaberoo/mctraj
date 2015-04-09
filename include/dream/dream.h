@@ -1,11 +1,14 @@
 #ifndef __DREAM_H__
 #define __DREAM_H__
 
-#include <rapidjson/document.h>
 #include <cstdlib>
 #include <string>
 #include <map>
 using namespace std;
+
+#include <rapidjson/document.h>
+#include <rng/RngStream.h>
+#include "array.h"
 
 double Nmin = 0;           /* minimum total population size */
 double Nmax = 1000;        /* maximum total population size */
@@ -23,6 +26,8 @@ int reverseTrees = 1;
 int saveTraj = 0;
 
 string json_input = "[]";
+
+typedef double (*LikFun)(const double* state, const void* pars);
 
 typedef struct t_dream_pars {
   int vflag;                 /* vebose flag */
@@ -57,6 +62,9 @@ typedef struct t_dream_pars {
   double* varInit;
   int* varLock;
   string* varName;
+
+  LikFun fun;
+  void* funPars;
 } dream_pars;
 
 void dream_pars_default(dream_pars* p);
@@ -66,6 +74,9 @@ void dream_pars_free_vars(dream_pars* p);
 // jpars.Parse<0>(json_input.c_str());
 // assert(jpars.IsObject());
 void dream_pars_read_json(dream_pars* p, rapidjson::Document& jpars);
+
+int dream_restore_state(const dream_pars* p, Array3D<double>& state, Array2D<double>& lik, vector<double>& pCR, int& inBurnIn);
+void dream_initialize(const dream_pars* p, rng::RngStream* rng, Array2DView<double>& state, ArrayView<double>& lik);
 
 #endif
 

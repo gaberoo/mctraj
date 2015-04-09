@@ -33,18 +33,6 @@
 #define __ARRAY_H__
 
 template<typename T>
-class ArrayView {
-protected:
-  size_t n;
-  const T* data;
-public:
-  ArrayView(size_t n, double* x) : n(n), data(x) {}
-  ArrayView(const ArrayView& a) : n(a.n), data(a.data) {}
-  virtual ~ArrayView() {}
-  inline T& operator[](int i) { return data[i]; }
-};
-
-template<typename T>
 class Array2D {
 protected:
   size_t nx, ny;
@@ -58,6 +46,7 @@ public:
   virtual ~Array2D() { free(data); }
   inline T* pt() { return data; }
   inline T* pt(size_t x, size_t y) { return data + (x*ny + y); }
+  inline const T* col_pt(size_t r) const { return data + r*ny; }
   inline T& operator()(size_t x, size_t y) { return data[x*ny + y]; }
   inline T& operator[](int i) { return data[i]; }
   inline void set_all(const T& val) { for (size_t i(0); i < nx*ny; ++i) data[i] = val; }
@@ -84,6 +73,34 @@ public:
   inline size_t n_x() const { return nx; }
   inline size_t n_y() const { return ny; }
   inline size_t n_z() const { return nz; }
+};
+
+// VIEWS =====================================================================
+
+template<typename T>
+class ArrayView {
+protected:
+  size_t n;
+  const T* data;
+public:
+  ArrayView(size_t n, double* x) : n(n), data(x) {}
+  ArrayView(const ArrayView& a) : n(a.n), data(a.data) {}
+  virtual ~ArrayView() {}
+  inline T& operator[](int i) { return data[i]; }
+};
+
+template<typename T>
+class Array2DView {
+protected:
+  size_t nx, ny;
+  T* data;
+public:
+  Array2DView(size_t x, size_t y, T* a) : nx(x), ny(y), data(a) {}
+  Array2DView(const Array2DView& a) : nx(a.nx), ny(a.ny), data(a.data) {}
+  virutal ~Array2DView() {}
+  inline T& operator()(size_t x, size_t y) { return data[x*ny + y]; }
+  inline const T* col_pt(size_t r) const { return data + r*ny; }
+  inline T* col_pt(size_t r) { return data + r*ny; }
 };
 
 #endif // __ARRAY_H__
