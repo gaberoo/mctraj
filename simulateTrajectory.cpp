@@ -8,15 +8,21 @@ using namespace std;
 #include "models/SEIS.h"
 using namespace MCTraj;
 
+#ifdef MKLRNG
+#include <rng/MKLRng.h>
+#else
+#include <rng/GSLRng.h>
+#endif
+
 int main(int argc, char** argv) {
   SEISModel::EpiPars seis_pars;
-  seis_pars.N     = 20;
+  seis_pars.N     = 100.0;
   seis_pars.beta  = 1.0;
   seis_pars.mu    = 0.1;
   seis_pars.psi   = 0.4;
   seis_pars.rho   = 0.0;
-  seis_pars.gamma = 0.01;
-  double maxTime = 500.0;
+  seis_pars.gamma = 0.1;
+  double maxTime = 100.0;
 
   SEIS model(&seis_pars);
 
@@ -31,8 +37,14 @@ int main(int argc, char** argv) {
 
   unsigned long seed = (argc > 1) ? atoi(argv[1]) : time(NULL);
 
-  gsl_rng* rng = gsl_rng_alloc(gsl_rng_taus2);
-  gsl_rng_set(rng,seed);
+  // Setup random number generators
+  rng::RngStream* rng = NULL;
+#ifdef MKLRNG
+  rng = new rng::MKLStream;
+#else
+  rng = new rng::GSLStream;
+#endif
+  rng->alloc(seed);
 
   traj.simulateTrajectory(maxTime,&seis_pars,rng);
 
@@ -67,8 +79,6 @@ int main(int argc, char** argv) {
   } json_w.EndObject();
 
   cout << buf.GetString() << endl;
-
-  gsl_rng_free(rng);
 
   return 0;
 }

@@ -149,6 +149,7 @@ namespace MCTraj {
       virtual ~SEIS() {}
 
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
+      bool validState(const EpiState& es) const;
   };
 }
 

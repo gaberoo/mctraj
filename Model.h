@@ -60,9 +60,10 @@ namespace MCTraj {
       inline int& sim_event(size_t i) { return simEvent.at(i); }
       inline int sim_event(size_t i) const { return simEvent.at(i); }
 
-      virtual double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const = 0;
-
       bool valid() const;
+
+      virtual double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const = 0;
+      virtual bool validState(const EpiState& es) const { return true; }
 
     protected:
       size_t nstates;

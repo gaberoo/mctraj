@@ -95,11 +95,11 @@ namespace MCTraj {
         dw = nextTrans->applyProb(newState,model->getPars());
 
         if (dw > 0.0 || ! adjZero) {
-          // add transition to list
-          transitions.push_back(st);
-
           // add branch transformations
           if (! noTree) nextTrans->applyBranch(curState,rng,st,pars);
+
+          // add transition to list
+          transitions.push_back(st);
 
           // adapt state
           addTransition(st);

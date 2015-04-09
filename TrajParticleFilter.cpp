@@ -46,6 +46,8 @@ namespace MCTraj {
       double s2 = gsl_stats_variance(w.data(),1,w.size());
       cerr << "FIL (" << filter_type << ") :: Sum = " << totalW 
            << ", var(w) = " << sqrt(s2)/(totalW/n) << endl;
+      size_t k = gsl_stats_max_index(w.data(),1,n);
+      cerr << "Best particle = " << particle(k).getState() << endl;
     }
 
     if (totalW <= 0.0) {
@@ -498,22 +500,20 @@ namespace MCTraj {
   // =========================================================================
 
   Trajectory TrajParticleFilter::singleTraj(rng::RngStream* rng) const {
-    vector<const TrajParticle*> traj;
-    traj.reserve(pf.size());
-    vector< vector<TrajParticle> >::const_reverse_iterator t;
-    int parent;
-    rng->uniform_int(1,&parent,0,pf.size());
-    const TrajParticle* tp;
-    for (t = pf.rbegin(); t != pf.rend(); ++t) {
-      tp = &((*t)[parent]);
-      traj.push_back(tp);
-      parent = tp->getParent();
+    vector<size_t> seq(pf.size(),0);
+    int p = 0;
+    size_t j = curStep;
+    rng->uniform_int(1,&p,0,pf[j].size());
+    seq[j] = p;
+    while (j > 0) {
+      seq[j-1] = pf[j][p].getParent();
+      --j;
     }
-    vector<const TrajParticle*>::const_reverse_iterator tpi = traj.rbegin();
-    Trajectory single(**tpi);
-    ++tpi;
-    for (; tpi != traj.rend(); ++tpi) single += **tpi;
-    return single;
+    Trajectory out(pf[0][seq[0]]);
+    for (j = 1; j <= curStep; ++j) {
+      out += pf[j][seq[j]];
+    }
+    return out;
   }
 
   // =========================================================================

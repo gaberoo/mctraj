@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
   if (branch_out != NULL) { branch_out->close(); delete branch_out; }
   if (traj_out != NULL) { traj_out->close(); delete traj_out; }
 
-  if (pf_pars.print_traj) cout << *traj << endl;
+  // if (pf_pars.print_traj) cout << *traj << endl;
 
   delete traj;
   delete mpt;

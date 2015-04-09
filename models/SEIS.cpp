@@ -275,3 +275,12 @@ double MCTraj::SEIS::sample_rho(const EpiState& es, rng::RngStream* rng, void* p
   return w;
 }
 
+/************************************************************************/
+
+bool MCTraj::SEIS::validState(const EpiState& es) const {
+  if (es[1] < es[2]) return false;
+  if (es[2] < es[4]) return false;
+  if (es[0] < 0 || es[1] < 0 || es[2] < 0 || es[3] < 0 || es[4] < 0) return false;
+  return true;
+}
+
