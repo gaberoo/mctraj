@@ -27,7 +27,7 @@ namespace spsa {
   inline int approx_gradient(const pars_t* p, const double* theta, void* pars) {
     double r = 0.0;
 
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < p->n; ++i) {
       p->rng->uniform(1,&r);
       p->delta[i] = (r >= 0.5) ? 1.0 : -1.0;
       p->x1[i] = theta[i] + p->ck*p->delta[i];
@@ -38,7 +38,7 @@ namespace spsa {
     double y2 = p->fun(p->x2,p->pars);
     double dy = y1-y2;
 
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < p->n; ++i) {
       p->grad[i] = dy/(2.*p->ck*p->delta[i]);
     }
 
