@@ -1,6 +1,7 @@
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#include <cstring>
 #include <rng/Rng.h>
 
 #include "MCTraj.h"
@@ -16,7 +17,8 @@ namespace MCTraj {
       Pars() {}
       virtual ~Pars() {}
 
-      template<typename T> void json(rapidjson::Writer<T>&) const;
+      virtual void json(rapidjson::Writer<rapidjson::StringBuffer>&) const {}
+      string to_json() const;
   };
 
   class Model {
@@ -26,9 +28,16 @@ namespace MCTraj {
         for (int i(0); i < 100; ++i) typeMap[i] = -1;
       }
 
-      virtual ~Model() {
-        delete[] typeMap;
+      Model(const Model& m)
+        : nstates(m.nstates), pars(m.pars), rho(m.rho),
+          transTypes(m.transTypes), obsTypes(m.obsTypes), 
+          simEvent(m.simEvent)
+      {
+        typeMap = new int[100];
+        memcpy(typeMap,m.typeMap,100*sizeof(int));
       }
+
+      virtual ~Model() { delete[] typeMap; }
 
       size_t n() const { return nstates; }
       const void* p() const { return pars; }
@@ -49,8 +58,9 @@ namespace MCTraj {
       double calculateTransRates(const EpiState& state, vector<double>& transRates) const;
       double delTransRate(vector<double>& transRates, size_t i) const;
 
-      inline const void* getPars() const { return pars; }
-      inline void setPars(const void* p) { pars = p; }
+      inline const Pars* getPars() const { return pars; }
+      inline void setPars(const Pars* p) { pars = p; }
+      inline string pars_json() const { return pars->to_json(); }
       
       inline double getRho() const { return rho; }
       inline void setRho(double x) { rho = x; }
@@ -67,7 +77,8 @@ namespace MCTraj {
 
     protected:
       size_t nstates;
-      const void* pars;
+      // const void* pars;
+      const Pars* pars;
       double rho;
       int* typeMap;
       vector<const TransitionType*> transTypes;

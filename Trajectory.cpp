@@ -142,10 +142,10 @@ namespace MCTraj {
     }
     
     if (totalRate < 0.0) {
-      cerr << "\033[1;31m";
-      cerr << "Negative rate (" << ret << "): " << totalRate
-           << "  ES = " << curState;
-      cerr << "\033[0m" << endl;
+//      cerr << "\033[1;31m";
+//      cerr << "Negative rate (" << ret << "): " << totalRate
+//           << "  ES = " << curState;
+//      cerr << "\033[0m" << endl;
       return -1;
     }
 

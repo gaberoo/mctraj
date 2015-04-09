@@ -7,7 +7,11 @@
 
 namespace MCTraj {
   namespace SISModel {
-    struct EpiPars {
+    class EpiPars : public Pars {
+    public:
+      EpiPars() {}
+      virtual ~EpiPars() {}
+
       double N;
       double beta;
       double mu;
@@ -45,6 +49,7 @@ namespace MCTraj {
 
   class SIS : public Model {
     public:
+      SIS(const SIS& m) : Model(m) {}
       SIS(const SISModel::EpiPars* p) {
         nstates = SISModel::nstates;
         pars = p;

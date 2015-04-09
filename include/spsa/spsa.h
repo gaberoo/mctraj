@@ -24,7 +24,8 @@ namespace spsa {
     void* pars;
   } pars_t;
 
-  inline int approx_gradient(const pars_t* p, const double* theta, void* pars) {
+  inline int approx_gradient(const pars_t* p, const double* theta) {
+    cerr << "Approximating gradient..." << endl;
     double r = 0.0;
 
     for (size_t i = 0; i < p->n; ++i) {
@@ -34,6 +35,7 @@ namespace spsa {
       p->x2[i] = theta[i] - p->ck*p->delta[i];
     }
 
+    cerr << "  ... calculating functions ..." << endl;
     double y1 = p->fun(p->x1,p->pars);
     double y2 = p->fun(p->x2,p->pars);
     double dy = y1-y2;

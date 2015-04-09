@@ -40,6 +40,7 @@ namespace MCTraj {
 
   class SIR : public Model {
     public:
+      SIR(const SIR& m) : Model(m) {}
       SIR(const SIRModel::EpiPars* p) {
         nstates = SIRModel::nstates;
         pars = p;

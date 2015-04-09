@@ -13,10 +13,12 @@ namespace MCTraj {
     class EpiPars : public Pars {
     public:
       EpiPars() {}
+      EpiPars(const EpiPars& e) 
+        : N(e.N), beta(e.beta), mu(e.mu), psi(e.psi), rho(e.rho), gamma(e.gamma)
+      {}
       virtual ~EpiPars() {}
 
-      template<typename T> 
-      void json(rapidjson::Writer<T>& w) const {
+      void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
         w.StartObject(); {
           w.String("name");  w.String("SEIS");
           w.String("N");     w.Double(N);
@@ -90,6 +92,7 @@ namespace MCTraj {
 
   class SEIS : public Model {
     public:
+      SEIS(const SEIS& m) : Model(m) {}
       SEIS(const SEISModel::EpiPars* p) {
         nstates = SEISModel::nstates;
         pars = p;
