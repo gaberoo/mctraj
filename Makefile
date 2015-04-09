@@ -58,7 +58,7 @@ testReadTrajectory: testReadTrajectory.cpp
 	$(CPP) $(CFLAGS) -o testReadTrajectory testReadTrajectory.cpp mctraj.a -lgsl 
 
 calcPfLik: calcPfLik.cpp mctraj.a Tree.o
-	$(CPP) $(CFLAGS) -o calcPfLik calcPfLik.cpp mctraj.a Tree.o -lgsl $(LDFLAGS)
+	$(CPP) $(CFLAGS) -o $@ $< -lgsl $(LDFLAGS)
 
 simulateTrajectory: simulateTrajectory.cpp mctraj.a Tree.o
 	$(CPP) $(CFLAGS) -o simulateTrajectory simulateTrajectory.cpp mctraj.a \
@@ -66,6 +66,9 @@ simulateTrajectory: simulateTrajectory.cpp mctraj.a Tree.o
 
 metrop_pf: metrop_pf.cpp mctraj.a Tree.o
 	$(CPP) $(CFLAGS) -o metrop_pf metrop_pf.cpp mctraj.a Tree.o -lgsl $(LDFLAGS)
+
+pfSPSA: pfSPSA.cpp mctraj.a Tree.o
+	$(CPP) $(CFLAGS) -o $@ $< -lgsl $(LDFLAGS)
 
 ##############################################################################
 
