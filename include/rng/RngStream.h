@@ -2,6 +2,7 @@
 #define __RNGSTREAM_H__
 
 #include <cstdlib>
+#include <iostream>
 #include <ctime>
 
 namespace rng {
@@ -42,6 +43,13 @@ namespace rng {
         }
         return j;
       }
+
+//      template<typename T> void shuffle(T* x, size_t n) {
+//        std::cerr << "Shuffling not implemented!" << std::endl;
+//      }
+//      virtual void multinomial(size_t k, size_t n, const double* p, unsigned int* x) {
+//        std::cerr << "Multinomial not implemented!" << std::endl;
+//      }
 
     protected:
       int is_alloc;

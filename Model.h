@@ -63,7 +63,7 @@ namespace MCTraj {
       bool valid() const;
 
       virtual double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const = 0;
-      virtual bool validState(const EpiState& es) const { return true; }
+      virtual bool validState(const EpiState& es) const = 0;
 
     protected:
       size_t nstates;

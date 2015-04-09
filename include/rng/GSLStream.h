@@ -3,6 +3,7 @@
 
 #include "RngStream.h"
 #include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 namespace rng {
   class GSLStream : public RngStream {
@@ -37,6 +38,13 @@ namespace rng {
         }
       }
 
+      template<typename T> void shuffle(T* x, size_t n) {
+        gsl_ran_shuffle(rng,x,n,sizeof(T));
+      }
+
+      inline void multinomial(size_t k, size_t n, const double* p, unsigned* a) {
+        gsl_ran_multinomial(rng,k,n,p,a);
+      }
 
     protected:
       const gsl_rng_type* type;
