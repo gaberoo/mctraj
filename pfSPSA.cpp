@@ -238,15 +238,13 @@ int main(int argc, char** argv) {
   // cerr << " Lik = " << pf_lik(theta,&pfp) << endl;
 
   int ret = 0;
-  double x;
   for (int k = 1; k <= steps.getValue(); ++k) {
     p.ak = p.a/pow(k+1.0+p.A,p.alpha);
     p.ck = p.c/pow(k+1.0,p.gamma);
     ret = spsa::approx_gradient(&p,theta);
     if (ret > 0) {
       for (size_t i = 0; i < p.n; ++i) {
-        x = exp(theta[i]-p.ak*p.grad[i]);
-        theta[i] = pars.limits(i,x,'L');
+        theta[i] = pars.limits(i,theta[i]-p.ak*p.grad[i],'L');
       }
       if (calcLik.getValue()) {
         switch (ret) {
