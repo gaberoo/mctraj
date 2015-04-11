@@ -206,6 +206,7 @@ int main(int argc, char** argv) {
   p.ck = 0.0;
   p.pars = &pfp;
 
+  double spsa_steps = steps.getValue();
   rapidjson::Value::MemberIterator A;
   if (spsa_json != jpars.MemberEnd()) {
     rapidjson::Value& B = spsa_json->value;
@@ -214,6 +215,7 @@ int main(int argc, char** argv) {
     A = B.FindMember("alpha"); if (A != B.MemberEnd()) p.alpha = A->value.GetDouble();
     A = B.FindMember("gamma"); if (A != B.MemberEnd()) p.gamma = A->value.GetDouble();
     A = B.FindMember("A"); if (A != B.MemberEnd()) p.A = A->value.GetDouble();
+    A = B.FindMember("steps"); if (A != B.MemberEnd()) spsa_steps = A->value.GetDouble();
   }
 
   size_t nvar = pars.nfree();
@@ -238,13 +240,14 @@ int main(int argc, char** argv) {
   // cerr << " Lik = " << pf_lik(theta,&pfp) << endl;
 
   int ret = 0;
-  for (int k = 1; k <= steps.getValue(); ++k) {
+  for (int k = 1; k <= spsa_steps; ++k) {
     p.ak = p.a/pow(k+1.0+p.A,p.alpha);
     p.ck = p.c/pow(k+1.0,p.gamma);
     ret = spsa::approx_gradient(&p,theta);
     if (ret > 0) {
       for (size_t i = 0; i < p.n; ++i) {
-        theta[i] = pars.limits(i,theta[i]-p.ak*p.grad[i],'L');
+        double x = theta[i]-p.ak*p.grad[i];
+        theta[i] = pars.limits(i,x,'L');
       }
       if (calcLik.getValue()) {
         switch (ret) {

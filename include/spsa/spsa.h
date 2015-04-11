@@ -99,7 +99,7 @@ namespace spsa {
 
     double dy = p->y[0]-p->y[1];
     for (size_t i = 0; i < p->n; ++i) {
-      dx = fabs(p->x1[i]-p->x2[i]);
+      dx = p->x1[i]-p->x2[i];
       p->grad[i] = dy/dx;
     }
 
