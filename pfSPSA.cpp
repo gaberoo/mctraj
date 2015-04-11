@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
     A = B.FindMember("alpha"); if (A != B.MemberEnd()) p.alpha = A->value.GetDouble();
     A = B.FindMember("gamma"); if (A != B.MemberEnd()) p.gamma = A->value.GetDouble();
     A = B.FindMember("A"); if (A != B.MemberEnd()) p.A = A->value.GetDouble();
-    A = B.FindMember("steps"); if (A != B.MemberEnd()) spsa_steps = A->value.GetDouble();
+    A = B.FindMember("steps"); if (A != B.MemberEnd()) spsa_steps = A->value.GetInt();
   }
 
   size_t nvar = pars.nfree();
