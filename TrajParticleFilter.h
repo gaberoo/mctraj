@@ -39,7 +39,7 @@ namespace MCTraj {
       void push_back(const TrajParticle& tp) { pf[curStep].push_back(tp); }
       void setTree(const Tree* tree, int skip = 0, rng::Rng* rng = NULL);
 
-      size_t stepTree(const void* pars, rng::Rng* rng, bool adjZero = true, double dt = INFINITY);
+      size_t stepTree(const Pars* pars, rng::Rng* rng, bool adjZero = true, double dt = INFINITY);
       int stepAddTP(size_t j, const void* pars, rng::RngStream* rng);
       size_t stepAdd(const void* pars, rng::Rng* rng);
 

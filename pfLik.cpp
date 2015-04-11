@@ -115,6 +115,9 @@ namespace MCTraj {
 //      cerr << endl;
 //    }
 
+//    cerr << m->getPars()->to_json() << endl;
+//    cerr << log_lik << endl;
+
     return log_lik;
   }
 }

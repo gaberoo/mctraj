@@ -301,7 +301,7 @@ namespace MCTraj {
 
   // ========================================================================
 
-  size_t TrajParticleFilter::stepTree(const void* pars, rng::Rng* rng, bool adjZero, double dt) 
+  size_t TrajParticleFilter::stepTree(const Pars* pars, rng::Rng* rng, bool adjZero, double dt) 
   {
     // size_t nextStep = curStep + 1;
     size_t nextStep = curStep;
