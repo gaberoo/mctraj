@@ -3,6 +3,9 @@
 #include <string>
 using namespace std;
 
+#include <tclap/CmdLine.h>
+#include <rapidjson/document.h>
+
 #include <rng/GSLRng.h>
 #include <spsa/spsa.h>
 
@@ -12,7 +15,7 @@ using namespace std;
 #include "models/SEIS.h"
 using namespace MCTraj;
 
-#include <tclap/CmdLine.h>
+#include "Parameters.h"
 
 typedef struct {
   Model* mpt;
@@ -20,7 +23,7 @@ typedef struct {
   const Tree* tree;
   const PFPars* pars;
   rng::Rng* rng;
-  const int* lock;
+  const Parameters* mpar;
 } pf_pars_t;
 
 double pf_lik(const double* state, void* pars) 
@@ -39,16 +42,19 @@ double pf_lik(const double* state, void* pars)
 
   SEISModel::EpiPars epi(*oldPars);
   size_t i = 0;
-  if (! p.lock[0]) epi.N = exp(state[i++]);
-  if (! p.lock[1]) epi.beta = exp(state[i++]);
-  if (! p.lock[2]) epi.mu = exp(state[i++]);
-  if (! p.lock[3]) epi.psi = exp(state[i++]);
-  if (! p.lock[4]) epi.gamma = exp(state[i++]);
+
+  const Parameters& mp = *p.mpar;
+  if (! mp.by_name("N")->lock) epi.N = exp(state[i++]);
+  if (! mp.by_name("beta")->lock) epi.beta = exp(state[i++]);
+  if (! mp.by_name("mu")->lock) epi.mu = exp(state[i++]);
+  if (! mp.by_name("psi")->lock) epi.psi = exp(state[i++]);
+  if (! mp.by_name("gamma")->lock) epi.gamma = exp(state[i++]);
 
   EpiState init(*p.es);
   init[0] = (int) ceil(epi.N) - 1;
   if (init[0] < 0) return -INFINITY;
 
+  if (p.pars->vflag) cerr << epi.to_json() << endl;
   p.mpt->setPars(&epi);
   double lik = pfLik(p.mpt,init,*(p.tree),*(p.pars),p.rng,NULL);
   p.mpt->setPars(oldPt);
@@ -59,12 +65,7 @@ double pf_lik(const double* state, void* pars)
 int main(int argc, char** argv) {
   TCLAP::CmdLine cmd("Particle filter approximation for marginal tree likelihood", ' ', "0.9");
 
-  TCLAP::ValueArg<double> N("N","popSize","Total population size",true,100.0,"double",cmd);
-  TCLAP::ValueArg<double> beta("b","beta","Transmission rate",true,1.0,"double",cmd);
-  TCLAP::ValueArg<double> mu("u","mu","Recovery rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> psi("s","psi","Sequential sampling rate",false,0.1,"double",cmd);
-  TCLAP::ValueArg<double> rho("o","rho","Homochroneous sampling rate",false,0.0,"double",cmd);
-  TCLAP::ValueArg<double> gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
+  TCLAP::ValueArg<string> json_fn("J","json","JSON input file",false,"","string",cmd);
 
   TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
   TCLAP::ValueArg<int> reps("r","nreps","Number of repetitions",false,1,"int",cmd);
@@ -104,6 +105,35 @@ int main(int argc, char** argv) {
 
   // =========================================================================
 
+  ifstream in;
+  string json_input;
+  if (json_fn.getValue() != "") {
+    in.open(json_fn.getValue().c_str());
+    in.seekg(0,ios::end);
+    json_input.reserve(in.tellg());
+    in.seekg(0,ios::beg);
+    json_input.assign(istreambuf_iterator<char>(in), 
+                      istreambuf_iterator<char>());
+  }
+
+  /* Reading priors from JSON */
+  rapidjson::Document jpars;
+  try {
+    jpars.Parse<0>(json_input.c_str());
+    if (! jpars.IsObject()) throw 10;
+  } catch (int e) {
+    cerr << "Coudln't create JSON document:" << endl;
+    cerr << json_input << endl;
+  }
+
+  cerr << "Reading parameters..." << flush;
+  Parameters pars;
+  pars.from_json(jpars);
+  pars.init_free_map();
+  cerr << "done" << endl;
+
+  // =========================================================================
+
   PFPars pf_pars;
   pf_pars.num_particles = numParticles.getValue();
   pf_pars.print_particles = printParticles.getValue();
@@ -128,12 +158,12 @@ int main(int argc, char** argv) {
   rng->alloc(max_threads);
 
   SEISModel::EpiPars seis_pars;
-  seis_pars.N    = fabs(N.getValue());
-  seis_pars.beta = fabs(beta.getValue());
-  seis_pars.mu   = fabs(mu.getValue());
-  seis_pars.psi  = fabs(psi.getValue());
-  seis_pars.rho  = fabs(rho.getValue());
-  seis_pars.gamma = fabs(gamma.getValue());
+  seis_pars.N    = pars.by_name("N")->init;
+  seis_pars.beta = pars.by_name("beta")->init;
+  seis_pars.mu   = pars.by_name("mu")->init;
+  seis_pars.psi  = pars.by_name("psi")->init;
+  seis_pars.rho  = pars.by_name("rho")->init;
+  seis_pars.gamma = pars.by_name("gamma")->init;
 
   Model* mpt = new SEIS(&seis_pars);
   EpiState* es = new EpiState(SEISModel::nstates);
@@ -158,6 +188,7 @@ int main(int argc, char** argv) {
   pfp.tree = &tree;
   pfp.pars = &pf_pars;
   pfp.rng = rng;
+  pfp.mpar = &pars;
 
   // SPSA parameters
   spsa::pars_t p;
@@ -172,39 +203,37 @@ int main(int argc, char** argv) {
   p.ck = 0.0;
   p.pars = &pfp;
 
-  int lock[] = { 0, 0, 0, 0, 0 };
-
-  size_t nvar = 0;
+  size_t nvar = pars.nfree();
   double theta[5];
-
-  if (N.getValue() <= 0.0)     { lock[0] = 1; } else { theta[nvar++] = log(N.getValue()); }
-  if (beta.getValue() <= 0.0)  { lock[1] = 1; } else { theta[nvar++] = log(beta.getValue()); }
-  if (mu.getValue() <= 0.0)    { lock[2] = 1; } else { theta[nvar++] = log(mu.getValue()); }
-  if (psi.getValue() <= 0.0)   { lock[3] = 1; } else { theta[nvar++] = log(psi.getValue()); }
-  if (gamma.getValue() <= 0.0) { lock[4] = 1; } else { theta[nvar++] = log(gamma.getValue()); }
 
   if (nvar <= 0) {
     cerr << "All variables locked!" << endl;
     return 0;
+  } else {
+    cerr << nvar << " free variables." << endl;
   }
-
-  pfp.lock = lock;
 
   double lik = GSL_NAN;
 
   if (calcLik.getValue()) lik = pf_lik(theta,&pfp);
 
   spsa::init_pars(&p,nvar);
+  for (size_t i = 0; i < nvar; ++i) {
+    p.lo[i] = log(pars.lower(i));
+    p.hi[i] = log(pars.upper(i));
+  }
   // cerr << " Lik = " << pf_lik(theta,&pfp) << endl;
 
   int ret = 0;
+  double x;
   for (int k = 1; k <= steps.getValue(); ++k) {
     p.ak = p.a/pow(k+1.0+p.A,p.alpha);
     p.ck = p.c/pow(k+1.0,p.gamma);
     ret = spsa::approx_gradient(&p,theta);
     if (ret > 0) {
       for (size_t i = 0; i < p.n; ++i) {
-        theta[i] -= p.ak*p.grad[i];
+        x = exp(theta[i]-p.ak*p.grad[i]);
+        theta[i] = pars.limits(i,x,'L');
       }
       if (calcLik.getValue()) {
         switch (ret) {

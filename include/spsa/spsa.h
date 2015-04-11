@@ -19,7 +19,6 @@ namespace spsa {
     double* y;
     double* x1;
     double* x2;
-    double* delta;
     double* grad;
     double* lo;
     double* hi;
@@ -36,11 +35,9 @@ namespace spsa {
     p->grad  = new double[n];
     p->x1    = new double[n];
     p->x2    = new double[n];
-    p->delta = new double[n];
   }
 
   inline void free_pars(pars_t* p) {
-    delete[] p->delta;
     delete[] p->x2;
     delete[] p->x1;
     delete[] p->y;
@@ -52,16 +49,31 @@ namespace spsa {
   inline int approx_gradient(const pars_t* p, const double* theta) {
     // cerr << "Approximating gradient..." << endl;
     double r = 0.0;
+    double dx;
 
     for (size_t i = 0; i < p->n; ++i) {
       p->rng->uniform(1,&r);
-      p->delta[i] = (r >= 0.5) ? 1.0 : -1.0;
-      p->x1[i] = theta[i] + p->ck*p->delta[i];
-      p->x2[i] = theta[i] - p->ck*p->delta[i];
+      dx = (r >= 0.5) ? 1.0 : -1.0;
+      p->x1[i] = theta[i] + p->ck*dx;
+      p->x2[i] = theta[i] - p->ck*dx;
     }
 
     // cerr << "  ... calculating functions ..." << endl;
+
+    for (size_t i = 0; i < p->n; ++i) {
+      // cout << p->x1[i] << " " << p->lo[i] << " " << p->hi[i] << " ";
+      // adjust for limits
+      if (p->x1[i] > p->hi[i]) p->x1[i] = p->hi[i];
+      else if (p->x1[i] < p->lo[i]) p->x1[i] = p->lo[i];
+      // cout << p->x1[i] << endl;
+    }
     p->y[0] = p->fun(p->x1,p->pars);
+
+    for (size_t i = 0; i < p->n; ++i) {
+      if (p->x2[i] > p->hi[i]) p->x2[i] = p->hi[i];
+      else if (p->x2[i] < p->lo[i]) p->x2[i] = p->lo[i];
+    }
+
     p->y[1] = p->fun(p->x2,p->pars);
 
     int f1 = gsl_finite(p->y[1]);
@@ -76,17 +88,19 @@ namespace spsa {
       // cerr << " ... one-sided approximation ..." << endl;
       if (f1) {
         p->y[1] = p->fun(theta,p->pars);
+        memcpy(p->x2,theta,p->n*sizeof(double));
         ret = 1;
       } else {
         p->y[0] = p->fun(theta,p->pars);
+        memcpy(p->x1,theta,p->n*sizeof(double));
         ret = 2;
       }
-      for (size_t i = 0; i < p->n; ++i) p->delta[i] *= 0.5;
     }
 
     double dy = p->y[0]-p->y[1];
     for (size_t i = 0; i < p->n; ++i) {
-      p->grad[i] = dy/(2.*p->ck*p->delta[i]);
+      dx = fabs(p->x1[i]-p->x2[i]);
+      p->grad[i] = dy/dx;
     }
 
     return ret;
