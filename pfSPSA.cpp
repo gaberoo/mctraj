@@ -127,9 +127,12 @@ int main(int argc, char** argv) {
   }
 
   cerr << "Reading parameters..." << flush;
+
   Parameters pars;
   pars.from_json(jpars);
   pars.init_free_map();
+  rapidjson::Value::MemberIterator spsa_json = jpars.FindMember("spsa"); 
+
   cerr << "done" << endl;
 
   // =========================================================================
@@ -202,6 +205,16 @@ int main(int argc, char** argv) {
   p.ak = 0.0;
   p.ck = 0.0;
   p.pars = &pfp;
+
+  rapidjson::Value::MemberIterator A;
+  if (spsa_json != jpars.MemberEnd()) {
+    rapidjson::Value& B = spsa_json->value;
+    A = B.FindMember("a"); if (A != B.MemberEnd()) p.a = A->value.GetDouble();
+    A = B.FindMember("c"); if (A != B.MemberEnd()) p.c = A->value.GetDouble();
+    A = B.FindMember("alpha"); if (A != B.MemberEnd()) p.alpha = A->value.GetDouble();
+    A = B.FindMember("gamma"); if (A != B.MemberEnd()) p.gamma = A->value.GetDouble();
+    A = B.FindMember("A"); if (A != B.MemberEnd()) p.A = A->value.GetDouble();
+  }
 
   size_t nvar = pars.nfree();
   double theta[5];
