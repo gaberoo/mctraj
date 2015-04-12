@@ -196,7 +196,6 @@ int main(int argc, char** argv) {
             (*rng)[0]->gaussian(1,&proposal[j],last[j],sqrt(sigma[j]));
           } while (proposal[j] < p.varLo[j] || proposal[j] > p.varHi[j]);
         }
-        cout << setw(12) << last[j] << " ";
       }
       new_lik = pf_lik(proposal.data(),&lik_pars);
       alpha = exp(new_lik-last_lik);
@@ -206,6 +205,7 @@ int main(int argc, char** argv) {
         last = proposal;
         last_lik = new_lik;
       }
+      for (size_t j = 0; j < p.nvar; ++j) cout << setw(12) << last[j] << " ";
       cout << last_lik << endl;
     }
   }
