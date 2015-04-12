@@ -11,7 +11,6 @@ namespace MCTraj {
     for (size_t i = 0; i < pars.num_particles; ++i) {
       char name[32];
       sprintf(name,"P%lu",i);
-      // cerr << name << endl;
       pf.push_back(TrajParticle(string(name),1.0,T));
       pf[i].setId(i);
     }
@@ -32,13 +31,14 @@ namespace MCTraj {
 
         if (pars.vflag > 1) cerr << "Adding tree event..." << endl;
         pf.addTreeEvent(m->getPars(),rng,1);
+        if (pars.vflag > 1) cerr << "done." << endl;
 
         if (pars.print_particles) pf.printFromLast();
 
         pf.setLast();
 
+        if (pars.vflag > 1) cerr << "Filter particles:" << endl;
         if (pf[0].getTime() >= time + pars.filter_time) {
-          if (pars.vflag > 1) cerr << "Filter particles..." << endl;
           filterRet = pf.filter(rng);
           time += pars.filter_time;
         } else {

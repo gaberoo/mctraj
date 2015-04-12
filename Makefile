@@ -31,6 +31,9 @@ lib: mctraj.a
 mctraj.a: $(OBJS)
 	ar rcs mctraj.a $(OBJS)
 
+cdream/dream.a:
+	cd cdream; make dream.a
+
 ##############################################################################
 
 models/SIS.o: models/SIS.h models/SIS.cpp
@@ -67,6 +70,9 @@ metrop_pf: metrop_pf.cpp mctraj.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfSPSA: pfSPSA.cpp mctraj.a Tree.o
+	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+pfDREAM: pfDREAM.cpp mctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 ##############################################################################

@@ -16,6 +16,7 @@ using namespace std;
 using namespace MCTraj;
 
 #include "Parameters.h"
+#include "MCTraj.h"
 
 typedef struct {
   Model* mpt;
@@ -64,7 +65,6 @@ double pf_lik(const double* state, void* pars)
 
 int main(int argc, char** argv) {
   TCLAP::CmdLine cmd("Particle filter approximation for marginal tree likelihood", ' ', "0.9");
-
   TCLAP::ValueArg<string> json_fn("J","json","JSON input file",false,"","string",cmd);
 
   TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);

@@ -210,6 +210,7 @@ namespace MCTraj {
              << setw(12) << particle(j).getWeight() << endl;
       }
 
+      // cerr << "++ " << flush;
       dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[id],pars);
 //      if (dw == 0.0) {
 //        const TransitionType* tt = model->getObsType(model->mapType(eventType));
@@ -218,7 +219,9 @@ namespace MCTraj {
 //        particle(j).msg(str);
 //        delete[] str;
 //      }
+      // cerr << "++ " << flush;
       particle(j).updateWeight(dw);
+      // cerr << "++ " << endl;
 
       if (vflag > 2) {
         cerr << setw(5) << j << "  > " << particle(j).getState() << " " 

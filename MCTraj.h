@@ -45,6 +45,9 @@ namespace MCTraj {
     double filter_time;
     bool adj_zero;
   } PFPars;
+
+  void pf_pars_read_json(PFPars* p, rapidjson::Value& json);
 }
+
 
 #endif // __MCTRAJ__

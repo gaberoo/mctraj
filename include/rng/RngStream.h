@@ -44,6 +44,11 @@ namespace rng {
         return j;
       }
 
+      virtual void multinomial(size_t k, size_t n, const double* p, unsigned* a) = 0;
+      virtual void gaussian(size_t n, double* r, double mu, double sigma) = 0;
+      virtual void shuffle(int* x, size_t n) = 0;
+      virtual void shuffle(double* x, size_t n) = 0;
+
 //      template<typename T> void shuffle(T* x, size_t n) {
 //        std::cerr << "Shuffling not implemented!" << std::endl;
 //      }

@@ -167,9 +167,11 @@ namespace MCTraj {
     transitions.push_back(StateTransition(nextTime-lastEventTime(),*tt,getState(),pars,nextEvent));
     StateTransition& st = transitions.back();
 
+    // cerr << curState << endl;
     /* probability that the event happened */
     double dw = tt->applyRate(curState,pars);
     // cerr << " ]]]]]]] " << nextEvent << " " << model->mapType(nextEvent) << " " << dw << endl;
+
     tt->applyBranch(curState,rng,st,pars);
     addTransition(st);
     time = nextTime;

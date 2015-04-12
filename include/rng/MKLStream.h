@@ -44,6 +44,23 @@ namespace rng {
 
       inline void set_type(const MKL_INT type) { brng = type; }
 
+      inline void shuffle(int* x, size_t n) {
+        std::cerr << "Int shuffling not implemented!" << std::endl;
+      }
+
+      inline void shuffle(double* x, size_t n) = 0; {
+        std::cerr << "Double shuffling not implemented!" << std::endl;
+      }
+
+      inline void gaussian(size_t n, double* r, double mu = 0.0, double sigma = 1.0) { 
+        std::cerr << "Gaussian not implemented!" << std::endl;
+      };
+
+      inline void multinomial(size_t k, size_t n, const double* p, unsigned* a) {
+        std::cerr << "Multinomial not implemented!" << std::endl;
+      }
+
+
     protected:
       MKL_INT brng;
       VSLStreamStatePtr stream;
