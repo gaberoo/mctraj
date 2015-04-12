@@ -171,9 +171,9 @@ int main(int argc, char** argv) {
   last.assign(p.varInit,p.varInit+p.nvar);
   proposal.assign(p.varInit,p.varInit+p.nvar);
 
-  cout << "ll = " << flush;
+  cerr << "ll = " << flush;
   double last_lik = pf_lik(proposal.data(),&lik_pars);
-  cout << last_lik << endl;
+  cerr << last_lik << endl;
 
   int accept;
   double new_lik;
