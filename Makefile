@@ -31,7 +31,7 @@ lib: mctraj.a
 mctraj.a: $(OBJS)
 	ar rcs mctraj.a $(OBJS)
 
-cdream/dream.a:
+cdream/dream.a: cdream/*.cpp
 	cd cdream; make dream.a
 
 ##############################################################################
@@ -73,6 +73,9 @@ pfSPSA: pfSPSA.cpp mctraj.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfDREAM: pfDREAM.cpp mctraj.a cdream/dream.a Tree.o
+	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+pfMH: pfMH.cpp mctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 ##############################################################################
