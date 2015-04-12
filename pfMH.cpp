@@ -167,9 +167,17 @@ int main(int argc, char** argv) {
 
   vector<double> last(p.nvar);
   vector<double> proposal(p.nvar);
-  vector<double> sigma(p.nvar,0.1);
+  vector<double> sigma(p.nvar,1.0);
   last.assign(p.varInit,p.varInit+p.nvar);
   proposal.assign(p.varInit,p.varInit+p.nvar);
+
+  rapidjson::Value::MemberIterator it = jpars.FindMember("pars");
+  rapidjson::Value& d = it->value;
+  rapidjson::Value::MemberIterator m1;
+  for (rapidjson::SizeType i = 0; i < d.Size(); ++i) {
+    m1 = d[i].FindMember("sigma"); 
+    if (m1 != d[i].MemberEnd()) sigma[i] = m1->value.GetDouble();
+  }
 
   cerr << "ll = " << flush;
   double last_lik = pf_lik(proposal.data(),&lik_pars);
