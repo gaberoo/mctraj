@@ -34,6 +34,9 @@ mctraj.a: $(OBJS)
 cdream/dream.a: cdream/*.cpp
 	cd cdream; make dream.a
 
+cpso/libpso.a: cpso/*.cpp
+	cd cpso; make libpso.a
+
 ##############################################################################
 
 models/SIS.o: models/SIS.h models/SIS.cpp
@@ -76,6 +79,9 @@ pfDREAM: pfDREAM.cpp mctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfMH: pfMH.cpp mctraj.a cdream/dream.a Tree.o
+	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+pfPSO: pfPSO.cpp mctraj.a cpso/libpso.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 ##############################################################################
