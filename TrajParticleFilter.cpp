@@ -559,7 +559,9 @@ namespace MCTraj {
     while (free_pos.size() > 0) {
       // find next replacement particle
       while (i < n && counts[i] <= 0) ++i;
-      particle(*(free_pos.begin())) = particle(i);
+      int j = *free_pos.begin();
+      free_pos.erase(free_pos.begin());
+      particle(j) = particle(i);
       --counts[i];
     }
 

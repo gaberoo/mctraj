@@ -39,7 +39,6 @@ namespace MCTraj {
   // =========================================================================
 
   void Trajectory::addTransition(const StateTransition& trans) {
-    // transitions.push_back(trans);
     curState += trans.trans;
     curState.branches += trans.branchTrans;
     last_event_time += trans.time;
@@ -99,7 +98,7 @@ namespace MCTraj {
           if (! noTree) nextTrans->applyBranch(curState,rng,st,pars);
 
           // add transition to list
-          transitions.push_back(st);
+          if (store_trans) transitions.push_back(st);
 
           // adapt state
           addTransition(st);
@@ -164,8 +163,7 @@ namespace MCTraj {
 
     const TransitionType* tt = model->getObsType(model->mapType(nextEvent));
 
-    transitions.push_back(StateTransition(nextTime-lastEventTime(),*tt,getState(),pars,nextEvent));
-    StateTransition& st = transitions.back();
+    StateTransition st(nextTime-lastEventTime(),*tt,getState(),pars,nextEvent);
 
     // cerr << curState << endl;
     /* probability that the event happened */
@@ -173,7 +171,10 @@ namespace MCTraj {
     // cerr << " ]]]]]]] " << nextEvent << " " << model->mapType(nextEvent) << " " << dw << endl;
 
     tt->applyBranch(curState,rng,st,pars);
+
+    if (store_trans) transitions.push_back(st);
     addTransition(st);
+
     time = nextTime;
 
     return dw;
