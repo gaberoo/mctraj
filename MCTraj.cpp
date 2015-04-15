@@ -66,5 +66,11 @@ void MCTraj::pf_pars_read_json(PFPars* p, rapidjson::Value& json) {
     if (! m1->value.IsInt()) throw "vflag";
     p->vflag = m1->value.GetInt();
   }
+
+  m1 = d.FindMember("history");
+  if (m1 != d.MemberEnd()) {
+    if (! m1->value.IsInt()) throw "history";
+    p->vflag = m1->value.GetInt();
+  }
 }
 

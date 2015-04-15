@@ -41,6 +41,7 @@ namespace MCTraj {
     int model_type;
     int print_traj;
     int full_tree;
+    int history;
     long unsigned seed;
     double filter_time;
     bool adj_zero;

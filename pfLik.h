@@ -1,6 +1,8 @@
 #include "../Tree.h"
 
-#include "TrajParticleFilter.h"
+#include "HistoryFilter.h"
+#include "StaticFilter.h"
+
 #include "models/SIS.h"
 #include "models/SIR.h"
 #include "models/SEIS.h"

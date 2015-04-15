@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <vector>
 #include <sstream>
+#include <set>
 using namespace std;
 
 #include <rng/Rng.h>

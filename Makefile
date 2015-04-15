@@ -11,7 +11,8 @@ MODELS_SRC = $(wildcard models/*.cpp)
 MODELS = $(MODELS_SRC:.cpp=.o)
 
 OBJS  = MCTraj.o Trajectory.o ParticleFilter.o TrajParticle.o 
-OBJS += StateTransition.o TransitionType.o TrajParticleFilter.o
+OBJS += StateTransition.o TransitionType.o
+OBJS += TrajParticleFilter.o HistoryFilter.o StaticFilter.o
 OBJS += pfLik.o Model.o EpiState.o BranchState.o TreeNode.o
 OBJS += $(MODELS)
 
