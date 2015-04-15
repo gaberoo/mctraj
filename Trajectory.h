@@ -23,25 +23,26 @@ namespace MCTraj {
   class Trajectory {
     public:
       Trajectory() 
-        : time(0.0), last_event_time(0.0), model(NULL) 
+        : time(0.0), last_event_time(0.0), model(NULL),
+          store_trans(true)
       {}
 
       Trajectory(const Model* m) 
-        : model(m)
+        : model(m), store_trans(true)
       {
         transRates.resize(m->ntrans());
       }
 
       Trajectory(size_t nstates, const Model* m) 
         : time(0.0), last_event_time(0.0), initialState(nstates), 
-          curState(nstates), prob(0.0)
+          curState(nstates), prob(0.0), store_trans(true)
       {
         transRates.resize(m->ntrans());
       }
 
       Trajectory(const EpiState& es, const Model* m) 
         : time(0.0), last_event_time(0.0), initialState(es), 
-          curState(es), model(m), prob(0.0)
+          curState(es), model(m), prob(0.0), store_trans(true)
       {
         transRates.resize(m->ntrans());
       }
@@ -51,7 +52,7 @@ namespace MCTraj {
           initialState(T.initialState), curState(T.curState), 
           transitions(T.transitions),
           model(T.model), transRates(T.transRates),
-          prob(T.prob)
+          prob(T.prob), store_trans(T.store_trans)
       {
         if (model != NULL) transRates.resize(model->ntrans());
       }
@@ -114,19 +115,18 @@ namespace MCTraj {
 
       void toTree(rng::RngStream* rng, vector<TreeNode>& tree, const int lineageStates[]) const;
 
+      void storeTrans(bool x) { store_trans = x; }
+
    protected:
-      double time;                              /* current process time */
-      double last_event_time;                   /* time of last event */
-
-      EpiState initialState;                    /* initial state of trajectory */
-      EpiState curState;                        /* current state of the trajectory */
-
-      vector<StateTransition> transitions;      /* transitions */
-
-      const Model* model;
-      vector<double> transRates;                /* rates of transition */
-
-      double prob;                              /* probability of trajectory */
+      double time;                         // current process time
+      double last_event_time;              // time of last event
+      EpiState initialState;               // initial state of trajectory
+      EpiState curState;                   // current state of the trajectory
+      vector<StateTransition> transitions; // transitions
+      const Model* model;                  // dynamic model
+      vector<double> transRates;           // rates of transition
+      double prob;                         // probability of trajectory
+      bool store_trans;                    // store simulated trajectory
   };
 }
 
