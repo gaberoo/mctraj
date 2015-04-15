@@ -87,6 +87,8 @@ namespace MCTraj {
         return model->getObsType(model->mapType(tree_ttype()));
       }
 
+       virtual void copyFromPrev(size_t i, size_t j) = 0;
+
     protected:
       const Model* model;
 

@@ -22,7 +22,10 @@ namespace MCTraj {
       StaticFilter(const StaticFilter& x) : TrajParticleFilter(x) {}
       virtual ~StaticFilter();
 
-      inline void push_back(const TrajParticle& tp) { A->push_back(tp); }
+      inline void push_back(const TrajParticle& tp) { 
+        A->push_back(tp); 
+        B->push_back(tp); 
+      }
       inline void setLast() {}
       inline void inc() {
         ++curStep;
@@ -35,6 +38,9 @@ namespace MCTraj {
 
       void meanState(double mean[], size_t gen = 0) const;
       void varState(double var[], const double mean[], size_t gen = 0) const;
+
+      inline void copyAB() { *B = *A; }
+      void copyFromPrev(size_t i, size_t j);
 
     protected:
       inline void swap() { TPArr* tmp = A; A = B; B = tmp; }

@@ -215,8 +215,11 @@ int main(int argc, char** argv) {
   s.initialize(init_type);
   s.evaluate();
   s.display();
-//  s.run_mpi(1000,1);
+#ifdef USE_MPI
+  s.run_mpi(max_evals,vflag,out,hist);
+#else
   s.run(max_evals,slowdown,vflag,out,hist);
+#endif
   s.end();
 
   return 0;

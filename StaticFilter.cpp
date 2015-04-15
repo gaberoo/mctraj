@@ -40,4 +40,10 @@ namespace MCTraj {
     }
     for (i = 0; i < n; ++i) var[i] /= 1.0*(size()-1);
   }
+
+  // =========================================================================
+
+  void StaticFilter::copyFromPrev(size_t i, size_t j) {
+    (*A)[i].setState((*B)[j].getState());
+  }
 }

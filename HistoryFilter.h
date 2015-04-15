@@ -39,6 +39,8 @@ namespace MCTraj {
 
       void weights(vector<double>& mu, vector<double>& s2) const;
 
+      void copyFromPrev(size_t i, size_t j);
+
     protected:
       inline vector<TrajParticle>& pop() { return pf[curStep]; }
       inline vector<TrajParticle>& prev() { return pf[curStep-1]; }

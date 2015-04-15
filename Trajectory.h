@@ -64,12 +64,12 @@ namespace MCTraj {
 
       void addTransition(const StateTransition& trans);
 
-      double getTime() const { return time; }
+      inline double getTime() const { return time; }
 
-      size_t getState(size_t i) const { return curState[i]; }
-      const EpiState& getState() const { return curState; }
-      void setState(const EpiState& es) { curState = es; }
-      const EpiState& getInitial() const { return initialState; }
+      inline size_t getState(size_t i) const { return curState[i]; }
+      inline const EpiState& getState() const { return curState; }
+      inline void setState(const EpiState& es) { curState = es; }
+      inline const EpiState& getInitial() const { return initialState; }
 
       double lastEventTime() const { return last_event_time; }
 
@@ -83,14 +83,13 @@ namespace MCTraj {
       int simulateTrajectory(double endTime, const void* pars, rng::RngStream* rng);
       EpiState initState() const { return initialState; }
 
-      size_t transitionCount() const { return transitions.size(); }
-      size_t nTrans() const { return transitions.size(); }
+      inline size_t transitionCount() const { return transitions.size(); }
+      inline size_t nTrans() const { return transitions.size(); }
 
-      StateTransition& getTrans(size_t i) { return transitions.at(i); }
-      const StateTransition& getTrans(size_t i) const { return transitions.at(i); }
-      const StateTransition& operator[](size_t i) const { return transitions[i]; }
-
-      const StateTransition& backTrans() const { return transitions.back(); }
+      inline StateTransition& getTrans(size_t i) { return transitions.at(i); }
+      inline const StateTransition& getTrans(size_t i) const { return transitions.at(i); }
+      inline const StateTransition& backTrans() const { return transitions.back(); }
+      inline const StateTransition& operator[](size_t i) const { return transitions[i]; }
 
       virtual int lastType(int type) const; 
 
@@ -116,7 +115,7 @@ namespace MCTraj {
 
       void toTree(rng::RngStream* rng, vector<TreeNode>& tree, const int lineageStates[]) const;
 
-      void storeTrans(bool x) { store_trans = x; }
+      inline void storeTrans(bool x) { store_trans = x; }
 
    protected:
       double time;                         // current process time

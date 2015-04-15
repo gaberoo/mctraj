@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
   TCLAP::SwitchArg printParticles("P","printParticles","Output particles",cmd,false);
   TCLAP::SwitchArg _fullTree("F","fullTree","Full tree",cmd,false);
   TCLAP::SwitchArg adjZero("z","adjZero","Adjust zero-weight trajectory",cmd,false);
+  TCLAP::SwitchArg history("H","history","Store trajectories",cmd,false);
   TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
 
   TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",false);
@@ -81,6 +82,7 @@ int main(int argc, char** argv) {
   pf_pars.full_tree = _fullTree.getValue();
   pf_pars.seed = (seed.getValue() > 0) ? seed.getValue() : time(NULL);
   pf_pars.adj_zero = adjZero.getValue();
+  pf_pars.history = history.getValue();
 
   string branch_file = _branchfn.getValue();
   string traj_file = _trajfn.getValue();

@@ -2,7 +2,9 @@ CC = gcc
 CPP = g++
 FC = gfortran
 LD = g++
-CFLAGS += -std=c++0x #-DMKLRNG #-DDEBUG
+CFLAGS = -Imodels -I. -I.. -isystem ./include
+CFLAGS += -fopenmp 
+#CFLAGS += -std=c++0x #-DMKLRNG #-DDEBUG
 #CFLAGS += -DUNROLL
 CFLAGS += -g -m64 -Wall -O3
 FFLAGS += -g -m64 -Wall -O3
@@ -16,4 +18,11 @@ BLAS = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 #BLAS = -framework Accelerate
 
 LDFLAGS += $(BLAS)
+
+MPICC = $(CC) `openmpicc -showme:compile`
+MPICPP = $(CPP) `openmpic++ -showme:compile`
+MPICFLAGS = -DUSE_MPI $(CFLAGS)
+MPIFFLAGS += -DUSE_MPI $(CPPFLAGS)
+MPILD = $(CPP)
+MPILDFLAGS = $(LDFLAGS) `openmpic++ -showme:link`
 

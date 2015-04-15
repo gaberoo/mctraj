@@ -71,6 +71,7 @@ namespace MCTraj {
 //            else cerr << "--- ";
 //            cerr << x.back() << " " << r << endl;
 //          }
+          // copyFromPrev(i,p);
           particle(i).copy(prev(p));
           particle(i).setId(i);
           particle(i).setParent(p);
@@ -235,6 +236,7 @@ namespace MCTraj {
         step_time = cur_time() + dt;
         if (step_time > time) step_time = time;
 
+        // cerr << "Step tree..." << flush;
 #pragma omp parallel for default(shared) private(j,id)
         for (j = 0; j < size(); ++j) {
           id = omp_get_thread_num();
@@ -246,6 +248,7 @@ namespace MCTraj {
             particle(j).setWeight(particle(j).getProb());
           }
         }
+        // cerr << "done." << endl;
         if (step_time < time) sampleInPlace((*rng)[0]);
       }
       return nextStep;

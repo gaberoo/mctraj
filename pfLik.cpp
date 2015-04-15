@@ -10,8 +10,10 @@ namespace MCTraj {
 
     TrajParticleFilter* pf;
     if (pars.history) {
+      if (pars.vflag > 1) cerr << "History filter." << endl;
       pf = new HistoryFilter(m);
     } else {
+      if (pars.vflag > 1) cerr << "Static filter." << endl;
       pf = new StaticFilter(m);
     }
     pf->setVerbosity(pars.vflag);
@@ -26,6 +28,8 @@ namespace MCTraj {
       (*pf)[i].setId(i);
       (*pf)[i].storeTrans(false);
     }
+
+    // pf->copyFromPrev();
 
     // assign tree
     //   note: skip doesn't have an effect for StaticFilter
@@ -65,7 +69,7 @@ namespace MCTraj {
             cerr << "\033[1;31m";
             cerr << pf->cur_time() << "/" << pf->maxTime() 
                  << ": Particle collapse => " << pf->getCurType()->getName() << " !";
-            cerr << endl;
+            cerr << "\033[0m" << endl;
 //            vector<double> mu;
 //            vector<double> s2;
 //            pf.weights(mu,s2);

@@ -188,8 +188,10 @@ namespace MCTraj {
     int ret = 1;
     // cerr << " SIM :: time " << " " << endTime << endl;
     while (time < endTime && ret > 0) {
+      // cerr << "+";
       ret = step(endTime,pars,rng);
     }
+    // cerr << "//" << endl;
     return ret;
   }
 

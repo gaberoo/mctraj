@@ -165,5 +165,10 @@ namespace MCTraj {
     }
   }
 
+  // ========================================================================
+
+  void HistoryFilter::copyFromPrev(size_t i, size_t j) {
+    particle(i).copy(prev()[j]);
+  }
 }
 

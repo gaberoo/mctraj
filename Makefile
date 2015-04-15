@@ -16,8 +16,6 @@ OBJS += TrajParticleFilter.o HistoryFilter.o StaticFilter.o
 OBJS += pfLik.o Model.o EpiState.o BranchState.o TreeNode.o
 OBJS += $(MODELS)
 
-CFLAGS += -fopenmp -Imodels -I. -I.. -isystem ./include
-
 clean:
 	rm -rf $(OBJS)
 
@@ -37,6 +35,9 @@ cdream/dream.a: cdream/*.cpp
 
 cpso/libpso.a: cpso/*.cpp
 	cd cpso; make libpso.a
+
+cpso/libpso_mpi.a: cpso/*.cpp
+	cd cpso; make libpso_mpi.a
 
 ##############################################################################
 
@@ -84,6 +85,9 @@ pfMH: pfMH.cpp mctraj.a cdream/dream.a Tree.o
 
 pfPSO: pfPSO.cpp mctraj.a cpso/libpso.a Tree.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+pfPSO_mpi: pfPSO.cpp mctraj.a cpso/libpso_mpi.a Tree.o
+	$(MPICPP) $(MPICFLAGS) -o $@ $^ -lgsl $(MPILDFLAGS)
 
 ##############################################################################
 
