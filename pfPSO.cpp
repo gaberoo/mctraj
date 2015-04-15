@@ -22,6 +22,8 @@ typedef struct {
   const EpiState* es;
   rng::Rng* rng;
   const PSO::Parameters* mpar;
+  ostream* otraj;
+  ostream* obranch;
 } pf_pars_t;
 
 double pf_lik(const PSO::Point& state, const void* pars) 
@@ -52,7 +54,13 @@ double pf_lik(const PSO::Point& state, const void* pars)
   if (p.pars->vflag) cerr << epi.to_json() << endl;
   p.mpt->setPars(&epi);
 
-  double lik = pfLik(p.mpt,init,*(p.tree),*(p.pars),p.rng,NULL);
+  Trajectory* traj = NULL;
+  if (p.otraj != NULL) traj = new Trajectory(init,p.mpt);
+
+  double lik = pfLik(p.mpt,init,*(p.tree),*(p.pars),p.rng,traj);
+
+  if (p.obranch != NULL) traj->printBranches(*p.obranch) << endl;
+  if (p.otraj != NULL) traj->printFromFirst(*p.otraj) << endl;
 
   p.mpt->setPars(oldPt);
 
