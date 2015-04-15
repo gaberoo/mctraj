@@ -45,18 +45,21 @@ namespace MCTraj {
     double infRateFun(const EpiState& es, const void* pars);
     double treeProbInf(const EpiState& es, const void* pars);
     const int infChange[] = { -1, 1, 0, 0, 0 };
+    int validateInf(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double transRateFun(const EpiState& es, const void* pars);
     double treeProbTrans(const EpiState& es, const void* pars);
     const int transChange[] = { 0, -1, 1, 0, 0 };
+    int validateTrans(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double recovRateFun(const EpiState& es, const void* pars);
     double treeProbRecov(const EpiState& es, const void* pars);
     const int recoverChange[] = { 1, 0, -1, 0, 0 };
+    int validateRecov(const EpiState& es, const void* pars);
 
     /************************************************************************/
 

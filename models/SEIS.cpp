@@ -34,6 +34,12 @@ double MCTraj::SEISModel::treeProbInf(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
+int MCTraj::SEISModel::validateInf(const EpiState& es, const void* pars) {
+  return 1;
+}
+
+/************************************************************************/
+
 double MCTraj::SEISModel::recovRateFun(const EpiState& es, const void* pars) 
 {
   EpiPars ep = *(EpiPars*) pars;
@@ -55,6 +61,12 @@ double MCTraj::SEISModel::treeProbRecov(const EpiState& es, const void* pars)
        << " >> " << I << " --> " << kI << endl;
 #endif
   return dw;
+}
+
+/************************************************************************/
+
+int MCTraj::SEISModel::validateRecov(const EpiState& es, const void* pars) {
+  return 1;
 }
 
 /************************************************************************/
@@ -130,6 +142,10 @@ double MCTraj::SEISModel::treeProbTrans(const EpiState& es, const void* pars)
   double kE = es[3];
   // return (E >= kE) ? (E-kE)/E : 0.0;
   return (E >= kE) ? 1.0 : 0.0;
+}
+
+int MCTraj::SEISModel::validateTrans(const EpiState& es, const void* pars) {
+  return 1;
 }
 
 double MCTraj::SEISModel::treeObsTrans(const EpiState& es, const void* pars) 
@@ -283,4 +299,5 @@ bool MCTraj::SEIS::validState(const EpiState& es) const {
   if (es[0] < 0 || es[1] < 0 || es[2] < 0 || es[3] < 0 || es[4] < 0) return false;
   return true;
 }
+
 
