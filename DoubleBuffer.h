@@ -3,10 +3,21 @@
 
 template<typename T>
 class DoubleBuffer {
+  protected:
+    size_t n;
+    T* first;
+    T* second;
+    T* data;
+
   public:
     DoubleBuffer(size_t n) { alloc(n); }
     virtual ~DoubleBuffer() { free(); }
 
+    inline void swap() { T* tmp = first; first = second; second = tmp; }
+    inline T* one() { return first; }
+    inline T* two() { return second; }
+
+  protected:
     inline void alloc(size_t n) { 
       free();
       data = new T[2*n];
@@ -24,21 +35,6 @@ class DoubleBuffer {
         n = 0;
       }
     }
-
-    inline void swap() {
-      T* tmp = first;
-      first = second;
-      second = tmp;
-    }
-
-    inline T* one() { return first; }
-    inline T* two() { return second; }
-
-  protected:
-    size_t n;
-    T* first;
-    T* second;
-    T* data;
-}
+};
 
 #endif

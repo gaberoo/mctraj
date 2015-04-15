@@ -1,6 +1,18 @@
 #include "TrajParticleFilter.h"
 
 namespace MCTraj {
+  void TrajParticleFilter::store_traj(bool x) {
+    if (x) {
+      pf.resize(1);
+      pfpt = 0;
+    } else {
+      pf.resize(2);
+      pfpt = 1;
+    }
+  }
+
+  // =========================================================================
+
   void TrajParticleFilter::setTree(const Tree* tree, int skip, rng::Rng* rng) { 
     this->tree = tree; 
     // preallocate the space for the particles
@@ -56,9 +68,11 @@ namespace MCTraj {
     }
 
     // allocate space for new generation of particles
-    if (vflag > 1) cerr << "Increasing array size..." << flush;
-    inc();
-    if (vflag > 1) cerr << "done." << endl;
+    if (filter_type != 's') {
+      if (vflag > 1) cerr << "Increasing array size..." << flush;
+      inc();
+      if (vflag > 1) cerr << "done." << endl;
+    }
 
     if (filter_type == 'c') {
       size_t i;

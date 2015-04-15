@@ -14,6 +14,7 @@ namespace MCTraj {
       pf.push_back(TrajParticle(string(name),1.0,T));
       pf[i].setId(i);
     }
+
     pf.setTree(&tree,pars.skip,rng);
 
     int ret = 1;
