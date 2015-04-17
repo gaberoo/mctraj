@@ -87,12 +87,16 @@ namespace MCTraj {
           }
           return -INFINITY;
         }
-      }
+      } 
+//      else {
+//        cerr << "End of tree!" << endl;
+//      }
     }
 
     double log_lik = pf->est();
 
     if (tree.extant > 0) {
+      if (pars.vflag) cerr << "There are " << tree.extant << " extant nodes." << endl;
       if (m->getRho() > 0.0) {
         // Sampling at present
         for (size_t i = 0; i < pars.num_particles; ++i) {
@@ -137,7 +141,10 @@ namespace MCTraj {
 //    cerr << m->getPars()->to_json() << endl;
 //    cerr << log_lik << endl;
 
+    if (pars.vflag > 1) cerr << "Cleaning up..." << flush;
     delete pf;
+    if (pars.vflag > 1) cerr << "done." << endl;
+
     return log_lik;
   }
 }

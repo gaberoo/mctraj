@@ -227,6 +227,7 @@ namespace MCTraj {
   {
     // size_t nextStep = curStep + 1;
     size_t nextStep = curStep;
+    // cerr << nextStep << " " << tree->times.size() << endl;
     if (nextStep < tree->times.size()) {
       double time = tree->times[nextStep];
       double step_time = -1.0;

@@ -57,10 +57,13 @@ double pf_lik(const PSO::Point& state, const void* pars)
   Trajectory* traj = NULL;
   if (p.otraj != NULL) traj = new Trajectory(init,p.mpt);
 
+  if (p.pars->vflag > 1) cerr << "Starting calculation." << endl;
   double lik = pfLik(p.mpt,init,*(p.tree),*(p.pars),p.rng,traj);
 
-  if (p.obranch != NULL) traj->printBranches(*p.obranch) << endl;
-  if (p.otraj != NULL) traj->printFromFirst(*p.otraj) << endl;
+  if (p.pars->vflag > 1) cerr << "Finished calculation." << endl;
+
+//  if (p.obranch != NULL) traj->printBranches(*p.obranch) << endl;
+//  if (p.otraj != NULL) traj->printFromFirst(*p.otraj) << endl;
 
   p.mpt->setPars(oldPt);
 
