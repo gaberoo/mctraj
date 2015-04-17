@@ -71,6 +71,8 @@ double pf_lik(const PSO::Point& state, const void* pars)
 int main(int argc, char** argv) {
   TCLAP::CmdLine cmd("Particle filter DREAM", ' ', "0.1");
   TCLAP::ValueArg<string> json_fn("J","json","JSON input file",true,"","string",cmd);
+  TCLAP::ValueArg<string> out_fn("o","out","output file",false,"","string",cmd);
+  TCLAP::ValueArg<string> hist_fn("H","hist","history file",false,"","string",cmd);
 
   TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",false);
   cmd.add(multi);
@@ -196,9 +198,20 @@ int main(int argc, char** argv) {
     it = d.FindMember("slowdown");
     if (it != d.MemberEnd()) slowdown = it->value.GetInt();
     it = d.FindMember("out_fn");
-    if (it != d.MemberEnd()) out = new ofstream(it->value.GetString());
-    it = d.FindMember("hist_fn");
-    if (it != d.MemberEnd()) hist = new ofstream(it->value.GetString());
+
+    if (out_fn.getValue() == "") {
+      it = d.FindMember("out_fn");
+      if (it != d.MemberEnd()) out = new ofstream(it->value.GetString());
+    } else {
+      out = new ofstream(out_fn.getValue().c_str());
+    }
+
+    if (hist_fn.getValue() == "") {
+      it = d.FindMember("hist_fn");
+      if (it != d.MemberEnd()) hist = new ofstream(it->value.GetString());
+    } else {
+      out = new ofstream(hist_fn.getValue().c_str());
+    }
   }
 
   // =========================================================================

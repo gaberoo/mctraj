@@ -10,6 +10,8 @@ using namespace std;
 #include "MCTraj.h"
 #include "BranchState.h"
 
+#include <rapidjson/document.h>
+
 namespace MCTraj {
   class EpiState {
     public:
@@ -72,7 +74,6 @@ namespace MCTraj {
         } json_w.EndObject();
       }
       string to_json() const;
-
 
     protected:
       vector<int> state;
