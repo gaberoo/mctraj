@@ -3,12 +3,13 @@ CPP = g++
 FC = gfortran
 LD = g++
 CFLAGS = -Imodels -I. -I.. -isystem ./include
-CFLAGS += -fopenmp 
-#CFLAGS += -std=c++0x #-DMKLRNG #-DDEBUG
+#CFLAGS += -DDEBUG
+#CFLAGS += -fopenmp 
+#CFLAGS += -std=c++0x -DMKLRNG 
 #CFLAGS += -DUNROLL
 CFLAGS += -g -m64 -Wall -O3
 FFLAGS += -g -m64 -Wall -O3
-LDFLAGS += -lgfortran
+#LDFLAGS += -lgfortran
 
 CPPFLAGS = $(CFLAGS)
 

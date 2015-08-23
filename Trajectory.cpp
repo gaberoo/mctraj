@@ -51,8 +51,8 @@ namespace MCTraj {
   {
     // get array of next event rates
     double nextTime = 0.0;
-    double totalRate = 0.0;
     double r = 0.0;
+
     int nextEvent = 0;
     int num_events = 0;
 
@@ -65,10 +65,11 @@ namespace MCTraj {
     const TransitionType* nextTrans;
 
     // calculate all rates
-    totalRate = model->calculateTransRates(curState,transRates);
+    double totalRate = model->calculateTransRates(curState,transRates);
 
     while (ret <= 0) {
       if (totalRate <= 0.0) {
+        time = maxTime;
         ret = 4;
         break;
       }
@@ -94,8 +95,13 @@ namespace MCTraj {
         dw = nextTrans->applyProb(newState,model->getPars());
 
         if (dw > 0.0 || ! adjZero) {
+          // if yes,
           // add branch transformations
-          if (! noTree) nextTrans->applyBranch(curState,rng,st,pars);
+          if (! noTree) {
+            curState.time = time + nextTime;
+            nextTrans->applyBranch(curState,rng,st,pars);
+            dw *= st.relprob;
+          }
 
           // add transition to list
           if (store_trans) transitions.push_back(st);
@@ -110,29 +116,41 @@ namespace MCTraj {
           time += nextTime;
           ++num_events;
 
-//          if (ret < 0) {
-//            cerr << "Legal event (" << nextEvent << ")."
-//                 << " w = " << dw << ", penalty = " << rate 
-//                 << ", total rate = " << totalRate << "." << endl;
-//          }
+#ifdef DEBUG
+          if (ret < 0) {
+            cerr << "Legal event (" << nextEvent << ")."
+                 << " w = " << dw << ", penalty = " << rate 
+                 << ", total rate = " << totalRate << "." << endl;
+          }
+#endif
 
           ret = 1; // exit loop
         } else {
-          // make this transition illegal
-//          cerr << "Illegal event (" << nextEvent << ")."
-//               << " w = " << dw << ", penalty = " << rate 
-//               << ", total rate = " << totalRate << "." << endl;
+          // if no,
+          // make this transition illegal in this particular step
+#ifdef DEBUG
+          cerr << "Illegal event (" << nextEvent << ")."
+               << " w = " << dw << ", penalty = " << rate 
+               << ", total rate = " << totalRate << "." << endl;
+#endif
+          // adjust cumulative rates
           for (size_t i = nextEvent; i < transRates.size(); ++i) {
             transRates[i] -= rate;
           }
           totalRate = transRates.back();
+
+          // condition on not seeing this event
           unrate += rate;
-          ret = -1; // redo loop with modified rates
+
+          // redo loop with modified rates
+          ret = -1;
         }
       } else {
-//        if (ret < 0) {
-//          cerr << "No event. Total rate = " << totalRate << "." << endl;
-//        }
+#ifdef DEBUG
+        if (ret < 0) {
+          cerr << "No event. Total rate = " << totalRate << "." << endl;
+        }
+#endif
 
         nextTime = maxTime - time;
         time = maxTime;
@@ -141,16 +159,21 @@ namespace MCTraj {
     }
     
     if (totalRate < 0.0) {
-//      cerr << "\033[1;31m";
-//      cerr << "Negative rate (" << ret << "): " << totalRate
-//           << "  ES = " << curState;
-//      cerr << "\033[0m" << endl;
+#ifdef DEBUG
+      cerr << "\033[1;31m";
+      cerr << "Negative rate (" << ret << "): " << totalRate
+           << "  ES = " << curState;
+      cerr << "\033[0m" << endl;
+#endif
       return -1;
     }
 
+    // condition on the illegal events ('prob' is in logarithmic scale)
     if (unrate > 0.0) prob -= unrate*nextTime;
 
-    return num_events;
+    return ret;
+    // return num_events;
+    // return (ret != 2) ? num_events : -2;
   }
 
   // =========================================================================
@@ -159,22 +182,27 @@ namespace MCTraj {
                            const vector<int>& ids, rng::RngStream* rng,
                            const void* pars) 
   {
+    // store this info so that it can be accessed by the model
     curState.curBranch = ids;
 
+    // get the transition of the next event
     const TransitionType* tt = model->getObsType(model->mapType(nextEvent));
 
+    // setup the transition
     StateTransition st(nextTime-lastEventTime(),*tt,getState(),pars,nextEvent);
 
-    // cerr << curState << endl;
-    /* probability that the event happened */
+    // probability that the event happened
     double dw = tt->applyRate(curState,pars);
-    // cerr << " ]]]]]]] " << nextEvent << " " << model->mapType(nextEvent) << " " << dw << endl;
 
+    // apply the branch changes
     tt->applyBranch(curState,rng,st,pars);
 
     if (store_trans) transitions.push_back(st);
+
+    // apply the state change
     addTransition(st);
 
+    // update the time
     time = nextTime;
 
     return dw;
@@ -183,15 +211,14 @@ namespace MCTraj {
   // =========================================================================
 
   int Trajectory::simulateTrajectory(double endTime, const void* pars, 
-                                     rng::RngStream* rng) 
+                                     rng::RngStream* rng, bool adjZero) 
   {
     int ret = 1;
-    // cerr << " SIM :: time " << " " << endTime << endl;
+    bool noTree = false;
     while (time < endTime && ret > 0) {
-      // cerr << "+";
-      ret = step(endTime,pars,rng);
+      // ret is the number of events in the step
+      ret = step(endTime,pars,rng,noTree,adjZero);
     }
-    // cerr << "//" << endl;
     return ret;
   }
 

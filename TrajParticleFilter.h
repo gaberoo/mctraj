@@ -6,7 +6,9 @@
 #include "TrajParticle.h"
 #include "Model.h"
 
+#if defined(_OPENMP)
 #include <omp.h>
+#endif
 
 #include <set>
 using namespace std;
@@ -38,7 +40,7 @@ namespace MCTraj {
 
       size_t stepTree(const Pars* pars, rng::Rng* rng, bool adjZero = true, double dt = INFINITY);
       void calcWeights(const void* pars);
-      int addTreeEvent(const void* pars, rng::Rng* rng, int noProb = 0);
+      int addTreeEvent(const void* pars, rng::Rng* rng);
 
       virtual void setLast() = 0;
       virtual void inc() = 0;

@@ -80,7 +80,7 @@ namespace MCTraj {
       int step(double maxTime, const void* pars, rng::RngStream* rng, 
                bool noTree = false, bool adjZero = true);
       double force(double nextTime, int nextEvent, const vector<int>& ids, rng::RngStream* rng, const void* pars);
-      int simulateTrajectory(double endTime, const void* pars, rng::RngStream* rng);
+      int simulateTrajectory(double endTime, const void* pars, rng::RngStream* rng, bool adjZero = true);
       EpiState initState() const { return initialState; }
 
       inline size_t transitionCount() const { return transitions.size(); }

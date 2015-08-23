@@ -15,7 +15,7 @@ namespace MCTraj {
 
   int BranchStates::random_color(rng::RngStream* rng, int col) const {
     vector<int> col_alive;
-    for (size_t i(0); i < alive.size(); ++i) {
+    for (size_t i = 0; i < alive.size(); ++i) {
       if (colors[alive[i]] == col) col_alive.push_back(alive[i]);
       // cerr << alive[i] << "(" << colors[alive[i]] << "),";
     }

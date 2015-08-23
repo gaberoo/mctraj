@@ -10,12 +10,14 @@ namespace MCTraj {
 
   int TrajParticleFilter::filter(rng::Rng* rng, char filter_type) 
   {
-    size_t n(size());
+    size_t n = size();
 
     // calculate total weight
     vector<double> w(n,0.0);
     double totalW = w_vec(w);
+
     if (vflag > 1) {
+      // output verbose info on weight distribution
       double s2 = gsl_stats_variance(w.data(),1,w.size());
       cerr << "  FIL (" << filter_type << ") :: Sum = " << totalW 
            << ", var(w) = " << sqrt(s2)/(totalW/n) << endl;
@@ -23,6 +25,7 @@ namespace MCTraj {
       cerr << "  Best particle = " << particle(k).getState() << endl;
     }
 
+    // check that the total weight is positive
     if (totalW <= 0.0) { logw = -INFINITY; return -1; }
 
     // allocate space for new generation of particles
@@ -31,16 +34,18 @@ namespace MCTraj {
     if (vflag > 1) cerr << "done." << endl;
 
     if (filter_type == 'c') {
-      // copy filter
+// copy filter ===============================================================
       size_t i;
+#if defined(_OPENMP)
 #pragma omp parallel for default(shared) private(i)
+#endif
       for (i = 0; i < n; ++i) {
         particle(i).copy(prev(i));
         particle(i).setId(i);
         particle(i).setParent(i);
       }
     } else {
-      // bootstrap filter
+// bootstrap filter ==========================================================
       logw += log(totalW/n);
 
       size_t i;
@@ -50,27 +55,21 @@ namespace MCTraj {
       rng::make_discrete(n,w.data(),x.data());
       if (vflag > 1) cerr << "done." << endl;
 
-      size_t id;
       int p;
 
+#if defined(_OPENMP)
+      size_t id;
 #pragma omp parallel for default(shared) private(i,id,p)
+#endif
       for (i = 0; i < n; ++i) {
         try {
           // sampling with replacement
+#if defined(_OPENMP)
           id = omp_get_thread_num();
           p = (*rng)[id]->discrete_x(n,x.data());
-//          if (w[p] <= 0.0) {
-//            cerr << " !!! Filtered a particle with weight zero!" 
-//                 << " p = " << p << "; ";
-//            size_t start = r/x.back()*n;
-//            cerr << " start = " << start << " "; 
-//            if (p > 0) cerr << "(p-1) = " << x[p-1] << " ";
-//            else cerr << "--- ";
-//            cerr << "p = " << x[p] << " ";
-//            if (p < n-1) cerr << "(p+1) = " << x[p+1] << " ";
-//            else cerr << "--- ";
-//            cerr << x.back() << " " << r << endl;
-//          }
+#else
+          p = (*rng)[0]->discrete_x(n,x.data());
+#endif
           // copyFromPrev(i,p);
           particle(i).copy(prev(p));
           particle(i).setId(i);
@@ -129,13 +128,15 @@ namespace MCTraj {
 
   // ========================================================================
 
-  int TrajParticleFilter::addTreeEvent(const void* pars, rng::Rng* rng, int noProb) {
+  int TrajParticleFilter::addTreeEvent(const void* pars, rng::Rng* rng) 
+  {
+    // get information on the next event
     size_t nextStep = curStep;
-
     double eventTime = tree->times[nextStep];
     int eventType = tree->ttypes[nextStep];
     int modelType = model->mapType(eventType);
 
+    // output some verbose information
     if (vflag > 1) {
       cerr << "Add tree event :: " << setw(12) << eventTime << " " 
            << "(" << eventType << "->" << modelType << ") :: ";
@@ -144,16 +145,20 @@ namespace MCTraj {
       }
       cerr << endl;
     }
+
+    // make sure the model is specified, otherwise stop
     if (modelType < 0) return tree->ttypes[nextStep];
 
     size_t j;
-    int id;
     double dw;
+    int cnt_zero = 0;
 
+#if defined(_OPENMP)
+    int id;
 #pragma omp parallel for default(shared) private(j,id,dw)
+#endif
     for (j = 0; j < size(); ++j) {
       dw = -1.0;
-      id = omp_get_thread_num();
 
       if (vflag > 2) {
         cerr << setw(5) << j << " |> " << particle(j).getState() << " " 
@@ -162,32 +167,37 @@ namespace MCTraj {
       }
 
       // cerr << "++ " << flush;
+#if defined(_OPENMP)
+      id = omp_get_thread_num();
       dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[id],pars);
+#else
+      dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[0],pars);
+#endif
+
+      if (dw == 0.0) cnt_zero++;
+
 //      if (dw == 0.0) {
 //        const TransitionType* tt = model->getObsType(model->mapType(eventType));
 //        char* str = new char[512];
-//        sprintf(str,"Forced weight is zero is event '%s'.",tt->getName().c_str());
+//        sprintf(str,"Forced weight is zero in event '%s'.",tt->getName().c_str());
 //        particle(j).msg(str);
 //        delete[] str;
 //      }
-      // cerr << "++ " << flush;
-      particle(j).updateWeight(dw);
-      // cerr << "++ " << endl;
 
+      // update the particle weight, which at this point should be equal to
+      // the (conditioned) trajectory weight
+      particle(j).updateWeight(dw);
+
+      // output verbose information
       if (vflag > 2) {
         cerr << setw(5) << j << "  > " << particle(j).getState() << " " 
              << setw(12) << dw << " " 
              << setw(12) << particle(j).getWeight() << endl;
       }
-
-//      if (! noProb) {
-//        /* probability that the event is included in the tree */
-//        const TransitionType* tt = model->getObsType(modelType);
-//        EpiState curState = particle(j).getState();
-//        dw = tt->applyProb(curState,pars);
-//        particle(j).updateWeight(dw);
-//        particle(j).updateProb(dw);
-//      }
+    }
+    
+    if (vflag > 1) {
+      cerr << "Number of zero-weight particles = " << cnt_zero << endl;
     }
 
     return tree->ttypes[nextStep];
@@ -197,7 +207,9 @@ namespace MCTraj {
 
   void TrajParticleFilter::calcWeights(const void* pars) {
     size_t j;
+#if defined(_OPENMP)
 #pragma omp parallel for default(shared) private(j)
+#endif
     for (j = 0; j < size(); ++j) {
       double dw = particle(j).calcWeight(pars);
 //      cerr << j << " " << particle(j).getProb() << " --> " << dw << endl;
@@ -223,33 +235,56 @@ namespace MCTraj {
 
   // ========================================================================
 
-  size_t TrajParticleFilter::stepTree(const Pars* pars, rng::Rng* rng, bool adjZero, double dt) 
+  size_t TrajParticleFilter::stepTree
+    (const Pars* pars, rng::Rng* rng, bool adjZero, double dt) 
   {
-    // size_t nextStep = curStep + 1;
+    // get step number
     size_t nextStep = curStep;
-    // cerr << nextStep << " " << tree->times.size() << endl;
-    if (nextStep < tree->times.size()) {
+
+    // make sure there are enough steps in the times file
+    if (nextStep < tree->times.size()) 
+    {
       double time = tree->times[nextStep];
       double step_time = -1.0;
       size_t j = 0;
+      int ret = 0;
+#if defined(_OPENMP)
       size_t id = 0;
+#endif
+
+      // iterate over all incremental steps
       while (step_time < time) {
         step_time = cur_time() + dt;
         if (step_time > time) step_time = time;
 
-        // cerr << "Step tree..." << flush;
-#pragma omp parallel for default(shared) private(j,id)
+#if defined(_OPENMP)
+#pragma omp parallel for default(shared) private(j,id,ret)
+#endif
         for (j = 0; j < size(); ++j) {
-          id = omp_get_thread_num();
+          // set probability of the trajectory to zero
           particle(j).resetProb();
-          int ret = particle(j).simulateTrajectory(step_time,pars,(*rng)[id]);
+
+          // simulate a trajectory
+#if defined(_OPENMP)
+          id = omp_get_thread_num();
+          ret = particle(j).simulateTrajectory(step_time,pars,(*rng)[id],adjZero);
+#else
+          ret = particle(j).simulateTrajectory(step_time,pars,(*rng)[0],adjZero);
+#endif
+
+          // check if the simulation was successful
           if (ret < 0) {
+            // if no, set particle weight to zero
             particle(j).setWeight(0.0);
           } else {
+            // if yes, get the probabiliy of the trajectory,
+            // potentially conditioned on some illegal events
+            // not happening
             particle(j).setWeight(particle(j).getProb());
           }
         }
-        // cerr << "done." << endl;
+
+        // if there are incremental steps, resample the particles in place
         if (step_time < time) sampleInPlace((*rng)[0]);
       }
       return nextStep;

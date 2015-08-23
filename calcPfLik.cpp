@@ -89,10 +89,18 @@ int main(int argc, char** argv) {
 
   // =========================================================================
   
-  // if (vflag.getValue() > 0) cerr << "# seed = " << seed << endl;
+  if (vflag.getValue() > 0) {
+    cerr << "# seed        = " << pf_pars.seed << endl;
+    cerr << "# adjust zero = " << pf_pars.adj_zero << endl;
+  }
 
   // Setup random number generators
-  int max_threads = omp_get_max_threads();
+
+  int max_threads = 1;
+#if defined(_OPENMP)
+  max_threads = omp_get_max_threads();
+#endif
+
   rng::Rng* rng = NULL;
 #ifdef MKLRNG
   rng = new rng::MKLRng;
@@ -124,6 +132,7 @@ int main(int argc, char** argv) {
       seis_pars.psi = pars.psi;
       seis_pars.rho = pars.rho;
       seis_pars.gamma = gamma.getValue();
+      seis_pars.tree = &tree;
       mpt = new SEIS(&seis_pars);
       es = new EpiState(SEISModel::nstates);
       (*es)[0] = ((int) seis_pars.N)-1;

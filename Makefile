@@ -1,5 +1,4 @@
 include Make.inc
-#CPP = clang++
 
 TESTS  = testChooseTransition testParticleFilter testTrajParticle
 TESTS += testReadTrajectory
@@ -13,7 +12,7 @@ MODELS = $(MODELS_SRC:.cpp=.o)
 OBJS  = MCTraj.o Trajectory.o ParticleFilter.o TrajParticle.o 
 OBJS += StateTransition.o TransitionType.o
 OBJS += TrajParticleFilter.o HistoryFilter.o StaticFilter.o
-OBJS += pfLik.o Model.o EpiState.o BranchState.o TreeNode.o
+OBJS += pfLik.o Model.o EpiState.o BranchState.o Tree.o TreeNode.o
 OBJS += $(MODELS)
 
 clean:
@@ -42,49 +41,49 @@ cpso/libpso_mpi.a: cpso/*.cpp
 ##############################################################################
 
 models/SIS.o: models/SIS.h models/SIS.cpp
-	$(CPP) $(CFLAGS) -c -o models/SIS.o models/SIS.cpp
+	$(CPP) $(CPPFLAGS) -c -o models/SIS.o models/SIS.cpp
 
 models/SIR.o: models/SIR.h models/SIR.cpp
-	$(CPP) $(CFLAGS) -c -o models/SIR.o models/SIR.cpp
+	$(CPP) $(CPPFLAGS) -c -o models/SIR.o models/SIR.cpp
 
 models/SEIS.o: models/SEIS.h models/SEIS.cpp
-	$(CPP) $(CFLAGS) -c -o models/SEIS.o models/SEIS.cpp
+	$(CPP) $(CPPFLAGS) -c -o models/SEIS.o models/SEIS.cpp
 
 ##############################################################################
 
 testChooseTransition: testChooseTransition.cpp MCTraj.o ParticleFilter.o
-	$(CPP) $(CFLAGS) -o testChooseTransition testChooseTransition.cpp mctraj.a -lgsl 
+	$(CPP) $(CPPFLAGS) -o testChooseTransition testChooseTransition.cpp mctraj.a -lgsl 
 
 testParticleFilter: testParticleFilter.cpp ParticleFilter.o
-	$(CPP) $(CFLAGS) -o testParticleFilter testParticleFilter.cpp mctraj.a -lgsl 
+	$(CPP) $(CPPFLAGS) -o testParticleFilter testParticleFilter.cpp mctraj.a -lgsl 
 
 testTrajParticle: testTrajParticle.cpp mctraj.a Tree.o
-	$(CPP) $(CFLAGS) -o testTrajParticle testTrajParticle.cpp mctraj.a \
+	$(CPP) $(CPPFLAGS) -o testTrajParticle testTrajParticle.cpp mctraj.a \
 		Tree.o -lgsl $(LDFLAGS)
 
 testReadTrajectory: testReadTrajectory.cpp
-	$(CPP) $(CFLAGS) -o testReadTrajectory testReadTrajectory.cpp mctraj.a -lgsl 
+	$(CPP) $(CPPFLAGS) -o testReadTrajectory testReadTrajectory.cpp mctraj.a -lgsl 
 
 calcPfLik: calcPfLik.cpp mctraj.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 simulateTrajectory: simulateTrajectory.cpp mctraj.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 metrop_pf: metrop_pf.cpp mctraj.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfSPSA: pfSPSA.cpp mctraj.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfDREAM: pfDREAM.cpp mctraj.a cdream/dream.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfMH: pfMH.cpp mctraj.a cdream/dream.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfPSO: pfPSO.cpp mctraj.a cpso/libpso.a Tree.o
-	$(CPP) $(CFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 pfPSO_mpi: pfPSO.cpp mctraj.a cpso/libpso_mpi.a Tree.o
 	$(MPICPP) $(MPICFLAGS) -o $@ $^ -lgsl $(MPILDFLAGS)
@@ -92,20 +91,20 @@ pfPSO_mpi: pfPSO.cpp mctraj.a cpso/libpso_mpi.a Tree.o
 ##############################################################################
 
 testSingleTraj: testSingleTraj.cpp mctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expoTree.o
-	$(CPP) $(CFLAGS) -o testSingleTraj testSingleTraj.cpp mctraj.a \
+	$(CPP) $(CPPFLAGS) -o testSingleTraj testSingleTraj.cpp mctraj.a \
 		../expoTreeSIR.o ../expoTree.o $(EXPOMV) ../Tree.o -lgsl $(LDFLAGS)
 
 clockPfLik: clockPfLik.cpp mctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expoTree.o
-	$(CPP) $(CFLAGS) -o clockPfLik clockPfLik.cpp mctraj.a \
+	$(CPP) $(CPPFLAGS) -o clockPfLik clockPfLik.cpp mctraj.a \
 		../expoTreeSIR.o ../expoTree.o $(EXPOMV) ../Tree.o -lgsl $(LDFLAGS)
 
 ##############################################################################
 
 testRng: testRng.cpp
-	$(CPP) $(CFLAGS) -o $@ $< -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $< -lgsl $(LDFLAGS)
 
 testBranchState: testBranchState.cpp BranchState.o
-	$(CPP) $(CFLAGS) -o $@ $< BranchState.o -lgsl $(LDFLAGS)
+	$(CPP) $(CPPFLAGS) -o $@ $< BranchState.o -lgsl $(LDFLAGS)
 
 ##############################################################################
 

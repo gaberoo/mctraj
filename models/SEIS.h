@@ -14,7 +14,8 @@ namespace MCTraj {
     public:
       EpiPars() {}
       EpiPars(const EpiPars& e) 
-        : N(e.N), beta(e.beta), mu(e.mu), psi(e.psi), rho(e.rho), gamma(e.gamma)
+        : Pars(e), N(e.N), beta(e.beta), mu(e.mu), 
+          psi(e.psi), rho(e.rho), gamma(e.gamma)
       {}
       virtual ~EpiPars() {}
 
@@ -43,52 +44,52 @@ namespace MCTraj {
     /************************************************************************/
 
     double infRateFun(const EpiState& es, const void* pars);
-    double treeProbInf(const EpiState& es, const void* pars);
+    double infTreeProb(const EpiState& es, const void* pars);
     const int infChange[] = { -1, 1, 0, 0, 0 };
-    int validateInf(const EpiState& es, const void* pars);
+    int infValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double transRateFun(const EpiState& es, const void* pars);
-    double treeProbTrans(const EpiState& es, const void* pars);
+    double transTreeProb(const EpiState& es, const void* pars);
     const int transChange[] = { 0, -1, 1, 0, 0 };
     int validateTrans(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double recovRateFun(const EpiState& es, const void* pars);
-    double treeProbRecov(const EpiState& es, const void* pars);
+    double recovTreeProb(const EpiState& es, const void* pars);
     const int recoverChange[] = { 1, 0, -1, 0, 0 };
-    int validateRecov(const EpiState& es, const void* pars);
+    int recovValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
-    double treeObsInf(const EpiState& es, const void* pars);
-    const int obsInfChange[] = { -1, 1, 0, 1, 0 };
+    double infTreeObs(const EpiState& es, const void* pars);
+    const int infObsChange[] = { -1, 1, 0, 1, 0 };
 
     /************************************************************************/
 
-    double treeObsTrans(const EpiState& es, const void* pars);
+    double transTreeObs(const EpiState& es, const void* pars);
     const int obsTransChange[] = { 0, -1, 1, -1, 1 };
 
     /************************************************************************/
 
-    double treeObsRecov(const EpiState& es, const void* pars);
+    double recovTreeObs(const EpiState& es, const void* pars);
     const int obsRecovChange[] = { 1, 0, -1, 0, -1 };
 
     /************************************************************************/
 
-    int branchInf(const EpiState& es, rng::RngStream* rng, 
+    int infBranch(const EpiState& es, rng::RngStream* rng, 
                    StateTransition& st, const void* pars);
-    int branchTrans(const EpiState& es, rng::RngStream* rng, 
+    int transBranch(const EpiState& es, rng::RngStream* rng, 
                      StateTransition& st, const void* pars);
 
-    int obsBranchInf(const EpiState& es, rng::RngStream* rng, 
-                      StateTransition& st, const void* pars);
-    int obsBranchRecov(const EpiState& es, rng::RngStream* rng, 
-                        StateTransition& st, const void* pars);
-    int obsBranchTrans(const EpiState& es, rng::RngStream* rng, 
-                        StateTransition& st, const void* pars);
+    int infBranchObs(const EpiState& es, rng::RngStream* rng, 
+                     StateTransition& st, const void* pars);
+    int recovBranchObs(const EpiState& es, rng::RngStream* rng, 
+                       StateTransition& st, const void* pars);
+    int transBranchObs(const EpiState& es, rng::RngStream* rng, 
+                       StateTransition& st, const void* pars);
   }
 
   /**************************************************************************/
@@ -107,13 +108,13 @@ namespace MCTraj {
                                                 SEISModel::nstates,
                                                 SEISModel::recoverChange,
                                                 SEISModel::recovRateFun,
-                                                SEISModel::treeProbRecov));
+                                                SEISModel::recovTreeProb));
         obsTypes.push_back(new TransitionType("obsRecov",
                                               SEISModel::nstates,
                                               SEISModel::obsRecovChange,
-                                              SEISModel::treeObsRecov,
+                                              SEISModel::recovTreeObs,
                                               oneProb,
-                                              SEISModel::obsBranchRecov));
+                                              SEISModel::recovBranchObs));
         simEvent.push_back(1);
 
         /* infection events */
@@ -122,15 +123,15 @@ namespace MCTraj {
                                                 SEISModel::nstates,
                                                 SEISModel::infChange,
                                                 SEISModel::infRateFun,
-                                                SEISModel::treeProbInf,
-                                                SEISModel::branchInf));
+                                                SEISModel::infTreeProb,
+                                                SEISModel::infBranch));
 
         obsTypes.push_back(new TransitionType("obsInf",
                                               SEISModel::nstates,
-                                              SEISModel::obsInfChange,
-                                              SEISModel::treeObsInf,
+                                              SEISModel::infObsChange,
+                                              SEISModel::infTreeObs,
                                               oneProb,
-                                              SEISModel::obsBranchInf));
+                                              SEISModel::infBranchObs));
         simEvent.push_back(1);
 
         /* transition events */
@@ -139,15 +140,15 @@ namespace MCTraj {
                                                 SEISModel::nstates,
                                                 SEISModel::transChange,
                                                 SEISModel::transRateFun,
-                                                SEISModel::treeProbTrans,
-                                                SEISModel::branchTrans));
+                                                SEISModel::transTreeProb,
+                                                SEISModel::transBranch));
 
         obsTypes.push_back(new TransitionType("obsTrans",
                                               SEISModel::nstates,
                                               SEISModel::obsTransChange,
-                                              SEISModel::treeObsTrans,
+                                              SEISModel::transTreeObs,
                                               oneProb,
-                                              SEISModel::obsBranchTrans));
+                                              SEISModel::transBranchObs));
         simEvent.push_back(1);
 
       }

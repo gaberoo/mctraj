@@ -8,17 +8,22 @@
 #include "EpiState.h"
 #include "TransitionType.h"
 #include "BranchState.h"
+#include "Tree.h"
 
 namespace MCTraj {
   inline double oneProb(const EpiState& es, const void* pars) { return 1.0; }
 
   class Pars {
     public:
-      Pars() {}
+      Pars() : tree(NULL) {}
+      Pars(const Pars& p) : tree(p.tree) {}
       virtual ~Pars() {}
 
       virtual void json(rapidjson::Writer<rapidjson::StringBuffer>&) const {}
       string to_json() const;
+
+    public:
+      const Tree* tree;
   };
 
   class Model {

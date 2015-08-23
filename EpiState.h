@@ -16,11 +16,14 @@ namespace MCTraj {
   class EpiState {
     public:
       EpiState() {}
-      EpiState(size_t nstates) : state(nstates) {}
-      EpiState(size_t nstates, int x) : state(nstates,x) {}
-      EpiState(const vector<int>& es) : state(es) {}
+      EpiState(size_t nstates) : state(nstates), time(0.0) {}
+      EpiState(size_t nstates, int x) : state(nstates,x), time(0.0) {}
+      EpiState(const vector<int>& es) : state(es), time(0.0) {}
       EpiState(const EpiState& es) 
-        : state(es.state), branches(es.branches), curBranch(es.curBranch)
+        : state(es.state), 
+          time(es.time),
+          branches(es.branches), 
+          curBranch(es.curBranch)
       {}
       virtual ~EpiState() {}
 
@@ -43,6 +46,7 @@ namespace MCTraj {
       const vector<int>& s() const { return state; }
 
       EpiState& operator=(const EpiState& es) { 
+        time = es.time;
         state = es.state; 
         branches = es.branches;
         curBranch = es.curBranch;
@@ -79,6 +83,7 @@ namespace MCTraj {
       vector<int> state;
 
     public:
+      double time;
       BranchStates branches;
       vector<int> curBranch;
   };

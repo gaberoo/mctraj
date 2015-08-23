@@ -14,25 +14,26 @@ namespace MCTraj {
       StateTransition() {}
       StateTransition(size_t nstates) 
         : time(0.0), prob(0.0), type(NULL), trans(nstates), 
-          eventType(-1), absTime(0.0)
+          eventType(-1), absTime(0.0), relprob(1.0)
       {}
 
       StateTransition(const EpiState& es) 
         : time(0.0), prob(0.0), type(NULL), trans(es.numStates()), 
-          eventType(-1), absTime(0.0)
+          eventType(-1), absTime(0.0), relprob(1.0)
       {}
 
       StateTransition(const StateTransition& st) 
         : time(st.time), prob(st.prob), type(st.type), 
           trans(st.trans),
           eventType(st.eventType), absTime(st.absTime), 
-          branchTrans(st.branchTrans)
+          branchTrans(st.branchTrans), 
+          relprob(st.relprob)
       {}
 
       StateTransition(double t, const TransitionType& tt, const EpiState& es, 
                       const void* pars, int et = -1, double at = -INFINITY) 
         : time(t), prob(0.0), type(&tt), trans(tt.change), 
-          eventType(et), absTime(at)
+          eventType(et), absTime(at), relprob(1.0)
       { /* prob = tt.applyRate(es,pars); */ }
 
       virtual ~StateTransition() {}
@@ -62,6 +63,7 @@ namespace MCTraj {
         eventType = st.eventType;
         absTime = st.absTime;
         branchTrans = st.branchTrans;
+        relprob = st.relprob;
         return *this;
       }
 
@@ -85,6 +87,7 @@ namespace MCTraj {
 
     public:
       vector<BranchStateChange> branchTrans;
+      double relprob;
   };
 }
 

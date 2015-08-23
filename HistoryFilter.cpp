@@ -14,7 +14,7 @@ namespace MCTraj {
 
     // add tree events
     while (skip-- > 0) {
-      addTreeEvent(model->p(),rng,1);
+      addTreeEvent(model->p(),rng);
 
       inc();
 
@@ -159,7 +159,9 @@ namespace MCTraj {
 
   void HistoryFilter::setLast() {
     size_t j;
+#if defined(_OPENMP)
 #pragma omp parallel for default(shared) private(j)
+#endif
     for (j = 0; j < size(); ++j) {
       particle(j).setLast();
     }

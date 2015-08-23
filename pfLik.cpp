@@ -42,14 +42,14 @@ namespace MCTraj {
 
     while (ret >= 0) {
       if (pars.vflag > 1) cerr << "Advancing tree..." << endl;
-      ret = pf->stepTree(m->getPars(),rng);
+      ret = pf->stepTree(m->getPars(),rng,pars.adj_zero);
 
       if (ret >= 0) {
 //        if (vflag > 1) cerr << "Calculating weights..." << endl;
 //        pf.calcWeights(m->getPars());
 
         if (pars.vflag > 1) cerr << "Adding tree event..." << endl;
-        pf->addTreeEvent(m->getPars(),rng,1);
+        pf->addTreeEvent(m->getPars(),rng);
         if (pars.vflag > 1) cerr << "done." << endl;
 
         // if (pars.print_particles) pf.printFromLast();
@@ -70,19 +70,21 @@ namespace MCTraj {
             cerr << pf->cur_time() << "/" << pf->maxTime() 
                  << ": Particle collapse => " << pf->getCurType()->getName() << " !";
             cerr << "\033[0m" << endl;
-//            vector<double> mu;
-//            vector<double> s2;
-//            pf.weights(mu,s2);
-//            cerr << "MU  [" << mu.size() << "]: ";
-//            for (size_t i = 0; i < mu.size(); ++i) cerr << setw(10) << mu[i] << " ";
-//            cerr << endl;
-//            cerr << "VAR [" << s2.size() << "]: ";
-//            for (size_t i = 0; i < s2.size(); ++i) cerr << setw(10) << s2[i] << " ";
-//            cerr << endl;
-//            cerr << "\033[0m" << flush;
-//            for (size_t i = 0; i < pars.num_particles; ++i) {
-//              cerr << pf[i].msg() << endl;
-//            }
+#ifdef DEBUG
+            vector<double> mu;
+            vector<double> s2;
+            pf.weights(mu,s2);
+            cerr << "MU  [" << mu.size() << "]: ";
+            for (size_t i = 0; i < mu.size(); ++i) cerr << setw(10) << mu[i] << " ";
+            cerr << endl;
+            cerr << "VAR [" << s2.size() << "]: ";
+            for (size_t i = 0; i < s2.size(); ++i) cerr << setw(10) << s2[i] << " ";
+            cerr << endl;
+            cerr << "\033[0m" << flush;
+            for (size_t i = 0; i < pars.num_particles; ++i) {
+              cerr << pf[i].msg() << endl;
+            }
+#endif
             // if (pars.vflag > 2) pf.printFromLast(m->getPars(),1);
           }
           return -INFINITY;

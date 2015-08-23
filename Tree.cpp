@@ -4,12 +4,15 @@
 
 void Tree::reverse() {
   double mt = maxTime();
-  for (size_t i(0); i < times.size(); ++i) {
+  for (size_t i = 0; i < times.size(); ++i) {
     times[i] = mt-times[i];
   }
   std::reverse(times.begin(),times.end());
   std::reverse(ttypes.begin(),ttypes.end());
   std::reverse(ids.begin(),ids.end());
+  for (size_t i = 0; i < branches.size(); ++i) {
+    branches[i].time = mt - branches[i].time;
+  }
   is_rev = ! is_rev;
 }
 
@@ -45,6 +48,7 @@ void Tree::readFromFile(string fn) {
   while (! getline(in,input).eof()) {
     if (input.length() == 0) continue;
     if (input[0] == '#') continue;
+
     istringstream istr(input);
     if (istr >> x1 >> x2) {
       times.push_back(x1);
@@ -62,15 +66,22 @@ void Tree::readFromFile(string fn) {
   // apply sort
   // gsl_permute(p.data(),times.data(),1,times.size());
   // gsl_permute_int(p.data(),ttypes.data(),1,ttypes.size());
-  extant = 0;
-  maxExtant = 0;
-  numBranches = -1;
+  extant = 1;
+  maxExtant = 1;
+  numBranches = 0;
   int n(times.size());
+  int nb = 0;
   for (int i(n-1); i >= 0; --i) {
     switch (ttypes[i]) {
       case 1:
-        ++extant;
-        numBranches += 2;
+        if (ids[i].size() > 0) {
+          nb = (ids[i][1] >= 0) + (ids[i][2] >= 0);
+          extant += nb - 1;
+          numBranches += nb;
+        } else {
+          ++extant;
+          numBranches += 2;
+        }
         break;
       case 0:
       case 2:
@@ -83,7 +94,35 @@ void Tree::readFromFile(string fn) {
   }
   if (extant < 0) {
     fprintf(stderr,"Invalid tree: More samples than infections.\n");
+    cout << "extant = " << extant << endl;
     abort();
   } 
+
+  makeBranches();
+}
+
+// ========================================================================
+
+void Tree::makeBranches() {
+  branches.resize(max_id()+1);
+  int id;
+  for (size_t i = 0; i < ids.size(); ++i) {
+    if (ids[i].size() > 0) {
+      id = ids[i][0];
+      if (id >= 0) {
+        branches[id].id = id;
+        branches[id].type = ttypes[i];
+        branches[id].time = times[i];
+        branches[id].child1 = ids[i][1];
+        branches[id].child2 = ids[i][2];
+      } else {
+        cerr << "Invalid ID at position " << i << " : " << id << endl;
+      }
+    } else {
+#ifdef DEBUG
+      cerr << "No ID information!" << endl;
+#endif
+    }
+  }
 }
 

@@ -11,6 +11,25 @@ using namespace std;
 
 #include <gsl/gsl_sort.h>
 
+class TreeBranch {
+  public:
+    TreeBranch() : id(-1), type(-1), time(0.0), child1(-1), child2(-1) {}
+    TreeBranch(int id, int type, int time, int c1 = -1, int c2 = -1)
+      : id(id), type(type), time(time), child1(c1), child2(c2)
+    {}
+    TreeBranch(const TreeBranch& b)
+      : id(b.id), type(b.type), time(b.time), 
+        child1(b.child1), child2(b.child2)
+    {}
+    virtual ~TreeBranch() {}
+
+    int id;
+    int type;
+    double time;
+    int child1;
+    int child2;
+};
+
 class Tree {
 public:
   /* CONSTRUCTORS-DESTRUCTORS */
@@ -97,6 +116,7 @@ public:
 
   inline double maxTime() const { return times.back(); }
   void reverse();
+  void makeBranches();
 
   // ========================================================================
 
@@ -115,6 +135,7 @@ public:
   // TreeNodeList nodes;    /* TreeNodes for extra information */
   int numBranches;
   vector< vector<int> > ids;
+  vector<TreeBranch> branches;
 };
 
 #endif
