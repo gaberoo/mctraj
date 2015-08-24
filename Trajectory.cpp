@@ -8,7 +8,6 @@ namespace MCTraj {
     curState = T.curState;
     model = T.model;
     transRates = T.transRates;
-    // transRates.resize(model->n());
     prob = T.prob;
     return *this;
   }
@@ -64,6 +63,9 @@ namespace MCTraj {
 
     const TransitionType* nextTrans;
 
+    // set time to EpiState
+    curState.time = time;
+
     // calculate all rates
     double totalRate = model->calculateTransRates(curState,transRates);
 
@@ -81,6 +83,8 @@ namespace MCTraj {
       if (time+nextTime < maxTime) {
         // sample next event type and calculate rate of the event
         nextEvent = model->chooseTransition(rng,transRates);
+
+        // get rate of chosen event
         rate = transRates[nextEvent] - ((nextEvent>0) ? transRates[nextEvent-1] : 0.0);
 
         // get the appropriate transition
@@ -98,9 +102,9 @@ namespace MCTraj {
           // if yes,
           // add branch transformations
           if (! noTree) {
-            curState.time = time + nextTime;
+            curState.nextTime = nextTime;
             nextTrans->applyBranch(curState,rng,st,pars);
-            dw *= st.relprob;
+            dw *= exp(st.relprob);
           }
 
           // add transition to list
@@ -111,6 +115,7 @@ namespace MCTraj {
 
           // multiply probability
           updateProb(dw);
+          // updateLogProb(st.relprob);
 
           // advance time
           time += nextTime;

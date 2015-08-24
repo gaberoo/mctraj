@@ -16,14 +16,13 @@ namespace MCTraj {
     return transRates[i-1];
   }
 
+  /**************************************************************************/
+
   size_t Model::chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const {
-    double r;
-    rng->uniform(1,&r,0,transRates.back());
-    int i = 0;
-    int n = transRates.size();
-    while (r > transRates[i] && i < n) ++i;
-    return i;
+    return rng->pick(transRates.data(),transRates.size());
   }
+
+  /**************************************************************************/
 
   double Model::delTransRate(vector<double>& transRates, size_t i) const {
     double rate = transRates[i] - ((i>0) ? transRates[i-1] : 0.0);
@@ -31,12 +30,16 @@ namespace MCTraj {
     return rate;
   }
 
+  /**************************************************************************/
+
   bool Model::valid() const {
     if (transTypes.size() < nstates) return false;
     if (obsTypes.size() < nstates) return false;
     if (simEvent.size() < nstates) return false;
     return true;
   }
+
+  /**************************************************************************/
 
   string Pars::to_json() const {
     rapidjson::StringBuffer buf;

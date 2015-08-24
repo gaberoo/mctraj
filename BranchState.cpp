@@ -13,13 +13,18 @@ namespace MCTraj {
     return *this;
   }
 
-  int BranchStates::random_color(rng::RngStream* rng, int col) const {
-    vector<int> col_alive;
+  void BranchStates::aliveCol(int col, vector<int>& alive_col) const {
+    alive_col.clear();
     for (size_t i = 0; i < alive.size(); ++i) {
-      if (colors[alive[i]] == col) col_alive.push_back(alive[i]);
+      if (colors[alive[i]] == col) alive_col.push_back(alive[i]);
       // cerr << alive[i] << "(" << colors[alive[i]] << "),";
     }
     // cerr << endl;
+  }
+
+  int BranchStates::random_color(rng::RngStream* rng, int col) const {
+    vector<int> col_alive;
+    aliveCol(col,col_alive);
     if (col_alive.size() > 0) {
       int r;
       rng->uniform_int(1,&r,0,col_alive.size());

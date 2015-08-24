@@ -132,6 +132,7 @@ int main(int argc, char** argv) {
       seis_pars.psi = pars.psi;
       seis_pars.rho = pars.rho;
       seis_pars.gamma = gamma.getValue();
+      seis_pars.alpha = 1.0;
       seis_pars.tree = &tree;
       mpt = new SEIS(&seis_pars);
       es = new EpiState(SEISModel::nstates);

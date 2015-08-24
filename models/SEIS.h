@@ -12,10 +12,11 @@ namespace MCTraj {
   namespace SEISModel {
     class EpiPars : public Pars {
     public:
-      EpiPars() {}
+      EpiPars() : alpha(1.0) {}
       EpiPars(const EpiPars& e) 
         : Pars(e), N(e.N), beta(e.beta), mu(e.mu), 
-          psi(e.psi), rho(e.rho), gamma(e.gamma)
+          psi(e.psi), rho(e.rho), gamma(e.gamma),
+          alpha(e.alpha)
       {}
       virtual ~EpiPars() {}
 
@@ -31,12 +32,14 @@ namespace MCTraj {
         } w.EndObject();
       }
 
-      double N;
-      double beta;
-      double mu;
-      double psi;
-      double rho;
-      double gamma;
+      double N;      // total population size
+      double beta;   // per-contact infection rate
+      double mu;     // recovery rate
+      double psi;    // sampling rate
+      double rho;    // present-day sampling rate
+      double gamma;  // transition rate
+
+      double alpha;  // damping coefficient of the potential
     };
 
     const size_t nstates = 5; /* S, E, I, kE, kI */
@@ -90,6 +93,11 @@ namespace MCTraj {
                        StateTransition& st, const void* pars);
     int transBranchObs(const EpiState& es, rng::RngStream* rng, 
                        StateTransition& st, const void* pars);
+
+    /************************************************************************/
+
+    double calcBranchPotentials
+      (const EpiState& es, const void* pars, int color, double* rates = NULL);
   }
 
   /**************************************************************************/

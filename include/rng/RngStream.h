@@ -27,22 +27,30 @@ namespace rng {
       int discrete(size_t n, const double* w) {
         double* w0 = new double[n+1];
         make_discrete(n,w,w0);
-        size_t j = discrete_x(n,w0);
+        int j = discrete_x(n,w0);
         delete[] w0;
         return j;
       }
 
-      int discrete_x(size_t n, const double* w) {
+      inline int pick(const double* x, size_t n) {
         double r;
-        uniform(1,&r,0,w[n]);
-        size_t j = r/w[n]*n;
-        while (j >= 0 && j < n) {
-          if (r < w[j]) --j;
-          else if (r >= w[j+1]) ++j;
-          else break;
+        uniform(1,&r,0,x[n-1]);
+        int i = (int) (r/x[n-1]*n);
+        if (i < 0) {
+          std::cerr << r << " " << x[n-1] << " " << n << std::endl;
+          return -1;
         }
-        return j;
+        if (r > x[i]) {
+          while (r > x[i] && i < n) ++i;
+        } else {
+          while (i > 0) {
+            if (r > x[i-1]) break;
+            --i;
+          }
+        }
+        return i;
       }
+      inline int discrete_x(size_t n, const double* w) { return pick(w,n); }
 
       virtual void multinomial(size_t k, size_t n, const double* p, unsigned* a) = 0;
       virtual void gaussian(size_t n, double* r, double mu, double sigma) = 0;

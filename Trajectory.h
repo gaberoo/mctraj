@@ -31,21 +31,21 @@ namespace MCTraj {
       Trajectory(const Model* m) 
         : model(m), store_trans(true)
       {
-        transRates.resize(m->ntrans());
+        transRates.resize(m->nTransRates());
       }
 
       Trajectory(size_t nstates, const Model* m) 
         : time(0.0), last_event_time(0.0), initialState(nstates), 
           curState(nstates), prob(0.0), store_trans(true)
       {
-        transRates.resize(m->ntrans());
+        transRates.resize(m->nTransRates());
       }
 
       Trajectory(const EpiState& es, const Model* m) 
         : time(0.0), last_event_time(0.0), initialState(es), 
           curState(es), model(m), prob(0.0), store_trans(true)
       {
-        transRates.resize(m->ntrans());
+        transRates.resize(m->nTransRates());
       }
 
       Trajectory(const Trajectory& T)
@@ -55,7 +55,7 @@ namespace MCTraj {
           model(T.model), transRates(T.transRates),
           prob(T.prob), store_trans(T.store_trans)
       {
-        if (model != NULL) transRates.resize(model->ntrans());
+        if (model != NULL) transRates.resize(model->nTransRates());
       }
 
       Trajectory(size_t n, istream* filehandle);
@@ -105,6 +105,7 @@ namespace MCTraj {
       inline double getProb() const { return exp(prob); }
       inline void setProb(double p) { prob = log(p); }
       inline void updateProb(double p) { prob += log(p); }
+      inline void updateLogProb(double logp) { prob += logp; }
       inline void resetProb() { prob = 0.0; }
 
       void printFromLast(size_t last = 0) const;

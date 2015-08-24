@@ -80,6 +80,8 @@ namespace MCTraj {
       virtual double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const = 0;
       virtual bool validState(const EpiState& es) const = 0;
 
+      inline size_t nTransRates() const { return ntrans(); }
+
     protected:
       size_t nstates;
       // const void* pars;

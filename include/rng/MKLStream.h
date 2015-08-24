@@ -48,7 +48,7 @@ namespace rng {
         std::cerr << "Int shuffling not implemented!" << std::endl;
       }
 
-      inline void shuffle(double* x, size_t n) = 0; {
+      inline void shuffle(double* x, size_t n) {
         std::cerr << "Double shuffling not implemented!" << std::endl;
       }
 

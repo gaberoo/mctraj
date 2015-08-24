@@ -21,7 +21,7 @@ namespace MCTraj {
       EpiState(const vector<int>& es) : state(es), time(0.0) {}
       EpiState(const EpiState& es) 
         : state(es.state), 
-          time(es.time),
+          time(es.time), nextTime(es.nextTime),
           branches(es.branches), 
           curBranch(es.curBranch)
       {}
@@ -47,6 +47,7 @@ namespace MCTraj {
 
       EpiState& operator=(const EpiState& es) { 
         time = es.time;
+        nextTime = es.nextTime;
         state = es.state; 
         branches = es.branches;
         curBranch = es.curBranch;
@@ -84,6 +85,7 @@ namespace MCTraj {
 
     public:
       double time;
+      double nextTime;
       BranchStates branches;
       vector<int> curBranch;
   };

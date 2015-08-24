@@ -1,7 +1,12 @@
-CC = gcc
-CPP = g++
+#CC = gcc
+#CPP = g++
 FC = gfortran
-LD = g++
+#LD = g++
+
+CC = clang
+CPP = clang++
+LD = clang++
+
 CFLAGS = -Imodels -I. -I.. -isystem ./include
 #CFLAGS += -DDEBUG
 #CFLAGS += -fopenmp 

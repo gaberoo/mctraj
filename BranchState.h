@@ -67,8 +67,7 @@ namespace MCTraj {
       }
 
       BranchStates(const BranchStates& bs) 
-        : colors(bs.colors), isAlive(bs.isAlive), 
-          alive(bs.alive)
+        : colors(bs.colors), isAlive(bs.isAlive), alive(bs.alive)
       {}
 
       virtual ~BranchStates() {}
@@ -119,6 +118,11 @@ namespace MCTraj {
         }
       }
 
+      int countCol(int col) const;
+      inline int getCol(size_t i) const { return colors[i]; }
+      inline void setCol(size_t i, int c) { colors[i] = c; }
+      void aliveCol(int c, vector<int>& alive_col) const;
+
       inline int random_alive(rng::RngStream* rng) const {
         int id; 
         rng->uniform_int(1,&id,0,alive.size());
@@ -126,9 +130,7 @@ namespace MCTraj {
       }
       int random_color(rng::RngStream* rng, int col) const;
       inline size_t num_alive() const { return alive.size(); }
-      int countCol(int col) const;
-      inline int getCol(size_t i) const { return colors[i]; }
-      inline void setCol(size_t i, int c) { colors[i] = c; }
+
 
       /* JSON ***************************************************************/
 

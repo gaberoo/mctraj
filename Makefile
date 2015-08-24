@@ -51,8 +51,8 @@ models/SEIS.o: models/SEIS.h models/SEIS.cpp
 
 ##############################################################################
 
-testChooseTransition: testChooseTransition.cpp MCTraj.o ParticleFilter.o
-	$(CPP) $(CPPFLAGS) -o testChooseTransition testChooseTransition.cpp mctraj.a -lgsl 
+testChooseTransition: testChooseTransition.cpp MCTraj.o ParticleFilter.o mctraj.a
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl 
 
 testParticleFilter: testParticleFilter.cpp ParticleFilter.o
 	$(CPP) $(CPPFLAGS) -o testParticleFilter testParticleFilter.cpp mctraj.a -lgsl 
