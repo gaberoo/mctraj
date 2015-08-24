@@ -344,6 +344,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
     rates[n] = E-kE + rates[n-1];
     i = rng->pick(rates,n+1);
 
+#ifdef DEBUG
     if (i < 0) {
       cerr << "Can't pick a transition!" << endl;
       int id = 0;
@@ -361,14 +362,16 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
            << " => " <<  -1
            << " >> " << n << " " << rates[n] << endl;
     }
-
-#ifdef DEBUG
-    cerr
-         << "[" << es.time << "/" << es.time + es.nextTime 
+    cerr << "[" << es.time << "/" << es.time + es.nextTime 
          << "] Transition on branch " << i << " of " << n
          << " (E=" << E << ",kE=" << kE << ")" 
          << endl;
 #endif
+
+    double logp = ep->gamma*es.nextTime*(rates[n-1]-kE);
+    double rate = rates[i] - ((i>0) ? rates[i-1] : 0.0);
+    st.relprob = logp - log(rate);
+    cerr << i << " " << n << " " << log(rate) << " " << logp << endl;
 
     if (i < n) 
       // check if the transition happened on a brach, i.e. no in the
@@ -381,10 +384,6 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
         st.branchTrans.push_back(BranchStateChange(id,0,1));
         st[3] = -1;
         st[4] = 1;
-        double rate = rates[i] - ((i>0) ? rates[i-1] : 0.0);
-        st.relprob = ep->gamma*es.nextTime*(rates[n-1]-kE) - log(rate);
-        cerr << st.relprob << endl;
-        // st.relprob = 0.0;
       } else {
         // cerr << "[T] Color doesn't exist (" << id << ") !" << endl;
         // cerr << es.branches.to_json() << endl;

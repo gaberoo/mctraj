@@ -12,7 +12,7 @@ namespace MCTraj {
   namespace SEISModel {
     class EpiPars : public Pars {
     public:
-      EpiPars() : alpha(1.0) {}
+      EpiPars() : alpha(10.0) {}
       EpiPars(const EpiPars& e) 
         : Pars(e), N(e.N), beta(e.beta), mu(e.mu), 
           psi(e.psi), rho(e.rho), gamma(e.gamma),
