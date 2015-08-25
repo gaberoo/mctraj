@@ -7,7 +7,7 @@ CC = clang
 CPP = clang++
 LD = clang++
 
-CFLAGS = -Imodels -I. -I.. -isystem ./include
+CFLAGS += -Imodels -I. -I.. -isystem ./include
 #CFLAGS += -DDEBUG
 #CFLAGS += -fopenmp 
 #CFLAGS += -std=c++0x -DMKLRNG 

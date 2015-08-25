@@ -29,8 +29,8 @@ namespace MCTraj {
 
       virtual ~TransitionType() {}
 
-      inline double applyRate(const EpiState& es, const void* pars) const 
-      { if (rate != NULL) { return rate(es,pars); } else { return 0.0; } }
+      inline double applyRate(const EpiState& es, const void* pars, double& tR) const 
+      { if (rate != NULL) { return rate(es,pars,tR); } else { return 0.0; } }
 
       inline double applyProb(const EpiState& es, const void* pars) const 
       { if (prob != NULL && pars != NULL) { return prob(es,pars); } else { return 0.0; } }

@@ -7,9 +7,8 @@
 
 namespace rng {
   inline void make_discrete(size_t n, const double* w, double* x) {
-    x[0] = 0.0;
-    for (size_t i = 1; i < n; ++i) x[i] = x[i-1] + w[i-1];
-    x[n] = x[n-1]+w[n-1];
+    x[0] = w[0];
+    for (size_t i = 1; i < n; ++i) x[i] = x[i-1] + w[i];
   }
 
   class RngStream {

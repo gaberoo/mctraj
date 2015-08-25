@@ -2,14 +2,16 @@
 
 namespace MCTraj {
   double Model::calculateTransRates(const EpiState& state, 
-                                    vector<double>& transRates) const
+                                    vector<double>& transRates,
+                                    vector<double>& trueRates) const
   {
     size_t i = 0;
-    transRates[i] = transTypes[i]->applyRate(state,pars);
+    transRates[i] = transTypes[i]->applyRate(state,pars,trueRates[i]);
     for (i = 1; i < transTypes.size(); ++i) {
       if (simEvent[i]) {
-        transRates[i] = transRates[i-1] + transTypes[i]->applyRate(state,pars);
+        transRates[i] = transRates[i-1] + transTypes[i]->applyRate(state,pars,trueRates[i]);
       } else {
+        trueRates[i] = 0.0;
         transRates[i] = transRates[i-1];
       }
     }
@@ -18,7 +20,7 @@ namespace MCTraj {
 
   /**************************************************************************/
 
-  size_t Model::chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const {
+  int Model::chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const {
     return rng->pick(transRates.data(),transRates.size());
   }
 

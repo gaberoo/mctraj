@@ -15,24 +15,24 @@ namespace MCTraj {
 
     /************************************************************************/
 
-    double infRateFun(const EpiState& es, const void* pars);
+    double infRateFun(const EpiState& es, const void* pars, double& trueRate);
     double treeProbInf(const EpiState& es, const void* pars);
     const int infChange[] = { -1, 1, 0, 0 };
 
     /************************************************************************/
 
-    double recovRateFun(const EpiState& es, const void* pars);
+    double recovRateFun(const EpiState& es, const void* pars, double& trueRate);
     double treeProbRecov(const EpiState& es, const void* pars);
     const int recoverChange[] = { 0, -1, 0, 1 };
 
     /************************************************************************/
 
-    double treeObsInf(const EpiState& es, const void* pars);
+    double treeObsInf(const EpiState& es, const void* pars, double& trueRate);
     const int obsInfChange[] = { -1, 1, 1, 0 };
 
     /************************************************************************/
 
-    double treeObsRecov(const EpiState& es, const void* pars);
+    double treeObsRecov(const EpiState& es, const void* pars, double& trueRate);
     const int obsRecovChange[] = { 0, -1, -1, 1 };
   }
 

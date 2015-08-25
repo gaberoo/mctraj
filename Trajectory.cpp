@@ -50,6 +50,7 @@ namespace MCTraj {
   {
     // get array of next event rates
     double nextTime = 0.0;
+    double transTime = 0.0;
     double r = 0.0;
 
     int nextEvent = 0;
@@ -67,7 +68,8 @@ namespace MCTraj {
     curState.time = time;
 
     // calculate all rates
-    double totalRate = model->calculateTransRates(curState,transRates);
+    double totalRate = model->calculateTransRates(curState,transRates,trueRates);
+    double totalTrue = std::accumulate(trueRates.begin(),trueRates.end(),0.0);
 
     while (ret <= 0) {
       if (totalRate <= 0.0) {
@@ -89,16 +91,20 @@ namespace MCTraj {
 
         // get the appropriate transition
         nextTrans = model->getTType(nextEvent);
-        StateTransition st(nextTime,*nextTrans,curState,pars,nextEvent,time+nextTime);
+        transTime = time+nextTime - lastEventTime();
+        StateTransition st(transTime,*nextTrans,curState,pars,nextEvent,time+nextTime);
 
         // get potential new state
         EpiState newState = curState;
         newState += st.trans;
 
-        // check if new state is allowed
+        // get probability of new state
+        newState.nextTime = nextTime;
         dw = nextTrans->applyProb(newState,model->getPars());
 
-        if (dw > 0.0 || ! adjZero) {
+        if (dw > 0.0 || ! adjZero) 
+          // check if the proposed state is feasible (prob > 0)
+        {
           // if yes,
           // add branch transformations
           if (! noTree) {
@@ -123,8 +129,8 @@ namespace MCTraj {
 
 #ifdef DEBUG
           if (ret < 0) {
-            cerr << "Legal event (" << nextEvent << ")."
-                 << " w = " << dw << ", penalty = " << rate 
+            cerr << "   Legal event (" << nextEvent << ")."
+                 << " w = " << dw << ", penalty = " << unrate 
                  << ", total rate = " << totalRate << "." << endl;
           }
 #endif
@@ -134,9 +140,11 @@ namespace MCTraj {
           // if no,
           // make this transition illegal in this particular step
 #ifdef DEBUG
-          cerr << "Illegal event (" << nextEvent << ")."
+          cerr << ascii::magenta
+               << "   Illegal event (" << nextEvent << ")."
                << " w = " << dw << ", penalty = " << rate 
-               << ", total rate = " << totalRate << "." << endl;
+               << ", total rate = " << totalRate << "." 
+               << ascii::end << endl;
 #endif
           // adjust cumulative rates
           for (size_t i = nextEvent; i < transRates.size(); ++i) {
@@ -174,7 +182,19 @@ namespace MCTraj {
     }
 
     // condition on the illegal events ('prob' is in logarithmic scale)
-    if (unrate > 0.0) prob -= unrate*nextTime;
+    // 'unrate' is the sum of all the rates that were conditioned on not
+    // happening
+    // if (unrate > 0.0) 
+    {
+      // updateLogProb(-unrate*nextTime);
+      double dR = totalTrue - totalRate;
+#ifdef DEBUG
+      if (dR != 0) {
+        cerr << "   difference in rates: " << totalTrue << " - " << totalRate << endl;
+      }
+#endif
+      updateLogProb(-dR*nextTime);
+    }
 
     return ret;
     // return num_events;
@@ -189,6 +209,8 @@ namespace MCTraj {
   {
     // store this info so that it can be accessed by the model
     curState.curBranch = ids;
+    curState.time = time;
+    curState.nextTime = nextTime-time;
 
     // get the transition of the next event
     const TransitionType* tt = model->getObsType(model->mapType(nextEvent));
@@ -197,10 +219,26 @@ namespace MCTraj {
     StateTransition st(nextTime-lastEventTime(),*tt,getState(),pars,nextEvent);
 
     // probability that the event happened
-    double dw = tt->applyRate(curState,pars);
+    double trueRate = 0.0;
+    double dw = tt->applyRate(curState,pars,trueRate);
 
     // apply the branch changes
-    tt->applyBranch(curState,rng,st,pars);
+    int ret = tt->applyBranch(curState,rng,st,pars);
+
+    if (ret < 0) {
+//      cerr << *this << endl;
+//      EpiState x = curState;
+//      x += st.getTrans();
+//      double dt = st.atTime();
+//      cerr << setw(12) << time+dt << " " << x << " ";
+//      cerr << " " << st;
+//      cerr << endl;
+//      return 0.0;
+      dw = 0.0;
+    } else {
+      // adjust the weight
+      dw *= exp(st.relprob);
+    }
 
     if (store_trans) transitions.push_back(st);
 

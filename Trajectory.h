@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <set>
+#include <numeric>
 using namespace std;
 
 #include <rng/Rng.h>
@@ -20,6 +21,8 @@ using namespace std;
 #include "Model.h"
 #include "TreeNode.h"
 
+#include "ascii.h"
+
 namespace MCTraj {
   class Trajectory {
     public:
@@ -32,6 +35,7 @@ namespace MCTraj {
         : model(m), store_trans(true)
       {
         transRates.resize(m->nTransRates());
+        trueRates.resize(m->nTransRates());
       }
 
       Trajectory(size_t nstates, const Model* m) 
@@ -39,6 +43,7 @@ namespace MCTraj {
           curState(nstates), prob(0.0), store_trans(true)
       {
         transRates.resize(m->nTransRates());
+        trueRates.resize(m->nTransRates());
       }
 
       Trajectory(const EpiState& es, const Model* m) 
@@ -46,16 +51,21 @@ namespace MCTraj {
           curState(es), model(m), prob(0.0), store_trans(true)
       {
         transRates.resize(m->nTransRates());
+        trueRates.resize(m->nTransRates());
       }
 
       Trajectory(const Trajectory& T)
         : time(T.time), last_event_time(T.last_event_time),
           initialState(T.initialState), curState(T.curState), 
           transitions(T.transitions),
-          model(T.model), transRates(T.transRates),
+          model(T.model), 
+          transRates(T.transRates), trueRates(T.trueRates),
           prob(T.prob), store_trans(T.store_trans)
       {
-        if (model != NULL) transRates.resize(model->nTransRates());
+//        if (model != NULL) {
+//          transRates.resize(model->nTransRates());
+//          trueRates.resize(model->nTransRates());
+//        }
       }
 
       Trajectory(size_t n, istream* filehandle);
@@ -125,7 +135,8 @@ namespace MCTraj {
       EpiState curState;                   // current state of the trajectory
       vector<StateTransition> transitions; // transitions
       const Model* model;                  // dynamic model
-      vector<double> transRates;           // rates of transition
+      vector<double> transRates;           // simulated rates of transition
+      vector<double> trueRates;            // true rates of transition
       double prob;                         // probability of trajectory
       bool store_trans;                    // store simulated trajectory
   };

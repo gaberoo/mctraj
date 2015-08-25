@@ -17,12 +17,18 @@ namespace MCTraj {
     double totalW = w_vec(w);
 
     if (vflag > 1) {
+      cerr << ascii::yellow;
+
       // output verbose info on weight distribution
       double s2 = gsl_stats_variance(w.data(),1,w.size());
-      cerr << "  FIL (" << filter_type << ") :: Sum = " << totalW 
-           << ", var(w) = " << sqrt(s2)/(totalW/n) << endl;
       size_t k = gsl_stats_max_index(w.data(),1,n);
-      cerr << "  Best particle = " << particle(k).getState() << endl;
+
+      cerr << "  FIL (" << filter_type << ") :: Sum = " << totalW 
+           << ", var(w) = " << sqrt(s2)/(totalW/n) 
+           << endl;
+
+      cerr << "  Best particle = " << particle(k).getState()
+           << endl;
     }
 
     // check that the total weight is positive
@@ -51,7 +57,7 @@ namespace MCTraj {
       size_t i;
 
       if (vflag > 1) cerr << "  Preparing weight vector..." << flush;
-      vector<double> x(n+1,0.0);
+      vector<double> x(n,0.0);
       rng::make_discrete(n,w.data(),x.data());
       if (vflag > 1) cerr << "done." << endl;
 
@@ -83,7 +89,7 @@ namespace MCTraj {
       }
     }
 
-    if (vflag > 1) cerr << "Done filtering." << endl;
+    if (vflag > 1) cerr << ascii::end << "Done filtering." << endl;
 
     return 1;
   }
@@ -138,12 +144,13 @@ namespace MCTraj {
 
     // output some verbose information
     if (vflag > 1) {
+      cerr << ascii::yellow;
       cerr << "Add tree event :: " << setw(12) << eventTime << " " 
            << "(" << eventType << "->" << modelType << ") :: ";
       for (size_t i(0); i < tree->ids[nextStep].size(); ++i) {
         cerr << tree->ids[nextStep][i] << " ";
       }
-      cerr << endl;
+      cerr << ascii::end << endl;
     }
 
     // make sure the model is specified, otherwise stop
@@ -167,14 +174,30 @@ namespace MCTraj {
       }
 
       // cerr << "++ " << flush;
+      if (particle(j).getWeight() > 0.0) {
 #if defined(_OPENMP)
-      id = omp_get_thread_num();
-      dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[id],pars);
+        id = omp_get_thread_num();
+        dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[id],pars);
 #else
-      dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[0],pars);
+        dw = particle(j).force(eventTime,eventType,tree->ids[nextStep],(*rng)[0],pars);
+#endif
+      }
+#ifdef DEBUG
+      else {
+        cerr << ascii::red 
+             << " [" << j << "] Weight already zero, not adding any event." 
+             << ascii::end << endl;
+      }
 #endif
 
-      if (dw == 0.0) cnt_zero++;
+      if (dw == 0.0) {
+#ifdef DEBUG
+        cerr << ascii::red 
+             << " [" << j << "] Weight is zero after adding event." 
+             << ascii::end << endl;
+#endif
+        cnt_zero++;
+      }
 
 //      if (dw == 0.0) {
 //        const TransitionType* tt = model->getObsType(model->mapType(eventType));
@@ -262,7 +285,7 @@ namespace MCTraj {
 #endif
         for (j = 0; j < size(); ++j) {
           // set probability of the trajectory to zero
-          particle(j).resetProb();
+          // particle(j).resetProb();
 
           // simulate a trajectory
 #if defined(_OPENMP)
@@ -270,6 +293,14 @@ namespace MCTraj {
           ret = particle(j).simulateTrajectory(step_time,pars,(*rng)[id],adjZero);
 #else
           ret = particle(j).simulateTrajectory(step_time,pars,(*rng)[0],adjZero);
+#endif
+
+#ifdef DEBUG
+          cerr << ascii::green
+               << "  Particle (" << particle(j).getId() << "/" 
+               << particle(j).getParent() << "): " 
+               << particle(j).getState() 
+               << ascii::end << endl;
 #endif
 
           // check if the simulation was successful
@@ -285,7 +316,7 @@ namespace MCTraj {
         }
 
         // if there are incremental steps, resample the particles in place
-        if (step_time < time) sampleInPlace((*rng)[0]);
+        // if (step_time < time) sampleInPlace((*rng)[0]);
       }
       return nextStep;
     } else {
@@ -334,7 +365,7 @@ namespace MCTraj {
     logw += log(totalW/n);
 
     vector<unsigned int> samples(n);
-    vector<double> w0(n+1,0.0);
+    vector<double> w0(n,0.0);
     rng::make_discrete(n,w.data(),w0.data());
     for (i = 0; i < n; ++i) samples[i] = rng->discrete_x(n,w0.data());
 

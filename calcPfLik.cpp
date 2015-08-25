@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
   TCLAP::ValueArg<int> seed("S","seed","Random number seed",false,-1,"int",cmd);
   TCLAP::ValueArg<int> type("T","model","Model type",false,1,"int",cmd);
   TCLAP::ValueArg<double> alpha("a","alpha","Importance damping",false,10.0,"double",cmd);
+  TCLAP::ValueArg<double> stepSize("t","stepSize","Time increments for simulation",false,INFINITY,"double",cmd);
 
   TCLAP::ValueArg<string> _branchfn("B","branchFn","Filename for branch colors",false,"","string",cmd);
   TCLAP::ValueArg<string> _trajfn("C","trajFn","Filename for trajectory",false,"","string",cmd);
@@ -87,6 +88,7 @@ int main(int argc, char** argv) {
   pf_pars.seed = (seed.getValue() > 0) ? seed.getValue() : time(NULL);
   pf_pars.adj_zero = adjZero.getValue();
   pf_pars.history = history.getValue();
+  pf_pars.step_size = stepSize.getValue();
 
   string branch_file = _branchfn.getValue();
   string traj_file = _trajfn.getValue();

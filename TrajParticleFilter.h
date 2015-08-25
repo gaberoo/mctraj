@@ -5,6 +5,7 @@
 #include "EpiState.h"
 #include "TrajParticle.h"
 #include "Model.h"
+#include "ascii.h"
 
 #if defined(_OPENMP)
 #include <omp.h>

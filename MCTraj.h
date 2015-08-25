@@ -27,7 +27,7 @@ namespace MCTraj {
   class Trajectory;
   class Model;
 
-  typedef double (*RateFun)(const EpiState&, const void* pars);
+  typedef double (*RateFun)(const EpiState&, const void* pars, double& trueRate);
   typedef double (*ProbFun)(const EpiState&, const void* pars);
   typedef int (*BranchFun)(const EpiState& es, rng::RngStream* rng, 
                            StateTransition& st, const void* pars);
@@ -44,6 +44,7 @@ namespace MCTraj {
     int history;
     long unsigned seed;
     double filter_time;
+    double step_size;
     bool adj_zero;
   } PFPars;
 

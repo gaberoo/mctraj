@@ -8,6 +8,8 @@
 #include "../EpiState.h"
 #include "../StateTransition.h"
 
+#include "../ascii.h"
+
 namespace MCTraj {
   namespace SEISModel {
     class EpiPars : public Pars {
@@ -46,39 +48,39 @@ namespace MCTraj {
 
     /************************************************************************/
 
-    double infRateFun(const EpiState& es, const void* pars);
+    double infRateFun(const EpiState& es, const void* pars, double& trueRate);
     double infTreeProb(const EpiState& es, const void* pars);
     const int infChange[] = { -1, 1, 0, 0, 0 };
     int infValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
-    double transRateFun(const EpiState& es, const void* pars);
+    double transRateFun(const EpiState& es, const void* pars, double& trueRate);
     double transTreeProb(const EpiState& es, const void* pars);
     const int transChange[] = { 0, -1, 1, 0, 0 };
     int transValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
-    double recovRateFun(const EpiState& es, const void* pars);
+    double recovRateFun(const EpiState& es, const void* pars, double& trueRate);
     double recovTreeProb(const EpiState& es, const void* pars);
     const int recoverChange[] = { 1, 0, -1, 0, 0 };
     int recovValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
-    double infTreeObs(const EpiState& es, const void* pars);
+    double infTreeObs(const EpiState& es, const void* pars, double& trueRate);
     const int infObsChange[] = { -1, 1, 0, 1, 0 };
 
     /************************************************************************/
 
-    double transTreeObs(const EpiState& es, const void* pars);
+    double transTreeObs(const EpiState& es, const void* pars, double& trueRate);
     const int obsTransChange[] = { 0, -1, 1, -1, 1 };
 
     /************************************************************************/
 
-    double recovTreeObs(const EpiState& es, const void* pars);
-    const int obsRecovChange[] = { 1, 0, -1, 0, -1 };
+    double recovTreeObs(const EpiState& es, const void* pars, double& trueRate);
+    const int recovChangeObs[] = { 1, 0, -1, 0, -1 };
 
     /************************************************************************/
 
@@ -119,7 +121,7 @@ namespace MCTraj {
                                                 SEISModel::recovTreeProb));
         obsTypes.push_back(new TransitionType("obsRecov",
                                               SEISModel::nstates,
-                                              SEISModel::obsRecovChange,
+                                              SEISModel::recovChangeObs,
                                               SEISModel::recovTreeObs,
                                               oneProb,
                                               SEISModel::recovBranchObs));
@@ -133,7 +135,6 @@ namespace MCTraj {
                                                 SEISModel::infRateFun,
                                                 SEISModel::infTreeProb,
                                                 SEISModel::infBranch));
-
         obsTypes.push_back(new TransitionType("obsInf",
                                               SEISModel::nstates,
                                               SEISModel::infObsChange,

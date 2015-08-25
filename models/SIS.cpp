@@ -1,6 +1,6 @@
 #include "SIS.h"
 
-double MCTraj::SISModel::infRateFun(const EpiState& es, const void* pars) 
+double MCTraj::SISModel::infRateFun(const EpiState& es, const void* pars, double& trueRate) 
 {
   // cerr << "SIS:INF" << endl;
   EpiPars ep = *(EpiPars*) pars;
@@ -25,7 +25,7 @@ double MCTraj::SISModel::treeProbInf(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
-double MCTraj::SISModel::recovRateFun(const EpiState& es, const void* pars) 
+double MCTraj::SISModel::recovRateFun(const EpiState& es, const void* pars, double& trueRate) 
 {
   // cerr << "SIS:RECOV" << endl;
   EpiPars ep = *(EpiPars*) pars;
@@ -50,7 +50,7 @@ double MCTraj::SISModel::treeProbRecov(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
-double MCTraj::SISModel::treeObsInf(const EpiState& es, const void* pars) 
+double MCTraj::SISModel::treeObsInf(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
   double S = es[0];
@@ -62,7 +62,7 @@ double MCTraj::SISModel::treeObsInf(const EpiState& es, const void* pars)
 
 /************************************************************************/
 
-double MCTraj::SISModel::treeObsRecov(const EpiState& es, const void* pars) 
+double MCTraj::SISModel::treeObsRecov(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
   double I = es[1];

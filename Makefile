@@ -3,9 +3,6 @@ include Make.inc
 TESTS  = testChooseTransition testParticleFilter testTrajParticle
 TESTS += testReadTrajectory
 
-#SRCS  = $(wildcard *.c)
-#SRCS += $(wildcard *.cpp)
-
 MODELS_SRC = $(wildcard models/*.cpp)
 MODELS = $(MODELS_SRC:.cpp=.o)
 
@@ -15,8 +12,19 @@ OBJS += TrajParticleFilter.o HistoryFilter.o StaticFilter.o
 OBJS += pfLik.o Model.o EpiState.o BranchState.o Tree.o TreeNode.o
 OBJS += $(MODELS)
 
-clean:
-	rm -rf $(OBJS)
+.PHONY: all debug
+
+all: calcPfLik
+
+DEBUG_FLAGS := -g -DDEBUG
+
+clean: clean_build clean_debug
+
+clean_build:
+	rm -f $(OBJS:%.o=build/%.o)
+
+clean_debug:
+	rm -f $(OBJS:%.o=debug/%.o)
 
 distclean: clean
 	rm -f mctraj.a
@@ -26,8 +34,11 @@ tests: all
 
 lib: mctraj.a
 
-mctraj.a: $(OBJS)
-	ar rcs mctraj.a $(OBJS)
+build/mctraj.a: $(OBJS:%.o=build/%.o)
+	ar rcs $@ $(OBJS:%.o=build/%.o)
+
+debug/mctraj.a: $(OBJS:%.o=debug/%.o)
+	ar rcs $@ $(OBJS:%.o=debug/%.o)
 
 cdream/dream.a: cdream/*.cpp
 	cd cdream; make dream.a
@@ -40,14 +51,29 @@ cpso/libpso_mpi.a: cpso/*.cpp
 
 ##############################################################################
 
-models/SIS.o: models/SIS.h models/SIS.cpp
-	$(CPP) $(CPPFLAGS) -c -o models/SIS.o models/SIS.cpp
+.c.o: $<
+	$(CC) $(CFLAGS) -c $<
 
-models/SIR.o: models/SIR.h models/SIR.cpp
-	$(CPP) $(CPPFLAGS) -c -o models/SIR.o models/SIR.cpp
+.f.o: $<
+	$(FC) $(FFLAGS) -c $<
 
-models/SEIS.o: models/SEIS.h models/SEIS.cpp
-	$(CPP) $(CPPFLAGS) -c -o models/SEIS.o models/SEIS.cpp
+.cpp.o: $<
+	$(CPP) $(CPPFLAGS) -c $<
+
+models/%.o: models/%.cpp models/%.h 
+	$(CPP) $(CPPFLAGS) -c -o $@ $<
+
+build/%.o: %.cpp
+	$(CPP) $(CPPFLAGS) -o $@ -c $<
+
+debug/%.o: %.cpp
+	$(CPP) $(DEBUG_FLAGS) $(CPPFLAGS) -o $@ -c $<
+
+build/%: %.cpp build/mctraj.a
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+debug/%: %.cpp debug/mctraj.a
+	$(CPP) $(DEBUG_FLAGS) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 ##############################################################################
 
@@ -64,10 +90,7 @@ testTrajParticle: testTrajParticle.cpp mctraj.a Tree.o
 testReadTrajectory: testReadTrajectory.cpp
 	$(CPP) $(CPPFLAGS) -o testReadTrajectory testReadTrajectory.cpp mctraj.a -lgsl 
 
-calcPfLik: calcPfLik.cpp mctraj.a Tree.o
-	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
-
-simulateTrajectory: simulateTrajectory.cpp mctraj.a Tree.o
+simulateTrajectory: simulateTrajectory.cpp mctraj.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 metrop_pf: metrop_pf.cpp mctraj.a Tree.o
@@ -108,12 +131,4 @@ testBranchState: testBranchState.cpp BranchState.o
 
 ##############################################################################
 
-.c.o: $<
-	$(CC) $(CFLAGS) -c $<
-
-.f.o: $<
-	$(FC) $(FFLAGS) -c $<
-
-.cpp.o: $<
-	$(CPP) $(CPPFLAGS) -c $<
 

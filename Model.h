@@ -60,7 +60,9 @@ namespace MCTraj {
       }
       size_t mapType(size_t i) const { return typeMap[i]; }
 
-      double calculateTransRates(const EpiState& state, vector<double>& transRates) const;
+      double calculateTransRates(const EpiState& state, 
+                                 vector<double>& transRates,
+                                 vector<double>& trueRates) const;
       double delTransRate(vector<double>& transRates, size_t i) const;
 
       inline const Pars* getPars() const { return pars; }
@@ -70,7 +72,7 @@ namespace MCTraj {
       inline double getRho() const { return rho; }
       inline void setRho(double x) { rho = x; }
 
-      size_t chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const;
+      int chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const;
 
       inline int& sim_event(size_t i) { return simEvent.at(i); }
       inline int sim_event(size_t i) const { return simEvent.at(i); }
