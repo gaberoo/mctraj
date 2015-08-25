@@ -2,3 +2,12 @@
 *.o
 *.dSYM
 *.a
+calcPfLik
+pfDREAM
+pfMH
+pfPSO
+pfPSO_mpi
+pfSPSA
+simulateTrajectory
+testChooseTransition
+testRng
