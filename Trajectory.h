@@ -131,10 +131,12 @@ namespace MCTraj {
    protected:
       double time;                         // current process time
       double last_event_time;              // time of last event
+
       EpiState initialState;               // initial state of trajectory
       EpiState curState;                   // current state of the trajectory
       vector<StateTransition> transitions; // transitions
       const Model* model;                  // dynamic model
+
       vector<double> transRates;           // simulated rates of transition
       vector<double> trueRates;            // true rates of transition
       double prob;                         // probability of trajectory

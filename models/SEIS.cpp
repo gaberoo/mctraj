@@ -5,7 +5,6 @@ double MCTraj::SEISModel::infRateFun(const EpiState& es, const void* pars, doubl
 {
   EpiPars ep = *(EpiPars*) pars;
   trueRate = (es[2] > 0) ? ep.beta*es[0]*es[2]/ep.N : 0.0;
-  // trueRate = ep.beta;
   return trueRate;
 }
 
@@ -19,8 +18,8 @@ double MCTraj::SEISModel::infTreeProb(const EpiState& es, const void* pars)
   double kE = es[3];
   double kI = es[4];
 
-  // double p = 1.0 - kI/I * kE/E;
-  double p = 1.0;
+  double p = 1.0 - kI/I * kE/E;
+  // double p = 1.0;
 
 #ifdef DEBUG
   cerr << "    treeProbInf   :: ES = " << es << " | p = " << p << endl;
@@ -116,7 +115,6 @@ int MCTraj::SEISModel::infBranch(const EpiState& es, rng::RngStream* rng,
   double r; 
   rng->uniform(1,&r);
 
-  // printf(">>>  I = %.0f, kI = %.0f\n",I,kI);
   // the probability of picking a tree branch is kI/I
   if (r < kI/I) {
     double p = 1.0;
@@ -209,12 +207,13 @@ int MCTraj::SEISModel::infBranchObs(const EpiState& es, rng::RngStream* rng,
 
   double p = 0.5;
 
-  // if (ep->alpha >= 0.0) 
+  // Choose which branch keeps the infected. Priority is given when the next
+  // event on a branch requires and infected class
   {
     double dt1 = ep->tree->branches[b1].time - (es.time+es.nextTime);
     double p1 = 1.0;
     switch (ep->tree->branches[b1].type) {
-      case 0: p1 = 1-exp(-dt1); break;
+      case 0: // p1 = 1-exp(-dt1); break;
       case 1: p1 = 1+exp(-dt1); break;
       default: p1 = 1.0; break;
     }
@@ -222,7 +221,7 @@ int MCTraj::SEISModel::infBranchObs(const EpiState& es, rng::RngStream* rng,
     double dt2 = ep->tree->branches[b2].time - (es.time+es.nextTime);
     double p2 = 1.0;
     switch (ep->tree->branches[b2].type) {
-      case 0: p2 = 1-exp(-dt2); break;
+      case 0: // p2 = 1-exp(-dt2); break;
       case 1: p2 = 1+exp(-dt2); break;
       default: p2 = 1.0; break;
     }
@@ -299,7 +298,8 @@ double MCTraj::SEISModel::recovTreeProb(const EpiState& es, const void* pars)
   double I  = es[2]+1.0;
   double kI = es[4];
 
-  double dw = (I > kI) ? (1.-s) : 0.0;
+  double dw = (I > kI) ? (1.-s)*(1.-kI/I) : 0.0;
+  // double dw = (I > kI) ? (1.-s) : 0.0;
 
   if (es[2] < es[4] || es[1] < es[3]) dw = 0.0;
 
@@ -325,15 +325,16 @@ double MCTraj::SEISModel::recovTreeObs(const EpiState& es, const void* pars, dou
 {
   EpiPars ep = *(EpiPars*) pars;
 
-  int    id = es.curBranch[0];
+  int id = es.curBranch[0];
   trueRate = 0.0;
 
   if (es.curBranch.size() > 0) 
     // check for branching information
   {
     if (es.branches.getCol(id) == 1) {
-      // trueRate = ep.psi*es[2];
-      trueRate = ep.psi;
+      trueRate = ep.psi*es[2];
+      // trueRate = ep.psi*es[4];
+      // trueRate = ep.psi; // <-- is this really just 'psi' ?
     } else {
 #ifdef DEBUG
       cerr << "     treeObsRecov :: ES = " << es 
@@ -369,7 +370,9 @@ int MCTraj::SEISModel::recovBranchObs(const EpiState& es, rng::RngStream* rng,
   return 0;
 }
 
+/************************************************************************/
 /* TRANSITIONS **********************************************************/
+/************************************************************************/
 
 double MCTraj::SEISModel::transRateFun(const EpiState& es, const void* pars, double& trueRate) 
 // transition rate in the simulation
@@ -399,7 +402,8 @@ double MCTraj::SEISModel::transTreeProb(const EpiState& es, const void* pars)
   double E = es[1];
   double kE = es[3];
   // return (E >= kE) ? (E-kE)/E : 0.0;
-  return (E >= kE) ? 1.0 : 0.0;
+  // return (E >= kE) ? 1.0 : 0.0;
+  return 1.0;
 }
 
 //----------------------------------------------------------------------------
@@ -436,7 +440,8 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
   int n = 0;  // alive branches
   int i = 0;  // chosen rate
 
-  if (ep->alpha >= 0.0) {
+  if (ep->alpha >= 0.0) 
+  {
     // cerr << "Using transition potentials..." << endl;
 
     double* rates = NULL;

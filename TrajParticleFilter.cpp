@@ -219,7 +219,7 @@ namespace MCTraj {
       }
     }
     
-    if (vflag > 1) {
+    if (vflag > 0) {
       cerr << "Number of zero-weight particles = " << cnt_zero << endl;
     }
 

@@ -162,6 +162,9 @@ namespace MCTraj {
       vector<int> colors;
       vector<bool> isAlive;
       vector<int> alive;
+
+      // TODO: keep track of hidden child branches
+      // vector< vector<int> > children;
   };
 }
 
