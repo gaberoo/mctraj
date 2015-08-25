@@ -56,7 +56,7 @@ namespace MCTraj {
     double transRateFun(const EpiState& es, const void* pars);
     double transTreeProb(const EpiState& es, const void* pars);
     const int transChange[] = { 0, -1, 1, 0, 0 };
-    int validateTrans(const EpiState& es, const void* pars);
+    int transValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 

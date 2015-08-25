@@ -26,12 +26,16 @@ int main(int argc, char** argv) {
   TCLAP::ValueArg<double> psi("s","psi","Sequential sampling rate",true,0.1,"double",cmd);
   TCLAP::ValueArg<double> rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
   TCLAP::ValueArg<double> gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
+
   TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
   TCLAP::ValueArg<int> reps("r","nreps","Number of repetitions",false,1,"int",cmd);
   TCLAP::ValueArg<int> seed("S","seed","Random number seed",false,-1,"int",cmd);
   TCLAP::ValueArg<int> type("T","model","Model type",false,1,"int",cmd);
+  TCLAP::ValueArg<double> alpha("a","alpha","Importance damping",false,10.0,"double",cmd);
+
   TCLAP::ValueArg<string> _branchfn("B","branchFn","Filename for branch colors",false,"","string",cmd);
   TCLAP::ValueArg<string> _trajfn("C","trajFn","Filename for trajectory",false,"","string",cmd);
+
   TCLAP::ValueArg<int> skip("x","skip","Skip lines of times files",false,0,"string",cmd);
   TCLAP::ValueArg<double> filterTime("f","filter","Min time between filters",false,0.0,"double",cmd);
 
@@ -132,7 +136,7 @@ int main(int argc, char** argv) {
       seis_pars.psi = pars.psi;
       seis_pars.rho = pars.rho;
       seis_pars.gamma = gamma.getValue();
-      seis_pars.alpha = 1.0;
+      seis_pars.alpha = alpha.getValue();
       seis_pars.tree = &tree;
       mpt = new SEIS(&seis_pars);
       es = new EpiState(SEISModel::nstates);

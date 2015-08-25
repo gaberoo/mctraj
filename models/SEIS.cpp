@@ -280,15 +280,17 @@ double MCTraj::SEISModel::transRateFun(const EpiState& es, const void* pars)
 {
   EpiPars* ep = (EpiPars*) pars;
   double E = es[1];
-  double kE = es[3];
-  double branchRates = 0.0;
-  // cerr << "Starting CBP..." << flush;
-  // vector<double> rates(es.branches.alive.size()+1,0.0);
-  if (kE > 0) branchRates = calcBranchPotentials(es,pars,0);
-  // cerr << "done. bR = " << branchRates << endl;
 
-  return ep->gamma * ((E-kE) + branchRates);
-  // return ep->gamma * E;
+  if (ep->alpha >= 0.0) {
+    double kE = es[3];
+    double branchRates = 0.0;
+    // cerr << "Starting CBP..." << flush;
+    if (kE > 0) branchRates = calcBranchPotentials(es,pars,0);
+    // cerr << "done. bR = " << branchRates << endl;
+    return ep->gamma * ((E-kE) + branchRates);
+  } else {
+    return ep->gamma * E;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -304,7 +306,7 @@ double MCTraj::SEISModel::transTreeProb(const EpiState& es, const void* pars)
 
 //----------------------------------------------------------------------------
 
-int MCTraj::SEISModel::validateTrans(const EpiState& es, const void* pars) 
+int MCTraj::SEISModel::transValidate(const EpiState& es, const void* pars) 
 // some validation function I can't remember
 {
   return 1;
@@ -335,51 +337,97 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
   int n = 0;  // alive branches
   int i = 0;  // chosen rate
 
-  double* rates = NULL;
+  if (ep->alpha >= 0.0) {
+    // cerr << "Using transition potentials..." << endl;
 
-  if (kE > 0) {
-    n = es.branches.alive.size();
-    rates = new double[n+1];
-    calcBranchPotentials(es,pars,0,rates);
-    rates[n] = E-kE + rates[n-1];
-    i = rng->pick(rates,n+1);
+    double* rates = NULL;
+
+    if (kE > 0) {
+      n = es.branches.alive.size();
+      rates = new double[n+1];
+      calcBranchPotentials(es,pars,0,rates);
+      rates[n] = E-kE + rates[n-1];
+      i = rng->pick(rates,n+1);
 
 #ifdef DEBUG
-    if (i < 0) {
-      cerr << "Can't pick a transition!" << endl;
-      int id = 0;
-      for (size_t j = 0; j < n; ++j) {
-        id = es.branches.alive[j];
+      if (i < 0) {
+        cerr << "Can't pick a transition!" << endl;
+        int id = 0;
+        for (size_t j = 0; j < n; ++j) {
+          id = es.branches.alive[j];
+          cerr << "   " 
+               << id << " < "
+               << setw(7) << ep->tree->branches[id].time 
+               << " => " << es.branches.colors[id] 
+               << " >> " << j << " " << rates[j] << endl;
+        }
         cerr << "   " 
-             << id << " < "
-             << setw(7) << ep->tree->branches[id].time 
-             << " => " << es.branches.colors[id] 
-             << " >> " << j << " " << rates[j] << endl;
+             << 0 << " < "
+             << setw(7) << 0.0 
+             << " => " <<  -1
+             << " >> " << n << " " << rates[n] << endl;
       }
-      cerr << "   " 
-           << 0 << " < "
-           << setw(7) << 0.0 
-           << " => " <<  -1
-           << " >> " << n << " " << rates[n] << endl;
-    }
-    cerr << "[" << es.time << "/" << es.time + es.nextTime 
-         << "] Transition on branch " << i << " of " << n
-         << " (E=" << E << ",kE=" << kE << ")" 
-         << endl;
+      cerr << "[" << es.time << "/" << es.time + es.nextTime 
+           << "] Transition on branch " << i << " of " << n
+           << " (E=" << E << ",kE=" << kE << ")" 
+           << endl;
 #endif
 
-    double logp = ep->gamma*es.nextTime*(rates[n-1]-kE);
-    double rate = rates[i] - ((i>0) ? rates[i-1] : 0.0);
-    st.relprob = logp - log(rate);
-    cerr << i << " " << n << " " << log(rate) << " " << logp << endl;
+      double logp = ep->gamma*es.nextTime*(rates[n-1]-kE);
+      double rate = (i < n) ? (rates[i] - ((i>0) ? rates[i-1] : 0.0)) : 1.0;
+      st.relprob = logp - log(rate);
 
-    if (i < n) 
-      // check if the transition happened on a brach, i.e. no in the
-      // last compartment in the rates
-    {
-      // int id = es.branches.random_color(rng,0);
+#ifdef DEBUG
+      if (logp-log(rate) > 0.0) {
+        cerr << "simulated trajectory less likely!" << endl;
+        cerr << i << "/" << n << " " 
+             << setw(8) << es.time << " " 
+             << setw(8) << es.nextTime << " " 
+             << setw(8) << rate << " " 
+             << setw(12) << logp << " "
+             << endl;
+        for (size_t j = 0; j < n; ++j) {
+          int id = es.branches.alive[j];
+          cerr << "   " 
+               << id << " < "
+               << setw(7) << ep->tree->branches[id].time 
+               << " =>  " << es.branches.colors[id] 
+               << " >> " << j << " " << rates[j] << endl;
+        }
+        cerr << "   " 
+             << 0 << " < "
+             << setw(7) << 0.0 
+             << " => " <<  -1
+             << " >> " << n << " " << rates[n] << endl;
+      }
+#endif
+
+      if (i < n) 
+        // check if the transition happened on a brach, i.e. no in the
+        // last compartment in the rates
+      {
+        // int id = es.branches.random_color(rng,0);
+        // cerr << "Trans on branch. " << r << "/" << id << " " << es << endl;
+        int id = es.branches.alive.at(i);
+        if (id >= 0) {
+          st.branchTrans.push_back(BranchStateChange(id,0,1));
+          st[3] = -1;
+          st[4] = 1;
+        } else {
+          // cerr << "[T] Color doesn't exist (" << id << ") !" << endl;
+          // cerr << es.branches.to_json() << endl;
+          return -1;
+        }
+      }
+
+      delete[] rates;
+    }
+  } else {
+    double r = 0.0;
+    rng->uniform(1,&r);
+    if (r < kE/E) {
+      int id = es.branches.random_color(rng,0);
       // cerr << "Trans on branch. " << r << "/" << id << " " << es << endl;
-      int id = es.branches.alive.at(i);
       if (id >= 0) {
         st.branchTrans.push_back(BranchStateChange(id,0,1));
         st[3] = -1;
@@ -390,25 +438,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
         return -1;
       }
     }
-
-    delete[] rates;
   }
-
-//  double r = 0.0;
-//  rng->uniform(1,&r);
-//  if (r < kE/E) {
-//    int id = es.branches.random_color(rng,0);
-//    // cerr << "Trans on branch. " << r << "/" << id << " " << es << endl;
-//    if (id >= 0) {
-//      st.branchTrans.push_back(BranchStateChange(id,0,1));
-//      st[3] = -1;
-//      st[4] = 1;
-//    } else {
-//      // cerr << "[T] Color doesn't exist (" << id << ") !" << endl;
-//      // cerr << es.branches.to_json() << endl;
-//      return -1;
-//    }
-//  }
 
   return 0;
 }
@@ -477,11 +507,15 @@ double MCTraj::SEISModel::calcBranchPotentials
   double rate = 0.0;
   size_t i = 0;
   double btime = 0.0;
+  double dt = 0.0;
 
   int id = es.branches.alive[0];
 
+  // if the branch is in state E, then transition is possible with
+  // rate as function of the distance from the next internal node
   if (es.branches.getCol(id) == color) {
-    rate = exp(1.0/(ep->tree->branches.at(id).time - es.time));
+    dt = ep->tree->branches.at(id).time - es.time;
+    rate = exp(1.0/(dt + ep->alpha));
   } else {
 #ifdef DEBUG
     cerr << "wrong color: " << i << " " << id << " " 
@@ -496,11 +530,17 @@ double MCTraj::SEISModel::calcBranchPotentials
     id = es.branches.alive[i];
     if (es.branches.getCol(id) == color) {
       btime = ep->tree->branches.at(id).time;
-      rate = exp(1.0/(btime - es.time + ep->alpha));
+      dt = ep->tree->branches.at(id).time - es.time;
+      if (btime <= es.time) {
+        // this should never occur !
+        cerr << "next branch time on " << id << " is before current time!" << endl
+             << "   --> " << btime << " <> " << es.time << endl;
+      }
+      rate = exp(1.0/(dt + ep->alpha));
       if (rate == INFINITY) {
         cerr << "Rate is infinite!" << endl
              << "   " << i << " " << id << " " << btime << " " << es.time 
-             << " " << exp(1.0/(btime - es.time)) << endl;
+             << " " << exp(1.0/(dt + ep->alpha)) << endl;
       }
       if (rates != NULL) rates[i] = rate + rates[i-1];
       totRate += rate;
