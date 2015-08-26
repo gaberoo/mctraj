@@ -123,6 +123,8 @@ namespace MCTraj {
       inline void setCol(size_t i, int c) { colors[i] = c; }
       void aliveCol(int c, vector<int>& alive_col) const;
 
+      inline int isAlive(size_t i) const { return alive[i]; }
+      inline size_t nAlive() const { return alive.size(); }
       inline int random_alive(rng::RngStream* rng) const {
         int id; 
         rng->uniform_int(1,&id,0,alive.size());
