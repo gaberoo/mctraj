@@ -160,6 +160,7 @@ int main(int argc, char** argv) {
   es->init_branches(tree.max_id()+1);
   es->branches.wake(0);
   es->branches.setCol(0,0);
+  es->branches.add(0,0);
   // cout << es->to_json() << endl;
 
   Trajectory* traj = NULL;

@@ -85,9 +85,11 @@ namespace MCTraj {
     /************************************************************************/
 
     int infBranch(const EpiState& es, rng::RngStream* rng, 
-                   StateTransition& st, const void* pars);
+                  StateTransition& st, const void* pars);
+    int recovBranch(const EpiState& es, rng::RngStream* rng, 
+                    StateTransition& st, const void* pars);
     int transBranch(const EpiState& es, rng::RngStream* rng, 
-                     StateTransition& st, const void* pars);
+                    StateTransition& st, const void* pars);
 
     int infBranchObs(const EpiState& es, rng::RngStream* rng, 
                      StateTransition& st, const void* pars);
@@ -100,6 +102,10 @@ namespace MCTraj {
 
     double calcBranchPotentials
       (const EpiState& es, const void* pars, int color, double* rates = NULL);
+
+    const int branchTransChange[] = { -1, 1 };
+    const int branchTransNew[] = { 0, 1 };
+    const int branchTransOld[] = { 1, 0 };
   }
 
   /**************************************************************************/
@@ -118,7 +124,8 @@ namespace MCTraj {
                                                 SEISModel::nstates,
                                                 SEISModel::recoverChange,
                                                 SEISModel::recovRateFun,
-                                                SEISModel::recovTreeProb));
+                                                SEISModel::recovTreeProb,
+                                                SEISModel::recovBranch));
         obsTypes.push_back(new TransitionType("obsRecov",
                                               SEISModel::nstates,
                                               SEISModel::recovChangeObs,

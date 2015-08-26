@@ -64,7 +64,7 @@ namespace MCTraj {
         return out;
       }
 
-      void init_branches(size_t n) { branches.resize(n); }
+      void init_branches(size_t n) { branches.resize(n,numStates()); }
 
       /* JSON ***************************************************************/
 

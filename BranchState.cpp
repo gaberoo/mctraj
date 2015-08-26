@@ -1,15 +1,22 @@
 #include "BranchState.h"
 
 namespace MCTraj {
-  BranchStates& BranchStates::operator+=(const vector<BranchStateChange>& bsc) {
-    for (size_t i(0); i < bsc.size(); ++i) {
-      if (bsc[i].id >= 0 && bsc[i].id < (int) colors.size()) {
-        colors[bsc[i].id] = bsc[i].new_color;
-        if (bsc[i].new_color < 0) kill(bsc[i].id);
-        else wake(bsc[i].id);
-        // cerr << "   " << bsc[i].id << " -> " << colors[bsc[i].id] << endl;
+  BranchStates& BranchStates::operator+=(const BranchStateChange& bsc) {
+    if (bsc.id >= 0 && bsc.id < (int) colors.size()) {
+      colors[bsc.id] = bsc.new_color;
+      if (bsc.new_color < 0) kill(bsc.id);
+      else wake(bsc.id);
+      if (bsc.change.size() >= states[bsc.id].size()) {
+        for (size_t j = 0; j < states[bsc.id].size(); ++j) {
+          states[bsc.id][j] += bsc.change[bsc.id];
+        }
       }
     }
+    return *this;
+  }
+
+  BranchStates& BranchStates::operator+=(const vector<BranchStateChange>& bsc) {
+    for (size_t i(0); i < bsc.size(); ++i) *this += bsc[i];
     return *this;
   }
 
@@ -20,6 +27,21 @@ namespace MCTraj {
       // cerr << alive[i] << "(" << colors[alive[i]] << "),";
     }
     // cerr << endl;
+  }
+
+  void BranchStates::colWeight(vector<double>& w, int col, bool aliveOnly) const {
+    w.assign(states.size(),0.0);
+    if (aliveOnly) {
+      for (size_t i = 0; i < alive.size(); ++i) {
+        w[alive[i]] = states[alive[i]].at(col);
+      }
+      for (size_t i = 1; i < w.size(); ++i) w[i] += w[i-1];
+    } else {
+      w[0] = states[0].at(col);
+      for (size_t i = 1; i < states.size(); ++i) {
+        w[i] = w[i-1] + states[i].at(col);
+      }
+    }
   }
 
   int BranchStates::random_color(rng::RngStream* rng, int col) const {
@@ -43,10 +65,10 @@ namespace MCTraj {
     return cnt;
   }
 
-  string BranchStates::to_json() const {
+  string BranchStates::to_json(bool aliveOnly) const {
     rapidjson::StringBuffer buf;
     rapidjson::Writer<rapidjson::StringBuffer> json_w(buf);
-    json(json_w,true);
+    json(json_w,aliveOnly);
     return buf.GetString();
   }
 }

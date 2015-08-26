@@ -32,11 +32,13 @@ namespace rng {
       }
 
       inline int pick(const double* x, size_t n) {
+        if (x[n-1] <= 0.0) return -1;
         double r;
         uniform(1,&r,0,x[n-1]);
         int i = (int) (r/x[n-1]*n);
         if (i < 0) {
-          std::cerr << r << " " << x[n-1] << " " << n << std::endl;
+          std::cerr << "RngStream::pick : "
+                    << r << " " << x[n-1] << " " << n << std::endl;
           return -1;
         }
         if (r > x[i]) {
