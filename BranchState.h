@@ -56,24 +56,33 @@ namespace MCTraj {
 
   /**************************************************************************/
 
+  class BranchState : public vector<int> {
+    public:
+      BranchState() {}
+      BranchState(size_t n) : vector<int>(n,0) {}
+      virtual ~BranchState() {}
+  };
+
   class BranchStates {
     public:
       BranchStates() {}
 
       BranchStates(size_t n, int col = 0) 
-        : colors(n,col), isAlive(n,0)
+        : colors(n,col), states(n), isAlive(n,0) 
       {
         alive.reserve(n);
       }
 
       BranchStates(const BranchStates& bs) 
-        : colors(bs.colors), isAlive(bs.isAlive), alive(bs.alive)
+        : colors(bs.colors), states(bs.states), 
+          isAlive(bs.isAlive), alive(bs.alive)
       {}
 
       virtual ~BranchStates() {}
 
       inline void clear() {
         colors.clear();
+        states.clear();
         isAlive.clear();
         alive.clear();
       }
@@ -81,12 +90,14 @@ namespace MCTraj {
       inline void resize(size_t n) {
         clear();
         colors.resize(n,-1);
+        states.resize(n);
         isAlive.resize(n,false);
         alive.reserve(n);
       }
 
       inline BranchStates& operator=(const BranchStates& bs) { 
         colors = bs.colors;
+        states = bs.states;
         isAlive = bs.isAlive;
         alive = bs.alive;
         return *this;
@@ -123,7 +134,7 @@ namespace MCTraj {
       inline void setCol(size_t i, int c) { colors[i] = c; }
       void aliveCol(int c, vector<int>& alive_col) const;
 
-      inline int isAlive(size_t i) const { return alive[i]; }
+      inline int getAlive(size_t i) const { return alive[i]; }
       inline size_t nAlive() const { return alive.size(); }
       inline int random_alive(rng::RngStream* rng) const {
         int id; 
@@ -162,6 +173,8 @@ namespace MCTraj {
 
     public:
       vector<int> colors;
+      vector< BranchState > states;
+
       vector<bool> isAlive;
       vector<int> alive;
 

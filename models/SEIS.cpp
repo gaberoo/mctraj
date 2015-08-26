@@ -80,8 +80,8 @@ double MCTraj::SEISModel::infTreeObs(const EpiState& es, const void* pars, doubl
       cerr << ascii::end << endl;
       for (size_t j = 0; j < es.branches.nAlive(); ++j) {
         cerr << "        " << j << " " 
-             << es.branches.isAlive(j) << " "
-             << es.branches.getCol(es.branches.isAlive(j)) << endl;
+             << es.branches.getAlive(j) << " "
+             << es.branches.getCol(es.branches.getAlive(j)) << endl;
       }
       cerr << ascii::end << endl;
     }
