@@ -78,10 +78,10 @@ double MCTraj::SEISModel::infTreeObs(const EpiState& es, const void* pars, doubl
            << "    treeObsInf    :: ES = " << es 
            << " | " << es.curBranch[0] << " -- " << branch_color;
       cerr << ascii::end << endl;
-      for (size_t j = 0; j < es.branches.alive.size(); ++j) {
+      for (size_t j = 0; j < es.branches.nAlive(); ++j) {
         cerr << "        " << j << " " 
-             << es.branches.alive[j] << " "
-             << es.branches.colors[es.branches.alive[j]] << endl;
+             << es.branches.isAlive(j) << " "
+             << es.branches.getCol(es.branches.isAlive(j)) << endl;
       }
       cerr << ascii::end << endl;
     }
@@ -447,7 +447,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
     double* rates = NULL;
 
     if (kE > 0) {
-      n = es.branches.alive.size();
+      n = es.branches.nAlive();
       rates = new double[n+1];
       calcBranchPotentials(es,pars,0,rates);
       rates[n] = E-kE + rates[n-1];
@@ -462,7 +462,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
           cerr << "   " 
                << id << " < "
                << setw(7) << ep->tree->branches[id].time 
-               << " => " << es.branches.colors[id] 
+               << " => " << es.branches.getCol(id) 
                << " >> " << j << " " << rates[j] << endl;
         }
         cerr << "   " 
@@ -495,7 +495,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
           cerr << "   " 
                << id << " < "
                << setw(7) << ep->tree->branches[id].time 
-               << " =>  " << es.branches.colors[id] 
+               << " =>  " << es.branches.getCol(id) 
                << " >> " << j << " " << rates[j] << endl;
         }
         cerr << "   " 
@@ -622,7 +622,7 @@ double MCTraj::SEISModel::calcBranchPotentials
 {
   EpiPars* ep = (EpiPars*) pars;
 
-  size_t n = es.branches.alive.size();
+  size_t n = es.branches.nAlive();
   if (n == 0) return 0.0;
 
   double totRate = 0.0;
