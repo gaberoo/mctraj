@@ -71,6 +71,7 @@ namespace MCTraj {
         branchTrans.push_back(BranchStateChange(id,old_color,new_color));
         return branchTrans.back();
       }
+      inline BranchStateChange& lastBT() { return branchTrans.back(); }
 
       friend ostream& operator<<(ostream& out, const StateTransition& trans);
 

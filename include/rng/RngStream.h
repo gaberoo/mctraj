@@ -10,6 +10,10 @@ namespace rng {
     x[0] = w[0];
     for (size_t i = 1; i < n; ++i) x[i] = x[i-1] + w[i];
   }
+  
+  inline double dprob(size_t i, const double* w) {
+    return w[i] - ((i>0) ? w[i-1] : 0);
+  }
 
   class RngStream {
     public:

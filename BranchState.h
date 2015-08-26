@@ -79,6 +79,16 @@ namespace MCTraj {
       virtual ~BranchState() {}
 
       inline int cnt() const { return std::accumulate(begin(),end(),0); }
+
+      template<typename T> 
+      void json(rapidjson::Writer<T>& json_w) const {
+        json_w.StartArray();
+        const_iterator k(begin());
+        while (k != end()) json_w.Int(*k++);
+        json_w.EndArray();
+      }
+
+      string to_json() const;
   };
 
   class BranchStates {
@@ -125,10 +135,7 @@ namespace MCTraj {
       BranchStates& operator+=(const BranchStateChange& bsc);
       BranchStates& operator+=(const vector<BranchStateChange>& bsc_vec);
 
-      inline BranchStates& operator-=(const BranchStateChange& bsc) {
-        if (bsc.id < (int) colors.size()) colors[bsc.id] = bsc.old_color;
-        return *this;
-      }
+      // BranchStates& operator-=(const BranchStateChange& bsc);
 
       inline void wake(int i) {
         if (! isAlive[i]) {
@@ -163,7 +170,8 @@ namespace MCTraj {
       int random_color(rng::RngStream* rng, int col) const;
       inline size_t num_alive() const { return alive.size(); }
 
-      void colWeight(vector<double>& w, int col, bool alive = false) const;
+      int colProb(vector<double>& w, int col, bool alive = false) const;
+      int colWeight(vector<double>& w, int col, bool alive = false) const;
       inline void add(size_t i, size_t c) { states[i][c]++; }
       inline void rem(size_t i, size_t c) { states[i][c]--; }
       inline int state(size_t i, size_t c) const { return states[i][c]; }
@@ -179,11 +187,7 @@ namespace MCTraj {
             json_w.StartObject(); {
               json_w.String("id");    json_w.Int(alive[i]); 
               json_w.String("color"); json_w.Int(colors[alive[i]]);
-              json_w.String("states"); json_w.StartArray(); {
-                for (size_t k = 0; k < states[i].size(); ++k) {
-                  json_w.Int(states[alive[i]][k]);
-                }
-              } json_w.EndArray();
+              json_w.String("states"); states[alive[i]].json(json_w);
             } json_w.EndObject();
           }
         } else {
@@ -192,11 +196,7 @@ namespace MCTraj {
               json_w.String("id");    json_w.Int(i); 
               json_w.String("alive"); json_w.Int(isAlive[i]); 
               json_w.String("color"); json_w.Int(colors[i]);
-              json_w.String("states"); json_w.StartArray(); {
-                for (size_t k = 0; k < states[i].size(); ++k) {
-                  json_w.Int(states[i][k]);
-                }
-              } json_w.EndArray();
+              json_w.String("states"); states[i].json(json_w);
             } json_w.EndObject();
           }
         }

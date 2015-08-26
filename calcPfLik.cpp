@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
   double lik = 0.0;
 
   tree.reverse();
-  es->init_branches(tree.max_id()+1);
+  es->init_branches(tree.max_id()+1,2);
   es->branches.wake(0);
   es->branches.setCol(0,0);
   es->branches.add(0,0);

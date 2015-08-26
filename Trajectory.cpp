@@ -129,9 +129,11 @@ namespace MCTraj {
 
 #ifdef DEBUG
           if (ret < 0) {
-            cerr << "   Legal event (" << nextEvent << ")."
+            cout << ascii::cyan << "      legal event" 
+                 << " (" << nextEvent << ")."
                  << " w = " << dw << ", penalty = " << unrate 
-                 << ", total rate = " << totalRate << "." << endl;
+                 << ", total rate = " << totalRate << "."  
+                 << ascii::end << endl;
           }
 #endif
 
@@ -140,8 +142,8 @@ namespace MCTraj {
           // if no,
           // make this transition illegal in this particular step
 #ifdef DEBUG
-          cerr << ascii::magenta
-               << "   Illegal event (" << nextEvent << ")."
+          cout << ascii::cyan
+               << "      illegal event (" << nextEvent << ")."
                << " w = " << dw << ", penalty = " << rate 
                << ", total rate = " << totalRate << "." 
                << ascii::end << endl;
@@ -161,7 +163,7 @@ namespace MCTraj {
       } else {
 #ifdef DEBUG
         if (ret < 0) {
-          cerr << "No event. Total rate = " << totalRate << "." << endl;
+          cout << "No event. Total rate = " << totalRate << "." << endl;
         }
 #endif
 
@@ -173,10 +175,10 @@ namespace MCTraj {
     
     if (totalRate < 0.0) {
 #ifdef DEBUG
-      cerr << "\033[1;31m";
-      cerr << "Negative rate (" << ret << "): " << totalRate
+      cout << "\033[1;31m";
+      cout << "Negative rate (" << ret << "): " << totalRate
            << "  ES = " << curState;
-      cerr << "\033[0m" << endl;
+      cout << "\033[0m" << endl;
 #endif
       return -1;
     }
@@ -190,7 +192,7 @@ namespace MCTraj {
       double dR = totalTrue - totalRate;
 #ifdef DEBUG
       if (dR != 0) {
-        cerr << "   difference in rates: " << totalTrue << " - " << totalRate << endl;
+        cout << "      difference in rates: " << totalTrue << " - " << totalRate << endl;
       }
 #endif
       updateLogProb(-dR*nextTime);
@@ -244,6 +246,8 @@ namespace MCTraj {
 
     // apply the state change
     addTransition(st);
+
+    // cerr << "New branch State: " << curState.branches.to_json(false) << endl;
 
     // update the time
     time = nextTime;

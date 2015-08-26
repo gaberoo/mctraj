@@ -184,7 +184,7 @@ namespace MCTraj {
       }
 #ifdef DEBUG
       else {
-        cerr << ascii::red 
+        cout << ascii::red 
              << " [" << j << "] Weight already zero, not adding any event." 
              << ascii::end << endl;
       }
@@ -192,7 +192,7 @@ namespace MCTraj {
 
       if (dw == 0.0) {
 #ifdef DEBUG
-        cerr << ascii::red 
+        cout << ascii::red 
              << " [" << j << "] Weight is zero after adding event." 
              << ascii::end << endl;
 #endif
@@ -219,9 +219,14 @@ namespace MCTraj {
       }
     }
     
+#ifdef DEBUG
+    cout << "Number of zero-weight particles = " << cnt_zero << endl;
+    cout << endl;
+#else
     if (vflag > 0) {
       cerr << "Number of zero-weight particles = " << cnt_zero << endl;
     }
+#endif
 
     return tree->ttypes[nextStep];
   }
@@ -296,7 +301,7 @@ namespace MCTraj {
 #endif
 
 #ifdef DEBUG
-          cerr << ascii::green
+          cout << ascii::green
                << "  Particle (" << particle(j).getId() << "/" 
                << particle(j).getParent() << "): " 
                << particle(j).getState() 
@@ -314,6 +319,10 @@ namespace MCTraj {
             particle(j).setWeight(particle(j).getProb());
           }
         }
+
+#ifdef DEBUG
+        cout << endl;
+#endif
 
         // if there are incremental steps, resample the particles in place
         // if (step_time < time) sampleInPlace((*rng)[0]);
