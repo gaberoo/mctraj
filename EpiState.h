@@ -54,6 +54,14 @@ namespace MCTraj {
         return *this; 
       }
 
+      inline EpiState& copyNoBranches(const EpiState& es) {
+        time = es.time;
+        nextTime = es.nextTime;
+        state = es.state; 
+        curBranch = es.curBranch;
+        return *this;
+      }
+
       EpiState& operator+=(const vector<int>& change) { return apply(change); }
       EpiState& operator-=(const vector<int>& change) { return apply(change,-1); }
 

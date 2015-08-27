@@ -95,7 +95,8 @@ namespace MCTraj {
         StateTransition st(transTime,*nextTrans,curState,pars,nextEvent,time+nextTime);
 
         // get potential new state
-        EpiState newState = curState;
+        EpiState newState;
+        newState.copyNoBranches(curState);
         newState += st.trans;
 
         // get probability of new state

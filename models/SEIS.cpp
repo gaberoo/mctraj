@@ -66,15 +66,19 @@ double MCTraj::SEISModel::infTreeObs(const EpiState& es, const void* pars, doubl
   EpiPars* ep = (EpiPars*) pars;
 
   // get number of infecteds in the branch group
-  int nI = es.branchState(es.cur(0),1);
+  double nE = es.branchState(es.cur(0),0);
+  double nI = es.branchState(es.cur(0),1);
 
 #ifdef DEBUG
   cout << ascii::blue << "    infTreeObs" << ascii::end 
        << " :: " << nI << " total I in group." << endl;
 #endif
 
-  // get infectious force for the group
-  trueRate = ep->beta*es[0]*nI/ep->N;
+  // get infectious force for the group:
+  //    rate of infection on a single branch
+  //  x probability that the branch is in state I
+  trueRate = ep->beta*es[0]/ep->N * nI/(nI+nE);
+
   // trueRate = (nI > 0) ? ep->beta*es[0]/ep->N : 0.0;
 
   return trueRate;
@@ -164,10 +168,11 @@ double MCTraj::SEISModel::recovTreeObs(const EpiState& es, const void* pars, dou
   EpiPars* ep = (EpiPars*) pars;
 
   // get number of I in group
-  int nI = es.branchState(es.cur(0),1);
+  double nE = es.branchState(es.cur(0),0);
+  double nI = es.branchState(es.cur(0),1);
 
   // sampling rate for this group
-  trueRate = ep->psi * nI;
+  trueRate = ep->psi * nI/(nI+nE);
 
 #ifdef DEBUG
   cout << ascii::blue << "    recovTreeObs" << ascii::end 
