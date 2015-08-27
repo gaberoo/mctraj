@@ -72,37 +72,23 @@ namespace MCTraj {
 
   /**************************************************************************/
 
-  class BranchState : public vector<int> {
-    public:
-      BranchState() {}
-      BranchState(size_t n) : vector<int>(n,0) {}
-      virtual ~BranchState() {}
-
-      inline int cnt() const { return std::accumulate(begin(),end(),0); }
-
-      template<typename T> 
-      void json(rapidjson::Writer<T>& json_w) const {
-        json_w.StartArray();
-        const_iterator k(begin());
-        while (k != end()) json_w.Int(*k++);
-        json_w.EndArray();
-      }
-
-      string to_json() const;
-  };
-
   class BranchStates {
     public:
-      BranchStates() {}
+      BranchStates() 
+        : size(0), nstates(1)
+      {}
 
       BranchStates(size_t n, int col = 0, int nStates = 1) 
-        : colors(n,col), states(n,nStates), isAlive(n,0)
+        : size(n), nstates(nStates),
+          colors(n,col), v_states(n*(nStates+1),0), 
+          isAlive(n,false)
       {
         alive.reserve(n);
       }
 
       BranchStates(const BranchStates& bs) 
-        : colors(bs.colors), states(bs.states), 
+        : size(bs.size), nstates(bs.nstates),
+          colors(bs.colors), v_states(bs.v_states), 
           isAlive(bs.isAlive), alive(bs.alive)
       {}
 
@@ -110,7 +96,7 @@ namespace MCTraj {
 
       inline void clear() {
         colors.clear();
-        states.clear();
+        v_states.clear();
         isAlive.clear();
         alive.clear();
       }
@@ -120,13 +106,16 @@ namespace MCTraj {
         colors.resize(n,-1);
         isAlive.resize(n,false);
         alive.reserve(n);
-        states.resize(n);
-        for (size_t i = 0; i < n; ++i) states[i].resize(nStates);
+        size = n;
+        nstates = nStates;
+        v_states.assign(n*(nStates+1),0);
       }
 
       inline BranchStates& operator=(const BranchStates& bs) { 
+        size = bs.size;
+        nstates = bs.nstates;
         colors = bs.colors;
-        states = bs.states;
+        v_states = bs.v_states;
         isAlive = bs.isAlive;
         alive = bs.alive;
         return *this;
@@ -134,7 +123,6 @@ namespace MCTraj {
 
       BranchStates& operator+=(const BranchStateChange& bsc);
       BranchStates& operator+=(const vector<BranchStateChange>& bsc_vec);
-
       // BranchStates& operator-=(const BranchStateChange& bsc);
 
       inline void wake(int i) {
@@ -172,10 +160,20 @@ namespace MCTraj {
 
       int colProb(vector<double>& w, int col, bool alive = false) const;
       int colWeight(vector<double>& w, int col, bool alive = false) const;
-      inline void add(size_t i, size_t c) { states[i][c]++; }
-      inline void rem(size_t i, size_t c) { states[i][c]--; }
-      inline int state(size_t i, size_t c) const { return states[i][c]; }
-      inline int all(size_t i) const { return states[i].cnt(); }
+
+//      inline const int* states(size_t i) const { return v_states.data() + (i*size); }
+//      inline int* states(size_t i) { return v_states.data() + (i*size); }
+
+      inline int state(size_t i, size_t c) const { return v_states.at(i*(nstates+1)+c); }
+      inline int& state(size_t i, size_t c) { return v_states.at(i*(nstates+1)+c); }
+
+      inline void add(size_t i, size_t c) { state(i,c)++; }
+      inline void rem(size_t i, size_t c) { state(i,c)--; }
+
+      inline int all(size_t i) const {
+        vector<int>::const_iterator it = v_states.begin() + i*(nstates+1) + 1;
+        return std::accumulate(it,it+nstates,0);
+      }
 
       /* JSON ***************************************************************/
 
@@ -184,36 +182,47 @@ namespace MCTraj {
         json_w.StartArray();
         if (aliveOnly) {
           for (size_t i = 0; i < alive.size(); ++i) {
-            json_w.StartObject(); {
-              json_w.String("id");    json_w.Int(alive[i]); 
-              json_w.String("color"); json_w.Int(colors[alive[i]]);
-              json_w.String("states"); states[alive[i]].json(json_w);
-            } json_w.EndObject();
+            state_json(i,json_w);
           }
         } else {
           for (size_t i = 0; i < colors.size(); ++i) {
-            json_w.StartObject(); {
-              json_w.String("id");    json_w.Int(i); 
-              json_w.String("alive"); json_w.Int(isAlive[i]); 
-              json_w.String("color"); json_w.Int(colors[i]);
-              json_w.String("states"); states[i].json(json_w);
-            } json_w.EndObject();
+            state_json(i,json_w);
           }
         }
         json_w.EndArray();
       }
 
+      template<typename T> 
+      void state_json(size_t i, rapidjson::Writer<T>& json_w) const {
+        if (i < size) {
+          json_w.StartObject(); {
+            json_w.String("id");    json_w.Int(i); 
+            json_w.String("alive"); json_w.Int(isAlive[i]); 
+            json_w.String("color"); json_w.Int(colors[i]);
+            json_w.String("states");
+            json_w.StartArray();
+            for (int k = 0; k <= nstates; ++k) json_w.Int(state(i,k));
+            json_w.EndArray();
+          } json_w.EndObject();
+        } else {
+          json_w.String("Err");
+        }
+      }
+
       string to_json(bool aliveOnly = true) const;
+      string state_to_json(int id) const;
 
     public:
+      int size;
+      int nstates;
+
       vector<int> colors;
-      vector< BranchState > states;
+      vector<int> v_states;
 
       vector<bool> isAlive;
       vector<int> alive;
 
-      // TODO: keep track of hidden child branches
-      // vector< vector<int> > children;
+      // vector< BranchState > states;
   };
 }
 

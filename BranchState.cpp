@@ -9,9 +9,9 @@ namespace MCTraj {
       else wake(bsc.id);
 
       // add branch state changes
-      for (size_t j = 0; j < states[bsc.id].size(); ++j) {
+      for (size_t j = 0; j <= nstates; ++j) {
         if (j < bsc.change.size()) {
-          states[bsc.id][j] += bsc.change[j];
+          state(bsc.id,j) += bsc.change[j];
         }
       }
     }
@@ -49,14 +49,14 @@ namespace MCTraj {
 
   int BranchStates::colProb(vector<double>& w, int col, bool aliveOnly) const 
   {
-    w.assign(states.size(),0.0);
+    w.assign(size,0.0);
     if (aliveOnly) {
       for (size_t i = 0; i < alive.size(); ++i) {
-        w[alive[i]] = states[alive[i]].at(col);
+        w[alive[i]] = state(alive[i],col);
       }
     } else {
-      for (size_t i = 0; i < states.size(); ++i) {
-        w[i] = states[i].at(col);
+      for (size_t i = 0; i < size; ++i) {
+        w[i] = state(i,col);
       }
     }
     return 0;
@@ -66,16 +66,16 @@ namespace MCTraj {
 
   int BranchStates::colWeight(vector<double>& w, int col, bool aliveOnly) const 
   {
-    w.assign(states.size(),0.0);
+    w.assign(size,0.0);
     if (aliveOnly) {
       for (size_t i = 0; i < alive.size(); ++i) {
-        w[alive[i]] = states[alive[i]].at(col);
+        w[alive[i]] = state(alive[i],col);
       }
       for (size_t i = 1; i < w.size(); ++i) w[i] += w[i-1];
     } else {
-      w[0] = states[0].at(col);
-      for (size_t i = 1; i < states.size(); ++i) {
-        w[i] = w[i-1] + states[i].at(col);
+      w[0] = state(0,col);
+      for (size_t i = 1; i < size; ++i) {
+        w[i] = w[i-1] + state(i,col);
       }
     }
     return 0;
@@ -106,12 +106,16 @@ namespace MCTraj {
     return cnt;
   }
 
-  string BranchState::to_json() const {
+  /**************************************************************************/
+
+  string BranchStates::state_to_json(int i) const {
     rapidjson::StringBuffer buf;
     rapidjson::Writer<rapidjson::StringBuffer> json_w(buf);
-    json(json_w);
+    state_json(i,json_w);
     return buf.GetString();
   }
+
+  /**************************************************************************/
 
   string BranchStates::to_json(bool aliveOnly) const {
     rapidjson::StringBuffer buf;

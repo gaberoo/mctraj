@@ -30,7 +30,7 @@ int MCTraj::SEISModel::infBranch(const EpiState& es, rng::RngStream* rng,
   // get the total number of infecteds from the branches 
   // (this should be equal to I)
   vector<double> w;
-  es.branches.colWeight(w,1);
+  es.branches.colWeight(w,2);
 
   // pick a branch for the infection to happen on
   int id = rng->pick(w.data(),w.size());
@@ -39,19 +39,21 @@ int MCTraj::SEISModel::infBranch(const EpiState& es, rng::RngStream* rng,
 #ifdef DEBUG
     cout << ascii::magenta << "    infBranch  "  << ascii::end
          << " on " << id << " :: " << es << " : "
-         << es.branches.states[id].to_json() << endl;
+         << es.branches.state_to_json(id) << endl;
 #endif
 
     // add dummy transition
-    st.addBranchTrans(id,1,1);
-    st.lastBT().change.assign(2,0);
-    st.lastBT().change[0] = 1;
+    st.addBranchTrans(id,es.branchCol(id),es.branchCol(id));
+    st.lastBT().change.assign(3,0);
+    st.lastBT().change[0] = 1;  // overall counter
+    st.lastBT().change[1] = 1;  // color counter
 
   } else {
 #ifdef DEBUG
     cout << ascii::magenta << "    infBranch  "  << ascii::end << " :: ";
     cout << "no branch was chosen!" << endl;
 #endif
+    st.relprob = -INFINITY;
   }
 
   return 0;
@@ -66,20 +68,22 @@ double MCTraj::SEISModel::infTreeObs(const EpiState& es, const void* pars, doubl
   EpiPars* ep = (EpiPars*) pars;
 
   // get number of infecteds in the branch group
-  double nE = es.branchState(es.cur(0),0);
-  double nI = es.branchState(es.cur(0),1);
-
-#ifdef DEBUG
-  cout << ascii::blue << "    infTreeObs" << ascii::end 
-       << " :: " << nI << " total I in group." << endl;
-#endif
+  double nE = es.branchState(es.cur(0),1);
+  double nI = es.branchState(es.cur(0),2);
 
   // get infectious force for the group:
   //    rate of infection on a single branch
   //  x probability that the branch is in state I
-  trueRate = ep->beta*es[0]/ep->N * nI/(nI+nE);
+  // trueRate = ep->beta*es[0]/ep->N * nI/(nI+nE);
+  trueRate = ep->beta*es[0]/ep->N * nI;
 
-  // trueRate = (nI > 0) ? ep->beta*es[0]/ep->N : 0.0;
+#ifdef DEBUG
+  cout << ascii::blue << "    infTreeObs" << ascii::end 
+       << " :: " << nI << " total I in group. "
+       << "Rate = " << setw(8) << trueRate << " | " << es << " | "
+       << es.branches.state_to_json(es.cur(0))
+       << endl;
+#endif
 
   return trueRate;
 }
@@ -90,7 +94,7 @@ int MCTraj::SEISModel::infBranchObs(const EpiState& es, rng::RngStream* rng,
                                     StateTransition& st, const void* pars)
 {
   // get number of infecteds in the branch group
-  int nI = es.branchState(es.cur(0),1);
+  int nI = es.branchState(es.cur(0),2);
 
   int b1 = es.cur(1);
   int b2 = es.cur(2);
@@ -108,17 +112,19 @@ int MCTraj::SEISModel::infBranchObs(const EpiState& es, rng::RngStream* rng,
          << es.cur(0) << "," << b1 << "," << b2 << ")" << endl;
 #endif
 
-    st.addBranchTrans(es.cur(0),1,-1);
-    st.lastBT().change.assign(2,0);
-    st.lastBT().change[1] = -1;
+    st.addBranchTrans(es.cur(0),es.branchCol(es.cur(0)),-1);
+    st.lastBT().change.assign(3,0);
+    st.lastBT().change[2] = -1;
 
     st.addBranchTrans(b1,es.branchCol(b1),1);
-    st.lastBT().change.assign(2,0);
-    st.lastBT().change[1] = 1;
+    st.lastBT().change.assign(3,0);
+    st.lastBT().change[0] = 1;
+    st.lastBT().change[2] = 1;
 
     st.addBranchTrans(b2,es.branchCol(b2),0);
-    st.lastBT().change.assign(2,0);
+    st.lastBT().change.assign(3,0);
     st.lastBT().change[0] = 1;
+    st.lastBT().change[1] = 1;
   } else {
 #ifdef DEBUG
     cout << ascii::red << "        infBranchObs" << ascii::end 
@@ -132,11 +138,12 @@ int MCTraj::SEISModel::infBranchObs(const EpiState& es, rng::RngStream* rng,
   return 0;
 }
 
-/****************************************************************************/
-/* RECOVERY FUNCTIONS *******************************************************/
-/****************************************************************************/
+/****************************************************************************\
+|* RECOVERY FUNCTIONS *******************************************************|
+\****************************************************************************/
 
-double MCTraj::SEISModel::recovRateFun(const EpiState& es, const void* pars, double& trueRate) 
+double MCTraj::SEISModel::recovRateFun(const EpiState& es, const void* pars, 
+                                       double& trueRate) 
   // rate at which recovery occurs
 {
   EpiPars* ep = (EpiPars*) pars;
@@ -162,17 +169,19 @@ int MCTraj::SEISModel::recovValidate(const EpiState& es, const void* pars)
 
 //---------------------------------------------------------------------------
 
-double MCTraj::SEISModel::recovTreeObs(const EpiState& es, const void* pars, double& trueRate) 
+double MCTraj::SEISModel::recovTreeObs(const EpiState& es, const void* pars, 
+                                       double& trueRate) 
   // probability that a recovery was observed, i.e. a sampling
 {
   EpiPars* ep = (EpiPars*) pars;
 
   // get number of I in group
-  double nE = es.branchState(es.cur(0),0);
-  double nI = es.branchState(es.cur(0),1);
+  double nE = es.branchState(es.cur(0),1);
+  double nI = es.branchState(es.cur(0),2);
 
   // sampling rate for this group
-  trueRate = ep->psi * nI/(nI+nE);
+  // trueRate = ep->psi * nI/(nI+nE);
+  trueRate = ep->psi * nI;
 
 #ifdef DEBUG
   cout << ascii::blue << "    recovTreeObs" << ascii::end 
@@ -189,7 +198,7 @@ int MCTraj::SEISModel::recovBranch(const EpiState& es, rng::RngStream* rng,
 {
   // get number of I in all branches
   vector<double> w;
-  es.branches.colProb(w,1);
+  es.branches.colProb(w,2);
 
   // check for last branch in live group
   double tot = 0.0;
@@ -209,9 +218,7 @@ int MCTraj::SEISModel::recovBranch(const EpiState& es, rng::RngStream* rng,
   if (id >= 0) 
     // make sure a valid branch was found
   {
-    int col = es.branches.getCol(id);
-
-    if (es.branches.awake(id) && es.branches.all(id) == 1) {
+    if (es.branchAwake(id) && es.branches.all(id) == 1) {
       cerr << ascii::red;
       cerr << "Can't remove last remaining state from an awake branch!";
       cerr << ascii::end << endl;
@@ -220,16 +227,16 @@ int MCTraj::SEISModel::recovBranch(const EpiState& es, rng::RngStream* rng,
 #ifdef DEBUG
     cout << ascii::magenta << "    recovBranch"  << ascii::end
          << " on " << id << " :: " << es << " : "
-         << es.branches.states[id].to_json() << endl;
+         << es.branches.state_to_json(id) << endl;
 #endif
 
-      st.addBranchTrans(id,col,col);
-      st.lastBT().change.assign(2,0);
-      st.lastBT().change[1] = -1;
+      st.addBranchTrans(id,es.branchCol(id),es.branchCol(id));
+      st.lastBT().change.assign(3,0);
+      st.lastBT().change[2] = -1;
     }
 
     // adjust for not picking the last branch
-    st.relprob = 1.0 - adj/tot;
+    st.relprob = log(1.0-adj/tot);
   } 
   else 
     // otherwise this means there was no possible recovery
@@ -238,7 +245,6 @@ int MCTraj::SEISModel::recovBranch(const EpiState& es, rng::RngStream* rng,
     cout << ascii::red << "    recovBranch"  << ascii::end
          << " on " << id << " :: " << es << " : "
          << "couldn't choose a branch to recover!" << endl;
-    cout << es.branches.to_json() << endl;
     cout << "      weight array" << endl;
     cout << "        ";
     for (size_t i = 0; i < w.size(); ++i) {
@@ -268,14 +274,14 @@ int MCTraj::SEISModel::recovBranchObs(const EpiState& es, rng::RngStream* rng,
     cerr << "Need node information to color tree!" << endl;
     return -1;
   } else {
-    if (es.branchState(es.cur(0),1) > 0) {
-      st.addBranchTrans(es.cur(0),1,-1);
-      st.lastBT().change.assign(2,0);
-      st.lastBT().change[1] = -1;
+    if (es.branchState(es.cur(0),2) > 0) {
+      st.addBranchTrans(es.cur(0),es.branchCol(es.cur(0)),-1);
+      st.lastBT().change.assign(3,0);
+      st.lastBT().change[2] = -1;
     } else {
 #ifdef DEBUG
       cout << ascii::red << "    recovBranchObs on " << es.cur(0) << " :: "
-           << " not enough I in group: " << es.branchState(es.cur(0),1) 
+           << " not enough I in group: " << es.branchState(es.cur(0),2) 
            << ascii::end << endl;
 #endif
       return -2;
@@ -330,7 +336,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
 {
   // get the weight of each branch
   vector<double> w;
-  es.branches.colWeight(w,0);
+  es.branches.colWeight(w,1);
 
   // pick branch for the transition to happen on
   int id = rng->pick(w.data(),w.size());
@@ -345,7 +351,7 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
 #ifdef DEBUG
   cout << ascii::magenta << "    transBranch" << ascii::end
        << " on " << id << " :: " << es << " : "
-       << es.branches.states[id].to_json() << endl;
+       << es.branches.state_to_json(id) << endl;
 //  cout << "      weight array" << endl;
 //  cout << "        ";
 //  for (size_t i = 0; i < w.size(); ++i) {
@@ -360,15 +366,10 @@ int MCTraj::SEISModel::transBranch(const EpiState& es, rng::RngStream* rng,
 #endif
 
   // add dummy transition
-  st.addBranchTrans(id,es.branchCol(id),1);
-  st.lastBT().change.assign(2,0);
-  st.lastBT().change[0] = -1;
-  st.lastBT().change[1] = 1;
-
-  if (es.branchCol(id) == 0) {
-    st[3] = -1;
-    st[4] = 1;
-  }
+  st.addBranchTrans(id,es.branchCol(id),es.branchCol(id));
+  st.lastBT().change.assign(3,0);
+  st.lastBT().change[1] = -1;
+  st.lastBT().change[2] = 1;
 
   return 0;
 }
@@ -384,15 +385,15 @@ int MCTraj::SEISModel::transBranchObs(const EpiState& es, rng::RngStream* rng,
     // check for node A information
     if (es.cur(0) >= 0) {
       // check the state of the current branch
-      if (es.branchState(es.cur(0),0) > 0) 
+      if (es.branchState(es.cur(0),1) > 0) 
         // there are exposed individuals in the branch cluster
       // if (es.branchCol(es.cur(0)) == 0)
       {
         st.addBranchTrans(es.cur(0),0,-1);
 
         // update branch states
-        st.lastBT().change.assign(2,0);
-        st.lastBT().change[0] = -1;
+        st.lastBT().change.assign(3,0);
+        st.lastBT().change[1] = -1;
 #ifdef DEBUG
         // cout << "transBranchObs :: Putting branch " << es.cur(0) << " to sleep." << endl;
 #endif
@@ -416,8 +417,8 @@ int MCTraj::SEISModel::transBranchObs(const EpiState& es, rng::RngStream* rng,
         st.addBranchTrans(es.cur(1),-1,1);
 
         // update branch states
-        st.lastBT().change.assign(2,0);
-        st.lastBT().change[1] = 1;
+        st.lastBT().change.assign(3,0);
+        st.lastBT().change[2] = 1;
 #ifdef DEBUG
         // cout << "transBranchObs :: Waking branch " << es.cur(1) << "." << endl;
 #endif
@@ -439,7 +440,9 @@ int MCTraj::SEISModel::transBranchObs(const EpiState& es, rng::RngStream* rng,
 
 /************************************************************************/
 
-double MCTraj::SEIS::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars) const {
+double MCTraj::SEIS::sample_rho(const EpiState& es, rng::RngStream* rng, 
+                                void* pars) const 
+{
   int k = es[3]+es[4];
   int I = es[1]+es[2];
   double w = 0.0;

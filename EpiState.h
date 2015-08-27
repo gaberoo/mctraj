@@ -77,7 +77,7 @@ namespace MCTraj {
       inline int cur(size_t i) const { return curBranch.at(i); }
       inline int branchCol(size_t i) const { return branches.getCol(i); }
       inline int branchState(size_t id, int col) const { return branches.state(id,col); }
-      inline int branchAwake(size_t i) const { return branches.awake(i); }
+      inline bool branchAwake(size_t i) const { return branches.awake(i); }
       inline int branchSize(size_t i) const { return branches.all(i); }
 
       /* JSON ***************************************************************/

@@ -101,6 +101,7 @@ namespace MCTraj {
 
         // get probability of new state
         newState.nextTime = nextTime;
+
         dw = nextTrans->applyProb(newState,model->getPars());
 
         if (dw > 0.0 || ! adjZero) 

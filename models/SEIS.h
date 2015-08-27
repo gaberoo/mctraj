@@ -44,43 +44,43 @@ namespace MCTraj {
       double alpha;  // damping coefficient of the potential
     };
 
-    const size_t nstates = 5; /* S, E, I, kE, kI */
+    const size_t nstates = 3; /* S, E, I, kE, kI */
 
     /************************************************************************/
 
     double infRateFun(const EpiState& es, const void* pars, double& trueRate);
     double infTreeProb(const EpiState& es, const void* pars);
-    const int infChange[] = { -1, 1, 0, 0, 0 };
+    const int infChange[] = { -1, 1, 0 };
     int infValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double transRateFun(const EpiState& es, const void* pars, double& trueRate);
     double transTreeProb(const EpiState& es, const void* pars);
-    const int transChange[] = { 0, -1, 1, 0, 0 };
+    const int transChange[] = { 0, -1, 1 };
     int transValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double recovRateFun(const EpiState& es, const void* pars, double& trueRate);
     double recovTreeProb(const EpiState& es, const void* pars);
-    const int recoverChange[] = { 1, 0, -1, 0, 0 };
+    const int recoverChange[] = { 1, 0, -1 };
     int recovValidate(const EpiState& es, const void* pars);
 
     /************************************************************************/
 
     double infTreeObs(const EpiState& es, const void* pars, double& trueRate);
-    const int infObsChange[] = { -1, 1, 0, 1, 0 };
+    const int infObsChange[] = { -1, 1, 0 };
 
     /************************************************************************/
 
     double transTreeObs(const EpiState& es, const void* pars, double& trueRate);
-    const int obsTransChange[] = { 0, -1, 1, -1, 1 };
+    const int obsTransChange[] = { 0, -1, 1 };
 
     /************************************************************************/
 
     double recovTreeObs(const EpiState& es, const void* pars, double& trueRate);
-    const int recovChangeObs[] = { 1, 0, -1, 0, -1 };
+    const int recovChangeObs[] = { 1, 0, -1 };
 
     /************************************************************************/
 

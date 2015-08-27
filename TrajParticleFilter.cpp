@@ -16,19 +16,26 @@ namespace MCTraj {
     vector<double> w(n,0.0);
     double totalW = w_vec(w);
 
-    if (vflag > 1) {
-      cerr << ascii::yellow;
-
+    if (vflag > 0) {
+#ifdef DEBUG
       // output verbose info on weight distribution
       double s2 = gsl_stats_variance(w.data(),1,w.size());
       size_t k = gsl_stats_max_index(w.data(),1,n);
 
+      cerr << ascii::yellow;
       cerr << "  FIL (" << filter_type << ") :: Sum = " << totalW 
            << ", var(w) = " << sqrt(s2)/(totalW/n) 
-           << endl;
+           << ascii::end << endl;
 
-      cerr << "  Best particle = " << particle(k).getState()
-           << endl;
+      cerr << ascii::yellow
+           << "  Best particle = " << particle(k).getState()
+           << ascii::end << endl;
+
+      for (size_t i = 0; i < n; ++i) {
+        cerr << ascii::yellow << "     " 
+             << i << " " << w[i] << ascii::end << endl;
+      }
+#endif
     }
 
     // check that the total weight is positive
@@ -210,6 +217,8 @@ namespace MCTraj {
       // update the particle weight, which at this point should be equal to
       // the (conditioned) trajectory weight
       particle(j).updateWeight(dw);
+#ifdef DEBUG
+#endif
 
       // output verbose information
       if (vflag > 2) {

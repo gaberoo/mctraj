@@ -145,8 +145,6 @@ int main(int argc, char** argv) {
       (*es)[0] = ((int) seis_pars.N)-1;
       (*es)[1] = 1;
       (*es)[2] = 0;
-      (*es)[3] = 1;
-      (*es)[4] = 0;
       if (pf_pars.full_tree) {
         mpt->sim_event(0) = 0;
         mpt->sim_event(1) = 0;
@@ -160,7 +158,10 @@ int main(int argc, char** argv) {
   es->init_branches(tree.max_id()+1,2);
   es->branches.wake(0);
   es->branches.setCol(0,0);
-  es->branches.add(0,0);
+
+  es->branches.add(0,0);  // overall counter
+  es->branches.add(0,1);  // color counter
+
   // cout << es->to_json() << endl;
 
   Trajectory* traj = NULL;
@@ -172,11 +173,15 @@ int main(int argc, char** argv) {
   if (branch_file != "") branch_out = new ofstream(branch_file.c_str());
   if (traj_file != "") traj_out = new ofstream(traj_file.c_str());
 
-  for (int r = 0; r < pf_pars.reps; ++r) {
-    lik = pfLik(mpt,*es,tree,pf_pars,rng,traj);
-    cout << lik << endl;
-    if (branch_out != NULL) traj->printBranches(*branch_out) << endl;
-    if (traj_out != NULL) traj->printFromFirst(*traj_out) << endl;
+  try {
+    for (int r = 0; r < pf_pars.reps; ++r) {
+      lik = pfLik(mpt,*es,tree,pf_pars,rng,traj);
+      cout << lik << endl;
+      if (branch_out != NULL) traj->printBranches(*branch_out) << endl;
+      if (traj_out != NULL) traj->printFromFirst(*traj_out) << endl;
+    }
+  } catch (std::exception& e) {
+    cout << "EXCEPTION: " << e.what() << endl;
   }
 
   if (branch_out != NULL) { branch_out->close(); delete branch_out; }
