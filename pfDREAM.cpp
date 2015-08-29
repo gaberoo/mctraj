@@ -149,7 +149,12 @@ int main(int argc, char** argv) {
   es->branches.setCol(0,0);
   // cout << es->to_json() << endl;
 
+#if defined(_OPENMP)
   int max_threads = omp_get_max_threads();
+#else
+  int max_threads = 1;
+#endif
+
   rng::Rng* rng = new rng::GSLRng;
   rng->set_seed(time(NULL));
   rng->alloc(max_threads);
