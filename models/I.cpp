@@ -1,14 +1,17 @@
-#include "SIS.h"
+#include "I.h"
 
-double MCTraj::SISModel::infRateFun(const EpiState& es, const void* pars, double& trueRate) 
+double MCTraj::IModel::infRateFun(const EpiState& es, 
+                                  const void* pars, 
+                                  double& trueRate) 
 {
-  // cerr << "SIS:INF" << endl;
+  // cerr << "I:INF" << endl;
   EpiPars ep = *(EpiPars*) pars;
-  double lambdaI = ep.beta*es[0]*es[1]/ep.N;
+  double I = es[0];
+  double lambdaI = ep.beta*I;
   return (lambdaI > 0.0) ? lambdaI : 0.0;
 }
 
-double MCTraj::SISModel::treeProbInf(const EpiState& es, const void* pars) 
+double MCTraj::IModel::treeProbInf(const EpiState& es, const void* pars) 
 {
   /* Three possibilities upon infection:
    *   (i)   infection involving two tree branches
@@ -17,23 +20,25 @@ double MCTraj::SISModel::treeProbInf(const EpiState& es, const void* pars)
    * The probability that it doesn't involve two tree branches is,
    *   p = 1 - (k choose 2) / (I choose 2) 
    */
-  double I = es[1];
-  double k = es[2];
+  double I = es[0];
+  double k = es[1];
   double p = 1.0 - k*(k-1.)/(I*(I-1.));
   return (I >= k) ? p : 0.0;
 }
 
 /************************************************************************/
 
-double MCTraj::SISModel::recovRateFun(const EpiState& es, const void* pars, double& trueRate) 
+double MCTraj::IModel::recovRateFun(const EpiState& es, 
+                                    const void* pars, 
+                                    double& trueRate) 
 {
-  // cerr << "SIS:RECOV" << endl;
+  // cerr << "I:RECOV" << endl;
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[1];
+  double I = es[0];
   return (ep.mu+ep.psi)*I;
 }
 
-double MCTraj::SISModel::treeProbRecov(const EpiState& es, const void* pars) 
+double MCTraj::IModel::treeProbRecov(const EpiState& es, const void* pars) 
 {
   /* Four possibilities:
    *   (i)   recovery in a non-tree branch
@@ -43,37 +48,38 @@ double MCTraj::SISModel::treeProbRecov(const EpiState& es, const void* pars)
    * The probability that it's a recovery in a non-tree branch is
    *   p = (1-s) 
    */
+  double I = es[0];
+  double k = es[1];
   EpiPars ep = *(EpiPars*) pars;
   double s = ep.psi/(ep.psi+ep.mu);
-  return (es[1]+1 > es[2]) ? (1.-s) : 0.0;
+  return (I+1 > k) ? (1.-s) : 0.0;
 }
 
 /************************************************************************/
 
-double MCTraj::SISModel::treeObsInf(const EpiState& es, const void* pars, double& trueRate) 
+double MCTraj::IModel::treeObsInf(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double S = es[0];
-  double I = es[1];
-  double lambda = ep.beta*S/ep.N;
+  double I = es[0];
+  double lambda = ep.beta;
   return 2.0*lambda/(I+1.);
   // return lambda;
 }
 
 /************************************************************************/
 
-double MCTraj::SISModel::treeObsRecov(const EpiState& es, const void* pars, double& trueRate) 
+double MCTraj::IModel::treeObsRecov(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[1];
+  double I = es[0];
   return (ep.psi > 0) ? ep.psi*I : 1.0;
 }
 
 /************************************************************************/
 
-double MCTraj::SIS::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars) const {
-  int k = es[2];
-  int I = es[1];
+double MCTraj::I::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars) const {
+  int k = es[1];
+  int I = es[0];
   double w = 0.0;
   if (rho >= 1.0 && I == k) {
     w = 1.0;
@@ -85,9 +91,9 @@ double MCTraj::SIS::sample_rho(const EpiState& es, rng::RngStream* rng, void* pa
 
 /************************************************************************/
 
-void MCTraj::SIS::toTree(const Trajectory& traj,
-                         rng::RngStream* rng, 
-                         vector<TreeNode>& tree) const 
+void MCTraj::I::toTree(const Trajectory& traj,
+                       rng::RngStream* rng, 
+                       vector<TreeNode>& tree) const 
 {
   EpiState x(traj.initState());
   size_t ntrans = traj.transitionCount();
@@ -100,7 +106,7 @@ void MCTraj::SIS::toTree(const Trajectory& traj,
   int branch_id = 0;
   int epi_id = 0;
 
-  int lineageStates[] = { 0, 1, 0 };
+  int lineageStates[] = { 1, 0 };
 
   // Initialize
   for (i = 0; i < x.numStates(); ++i) {
@@ -130,10 +136,10 @@ void MCTraj::SIS::toTree(const Trajectory& traj,
 
     switch (st.etype()) {
       case 1:
-        rng->uniform_int(1,&rand,0,states[1].size());
+        rng->uniform_int(1,&rand,0,states[0].size());
 
-        parent = states[1][rand];
-        states[1].erase(states[1].begin()+rand);
+        parent = states[0][rand];
+        states[0].erase(states[0].begin()+rand);
 
         tree[parent].age = time;
         tree[parent].n_off = 2;
@@ -149,7 +155,7 @@ void MCTraj::SIS::toTree(const Trajectory& traj,
         tree[branch_id].epi_id = tree[parent].epi_id;
         tree[branch_id].epi_state = tree[parent].epi_state;
 
-        states[1].push_back(branch_id);
+        states[0].push_back(branch_id);
         tree[parent].off.push_back(branch_id);
 
         // new infected
@@ -163,15 +169,15 @@ void MCTraj::SIS::toTree(const Trajectory& traj,
         tree[branch_id].epi_id = epi_id++;
         tree[branch_id].epi_state = 1;
 
-        states[1].push_back(branch_id);
+        states[0].push_back(branch_id);
         tree[parent].off.push_back(branch_id);
 
         break;
 
       case 0:
-        rng->uniform_int(1,&rand,0,states[1].size());
-        parent = states[1][rand];
-        states[1].erase(states[1].begin()+rand);
+        rng->uniform_int(1,&rand,0,states[0].size());
+        parent = states[0][rand];
+        states[0].erase(states[0].begin()+rand);
         tree[parent].age = time;
         tree[parent].n_off = 0;
 

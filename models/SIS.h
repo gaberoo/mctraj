@@ -4,6 +4,7 @@
 #include <rng/Rng.h>
 #include "../Model.h"
 #include "../EpiState.h"
+#include "../Trajectory.h"
 
 namespace MCTraj {
   namespace SISModel {
@@ -11,6 +12,17 @@ namespace MCTraj {
     public:
       EpiPars() {}
       virtual ~EpiPars() {}
+
+      void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
+        w.StartObject(); {
+          w.String("name");  w.String("SIS");
+          w.String("N");     w.Double(N);
+          w.String("beta");  w.Double(beta);
+          w.String("mu");    w.Double(mu);
+          w.String("psi");   w.Double(psi);
+          w.String("rho");   w.Double(rho);
+        } w.EndObject();
+      }
 
       double N;
       double beta;
@@ -89,6 +101,7 @@ namespace MCTraj {
 
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
       inline bool validState(const EpiState& es) const { return true; }
+      void toTree(const Trajectory& traj, rng::RngStream* rng, vector<TreeNode>& tree) const;
   };
 }
 

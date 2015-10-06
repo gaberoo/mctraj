@@ -40,7 +40,10 @@ ostream& MCTraj::operator<<(ostream& out, const TreeNode& tn) {
 
 /****************************************************************************/
 
-int MCTraj::only_sampled(const vector<TreeNode>& tree, vector<TreeNode>& sample, int root) {
+int MCTraj::only_sampled(const vector<TreeNode>& tree, 
+                         vector<TreeNode>& sample, 
+                         int root) 
+{
   int n = tree.size();
   if (root < 0 || root >= n) {
     return 0;

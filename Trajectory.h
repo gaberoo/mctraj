@@ -124,9 +124,11 @@ namespace MCTraj {
       ostream& printBranches(ostream& out = cout) const;
       ostream& printTxt(ostream& out = cout) const;
 
-      void toTree(rng::RngStream* rng, vector<TreeNode>& tree, const int lineageStates[]) const;
-
+      const Model* getModel() const { return model; }
       inline void storeTrans(bool x) { store_trans = x; }
+
+      void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const;
+      string to_json() const;
 
    protected:
       double time;                         // current process time

@@ -173,6 +173,7 @@ namespace MCTraj {
 
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
       bool validState(const EpiState& es) const;
+      void toTree(const Trajectory& traj, rng::RngStream* rng, vector<TreeNode>& tree) const;
   };
 }
 

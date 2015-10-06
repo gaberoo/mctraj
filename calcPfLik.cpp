@@ -10,9 +10,8 @@ using namespace std;
 #endif
 
 #include "pfLik.h"
-#include "models/SIS.h"
-#include "models/SIR.h"
-#include "models/SEIS.h"
+
+#include "models/Models.h"
 using namespace MCTraj;
 
 #include <tclap/CmdLine.h>
@@ -120,17 +119,24 @@ int main(int argc, char** argv) {
   Model* mpt = NULL;
 
   switch (pf_pars.model_type) {
+    case 0:
+      mpt = new I(&pars);
+      es = new EpiState(IModel::nstates);
+      break;
+
     case 1:
     default:
       mpt = new SIS(&pars);
       es = new EpiState(SISModel::nstates);
       (*es)[0] = (int) pars.N;
       break;
+
     case 2:
       mpt = new SIR(&pars);
       es = new EpiState(SISModel::nstates);
       (*es)[0] = (int) pars.N;
       break;
+
     case 3:
       seis_pars.N = pars.N;
       seis_pars.beta = pars.beta;

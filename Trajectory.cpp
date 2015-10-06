@@ -45,8 +45,11 @@ namespace MCTraj {
 
   // =========================================================================
 
-  int Trajectory::step(double maxTime, const void* pars, rng::RngStream* rng, 
-                       bool noTree, bool adjZero) 
+  int Trajectory::step(double maxTime, 
+                       const void* pars, 
+                       rng::RngStream* rng, 
+                       bool noTree, 
+                       bool adjZero) 
   {
     // get array of next event rates
     double nextTime = 0.0;
@@ -473,133 +476,42 @@ namespace MCTraj {
 
   // =========================================================================
 
-  void Trajectory::toTree(rng::RngStream* rng, vector<TreeNode>& tree,
-                          const int lineageStates[]) const 
-  {
+  string Trajectory::to_json() const {
+    string out;
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    json(writer);
+    return buffer.GetString();
+  }
+
+  // =========================================================================
+
+  void Trajectory::json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
     EpiState x(initialState);
     size_t ntrans = transitionCount();
     double time = 0.0;
 
-    vector< vector<int> > states(model->n());
+    w.StartArray();
 
-    size_t i, j;
-    int branch_id = 0;
-    int epi_id = 0;
-
-    // Initialize
-    for (i = 0; i < x.numStates(); ++i) {
-      if (lineageStates[i]) {
-        for (j = 0; j < (size_t) x[i]; ++j) {
-          tree.push_back(TreeNode());
-          branch_id = tree.size()-1;
-          tree.back().code = branch_id;
-          tree.back().epi_id = epi_id++;
-          tree.back().epi_state = i;
-          states[i].push_back(branch_id);
-        }
-      }
-    }
-
-    int rand;
-    int parent;
-
-    double p = 1.0;
-    double r;
-    StateTransition st;
+    w.StartObject(); {
+      w.String("time"); w.Double(time);
+      w.String("state"); w.StartArray(); {
+        for (size_t j = 0; j < x.numStates(); ++j) w.Int(x[j]);
+      } w.EndArray();
+    }w.EndObject();
 
     for (size_t i = 0; i < ntrans; ++i) {
-      st = transitions[i]; 
-      x += st.getTrans();
-      time += st.atTime();
-
-      switch (st.etype()) {
-        case 1:
-          // choose a parent
-          rng->uniform_int(1,&rand,0,states[2].size());
-
-          parent = states[2][rand];
-          states[2].erase(states[2].begin()+rand);
-
-          tree[parent].age = time;
-          tree[parent].n_off = 2;
-
-          // old infected
-          tree.push_back(TreeNode());
-          branch_id = tree.size()-1;
-
-          tree[branch_id].code = branch_id;
-          tree[branch_id].parent = tree[parent].code;
-          tree[branch_id].age = -1.0;
-          tree[branch_id].ancestor_age = tree[parent].age;
-          tree[branch_id].epi_id = tree[parent].epi_id;
-          tree[branch_id].epi_state = tree[parent].epi_state;
-
-          states[2].push_back(branch_id);
-          tree[parent].off.push_back(branch_id);
-
-          // new infected
-          tree.push_back(TreeNode());
-          branch_id = tree.size()-1;
-
-          tree[branch_id].code = branch_id;
-          tree[branch_id].parent = tree[parent].code;
-          tree[branch_id].age = -1.0;
-          tree[branch_id].ancestor_age = tree[parent].age;
-          tree[branch_id].epi_id = epi_id++;
-          tree[branch_id].epi_state = 1;
-
-          states[1].push_back(branch_id);
-          tree[parent].off.push_back(branch_id);
-
-          break;
-
-        case 0:
-          rng->uniform_int(1,&rand,0,states[2].size());
-          parent = states[2][rand];
-          states[2].erase(states[2].begin()+rand);
-          tree[parent].age = time;
-          tree[parent].n_off = 0;
-
-          p = st.getType()->applyProb(x,model->getPars());
-          rng->uniform(1,&r);
-
-          if (r < p) {
-            add_extant(tree,parent);
-            // tree[parent].extant_off = 2;
-          }
-
-          break;
-
-        case 2:
-          rng->uniform_int(1,&rand,0,states[1].size());
-          parent = states[1][rand];
-          states[1].erase(states[1].begin()+rand);
-          tree[parent].age = time;
-          tree[parent].n_off = 1;
-
-          tree.push_back(TreeNode());
-          branch_id = tree.size()-1;
-          states[2].push_back(branch_id);
-          tree[branch_id].code = branch_id;
-          tree[branch_id].parent = tree[parent].code;
-          tree[branch_id].age = -1.0;
-          tree[branch_id].ancestor_age = tree[parent].age;
-          tree[branch_id].epi_id = tree[parent].epi_id;
-          tree[branch_id].epi_state = 2;
-          tree[parent].off.push_back(branch_id);
-
-          break;
-      }
+      x += transitions[i].getTrans();
+      time += transitions[i].atTime();
+      w.StartObject(); {
+        w.String("time"); w.Double(time);
+        w.String("state"); w.StartArray(); {
+          for (size_t j = 0; j < x.numStates(); ++j) w.Int(x[j]);
+        } w.EndArray();
+      } w.EndObject();
     }
 
-    // print the remaining branches
-    for (i = 0; i < x.numStates(); ++i) {
-      if (lineageStates[i]) {
-        for (j = 0; j < states[i].size(); ++j) {
-          tree[states[i][j]].age = time;
-        }
-      }
-    }
+    w.EndArray();
   }
 }
 

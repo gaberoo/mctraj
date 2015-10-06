@@ -9,6 +9,7 @@
 #include "TransitionType.h"
 #include "BranchState.h"
 #include "Tree.h"
+#include "TreeNode.h"
 
 namespace MCTraj {
   inline double oneProb(const EpiState& es, const void* pars) { return 1.0; }
@@ -83,6 +84,8 @@ namespace MCTraj {
       virtual bool validState(const EpiState& es) const = 0;
 
       inline size_t nTransRates() const { return ntrans(); }
+
+      virtual void toTree(const Trajectory& traj, rng::RngStream* rng, vector<TreeNode>& tree) const = 0;
 
     protected:
       size_t nstates;
