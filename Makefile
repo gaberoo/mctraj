@@ -27,17 +27,17 @@ clean_debug:
 	rm -f $(OBJS:%.o=debug/%.o)
 
 distclean: clean
-	rm -f mctraj.a
+	rm -f build/libmctraj.a
 	rm -f $(TESTS)
 
 tests: all
 
-lib: mctraj.a
+lib: build/libmctraj.a
 
-build/mctraj.a: $(OBJS:%.o=build/%.o)
+build/libmctraj.a: $(OBJS:%.o=build/%.o)
 	ar rcs $@ $(OBJS:%.o=build/%.o)
 
-debug/mctraj.a: $(OBJS:%.o=debug/%.o)
+debug/libmctraj.a: $(OBJS:%.o=debug/%.o)
 	ar rcs $@ $(OBJS:%.o=debug/%.o)
 
 cdream/dream.a: cdream/*.cpp
@@ -69,56 +69,56 @@ build/%.o: %.cpp
 debug/%.o: %.cpp
 	$(CPP) $(DEBUG_FLAGS) $(CPPFLAGS) -o $@ -c $<
 
-build/%: %.cpp build/mctraj.a
+build/%: %.cpp build/libmctraj.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-debug/%: %.cpp debug/mctraj.a
+debug/%: %.cpp debug/libmctraj.a
 	$(CPP) $(DEBUG_FLAGS) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 ##############################################################################
 
-testChooseTransition: testChooseTransition.cpp MCTraj.o ParticleFilter.o mctraj.a
+testChooseTransition: testChooseTransition.cpp MCTraj.o ParticleFilter.o libmctraj.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl 
 
 testParticleFilter: testParticleFilter.cpp ParticleFilter.o
-	$(CPP) $(CPPFLAGS) -o testParticleFilter testParticleFilter.cpp mctraj.a -lgsl 
+	$(CPP) $(CPPFLAGS) -o testParticleFilter testParticleFilter.cpp libmctraj.a -lgsl 
 
-testTrajParticle: testTrajParticle.cpp mctraj.a Tree.o
-	$(CPP) $(CPPFLAGS) -o testTrajParticle testTrajParticle.cpp mctraj.a \
+testTrajParticle: testTrajParticle.cpp libmctraj.a Tree.o
+	$(CPP) $(CPPFLAGS) -o testTrajParticle testTrajParticle.cpp libmctraj.a \
 		Tree.o -lgsl $(LDFLAGS)
 
 testReadTrajectory: testReadTrajectory.cpp
-	$(CPP) $(CPPFLAGS) -o testReadTrajectory testReadTrajectory.cpp mctraj.a -lgsl 
+	$(CPP) $(CPPFLAGS) -o testReadTrajectory testReadTrajectory.cpp libmctraj.a -lgsl 
 
-simulateTrajectory: simulateTrajectory.cpp mctraj.a
+simulateTrajectory: simulateTrajectory.cpp libmctraj.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-metrop_pf: metrop_pf.cpp mctraj.a Tree.o
+metrop_pf: metrop_pf.cpp libmctraj.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-pfSPSA: pfSPSA.cpp mctraj.a Tree.o
+build/pfSPSA: pfSPSA.cpp libmctraj.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-pfDREAM: pfDREAM.cpp mctraj.a cdream/dream.a Tree.o
+build/pfDREAM: pfDREAM.cpp build/libmctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-pfMH: pfMH.cpp mctraj.a cdream/dream.a Tree.o
+build/pfMH: pfMH.cpp build/libmctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-pfPSO: pfPSO.cpp mctraj.a cpso/libpso.a Tree.o
+build/pfPSO: pfPSO.cpp build/libmctraj.a cpso/libpso.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-pfPSO_mpi: pfPSO.cpp mctraj.a cpso/libpso_mpi.a Tree.o
+pfPSO_mpi: pfPSO.cpp libmctraj.a cpso/libpso_mpi.a Tree.o
 	$(MPICPP) $(MPICFLAGS) -o $@ $^ -lgsl $(MPILDFLAGS)
 
 ##############################################################################
 
-testSingleTraj: testSingleTraj.cpp mctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expoTree.o
-	$(CPP) $(CPPFLAGS) -o testSingleTraj testSingleTraj.cpp mctraj.a \
+testSingleTraj: testSingleTraj.cpp libmctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expoTree.o
+	$(CPP) $(CPPFLAGS) -o testSingleTraj testSingleTraj.cpp libmctraj.a \
 		../expoTreeSIR.o ../expoTree.o $(EXPOMV) ../Tree.o -lgsl $(LDFLAGS)
 
-clockPfLik: clockPfLik.cpp mctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expoTree.o
-	$(CPP) $(CPPFLAGS) -o clockPfLik clockPfLik.cpp mctraj.a \
+clockPfLik: clockPfLik.cpp libmctraj.a $(EXPOMV) ../Tree.o ../expoTreeSIR.o ../expoTree.o
+	$(CPP) $(CPPFLAGS) -o clockPfLik clockPfLik.cpp libmctraj.a \
 		../expoTreeSIR.o ../expoTree.o $(EXPOMV) ../Tree.o -lgsl $(LDFLAGS)
 
 ##############################################################################
