@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
   TCLAP::ValueArg<int> reps("r","nreps","Number of repetitions",false,1,"int",cmd);
   TCLAP::ValueArg<int> seed("S","seed","Random number seed",false,-1,"int",cmd);
-  TCLAP::ValueArg<int> type("T","model","Model type",false,1,"int",cmd);
+  TCLAP::ValueArg<char> type("T","model","Model type",false,'S',"char",cmd);
   TCLAP::ValueArg<double> alpha("a","alpha","Importance damping",false,10.0,"double",cmd);
   TCLAP::ValueArg<double> stepSize("t","stepSize","Time increments for simulation",false,INFINITY,"double",cmd);
 
@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
   pars.psi  = psi.getValue();
   pars.rho  = rho.getValue();
 
+  IModel::EpiPars i_pars;
   SEISModel::EpiPars seis_pars;
 
   PFPars pf_pars;
@@ -119,25 +120,38 @@ int main(int argc, char** argv) {
   Model* mpt = NULL;
 
   switch (pf_pars.model_type) {
+    case 'I':
     case 0:
-      mpt = new I(&pars);
+      if (vflag.getValue() > 1) cerr << "I model." << endl;
+      i_pars.beta = pars.beta;
+      i_pars.mu   = pars.mu;
+      i_pars.psi  = pars.psi;
+      i_pars.rho  = pars.psi;
+      mpt = new I(&i_pars);
       es = new EpiState(IModel::nstates);
+      (*es)[0] = 0;
       break;
 
+    case 'S':
     case 1:
     default:
+      if (vflag.getValue() > 1) cerr << "SIS model." << endl;
       mpt = new SIS(&pars);
       es = new EpiState(SISModel::nstates);
       (*es)[0] = (int) pars.N;
       break;
 
+    case 'R':
     case 2:
+      if (vflag.getValue() > 1) cerr << "SIR model." << endl;
       mpt = new SIR(&pars);
       es = new EpiState(SISModel::nstates);
       (*es)[0] = (int) pars.N;
       break;
 
+    case 'E':
     case 3:
+      if (vflag.getValue() > 1) cerr << "SEIS model." << endl;
       seis_pars.N = pars.N;
       seis_pars.beta = pars.beta;
       seis_pars.mu = pars.mu;

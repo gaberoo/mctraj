@@ -232,6 +232,8 @@ namespace MCTraj {
     // apply the branch changes
     int ret = tt->applyBranch(curState,rng,st,pars);
 
+    // cerr << ">>>>> " << ret << endl;
+
     if (ret < 0) {
 //      cerr << *this << endl;
 //      EpiState x = curState;
@@ -242,7 +244,7 @@ namespace MCTraj {
 //      cerr << endl;
 //      return 0.0;
       dw = 0.0;
-    } else {
+    } else if (ret < 100) {
       // adjust the weight
       dw *= exp(st.relprob);
     }

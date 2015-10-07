@@ -3,8 +3,9 @@
 double MCTraj::SIRModel::infRateFun(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double lambdaI = ep.beta*es[0]*es[1]/ep.N;
-  return (lambdaI > 0.0) ? lambdaI : 0.0;
+  trueRate = ep.beta*es[0]*es[1]/ep.N;
+  if (trueRate < 0) trueRate = 0.0;
+  return trueRate;
 }
 
 double MCTraj::SIRModel::treeProbInf(const EpiState& es, const void* pars) 
@@ -27,8 +28,8 @@ double MCTraj::SIRModel::treeProbInf(const EpiState& es, const void* pars)
 double MCTraj::SIRModel::recovRateFun(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[1];
-  return (ep.mu+ep.psi)*I;
+  trueRate = (ep.mu+ep.psi)*es[1];
+  return trueRate;
 }
 
 double MCTraj::SIRModel::treeProbRecov(const EpiState& es, const void* pars) 
@@ -54,8 +55,8 @@ double MCTraj::SIRModel::treeObsInf(const EpiState& es, const void* pars, double
   double S = es[0];
   double I = es[1];
   double lambda = ep.beta*S/ep.N;
-  return 2.0*lambda/(I+1.);
-  // return lambda;
+  trueRate = 2.0*lambda/(I+1.);
+  return trueRate;
 }
 
 /************************************************************************/
@@ -63,8 +64,8 @@ double MCTraj::SIRModel::treeObsInf(const EpiState& es, const void* pars, double
 double MCTraj::SIRModel::treeObsRecov(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[1];
-  return (ep.psi > 0) ? ep.psi*I : 1.0;
+  trueRate = (ep.psi > 0) ? ep.psi*es[1] : 1.0;
+  return trueRate;
 }
 
 /************************************************************************/
