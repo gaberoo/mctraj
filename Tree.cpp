@@ -35,21 +35,24 @@ void Tree::addRateShift(double t) {
 
 // ========================================================================
 
-void Tree::readFromFile(string fn) {
+int Tree::readFromFile(string fn) {
   ifstream in(fn.c_str());
   if (! in.is_open()) {
     cerr << "Problem opening file '" << fn << "'. Aborting." << endl;
-    return;
+    return -2;
   }
+
   string input;
   double x1;
   int    x2;
   int    A;
+
   while (! getline(in,input).eof()) {
     if (input.length() == 0) continue;
     if (input[0] == '#') continue;
 
     istringstream istr(input);
+
     if (istr >> x1 >> x2) {
       times.push_back(x1);
       ttypes.push_back(x2);
@@ -57,31 +60,34 @@ void Tree::readFromFile(string fn) {
     } else {
       cerr << "Error reading times/type:" << endl << " > " << in << endl;
     }
-    while (istr >> A) ids.back().push_back(A);
+
+    while (1) {
+      if (istr >> A) ids.back().push_back(A);
+      else if (istr.eof()) break;
+    }
   }
   in.close();
+
   // make sure times are sorted
   vector<size_t> p(times.size());
   gsl_sort_index(p.data(),times.data(),1,times.size());
+
   // apply sort
   // gsl_permute(p.data(),times.data(),1,times.size());
   // gsl_permute_int(p.data(),ttypes.data(),1,ttypes.size());
-  extant = 1;
-  maxExtant = 1;
-  numBranches = 0;
+
+  extant = nroot;
+  maxExtant = nroot;
+  numBranches = nroot;
+
   int n(times.size());
-  int nb = 0;
+
   for (int i(n-1); i >= 0; --i) {
     switch (ttypes[i]) {
       case 1:
-        if (ids[i].size() > 0) {
-          nb = (ids[i][1] >= 0) + (ids[i][2] >= 0);
-          extant += nb - 1;
-          numBranches += nb;
-        } else {
-          ++extant;
-          numBranches += 2;
-        }
+      case 11:
+        ++extant;
+        numBranches += 2;
         break;
       case 0:
       case 2:
@@ -92,13 +98,16 @@ void Tree::readFromFile(string fn) {
     }
     if (maxExtant < extant) maxExtant = extant;
   }
+
   if (extant < 0) {
     fprintf(stderr,"Invalid tree: More samples than infections.\n");
     cout << "extant = " << extant << endl;
-    abort();
+    return -1;
   } 
 
   makeBranches();
+
+  return 0;
 }
 
 // ========================================================================
@@ -125,4 +134,27 @@ void Tree::makeBranches() {
     }
   }
 }
+
+// ========================================================================
+
+size_t Tree::countTypes(int type) const {
+  size_t c = 0;
+  for (size_t i = 0; i < ttypes.size(); ++i) {
+    if (ttype(i) == type) ++c;
+  }
+  return c;
+}
+
+// ========================================================================
+
+int Tree::max_id() const {
+  int max = 0;
+  for (size_t i = 0; i < ids.size(); ++i) {
+    if (ids[i].size() > 0) {
+      if (ids[i][0] > max) max = ids[i][0];
+    }
+  }
+  return max;
+}
+
 

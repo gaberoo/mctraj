@@ -112,9 +112,11 @@ namespace MCTraj {
 
   class SEIS : public Model {
     public:
-      SEIS(const SEIS& m) : Model(m) {}
+      SEIS(const SEIS& m) : Model(m) { do_branches = true; }
       SEIS(const SEISModel::EpiPars* p) {
         nstates = SEISModel::nstates;
+        do_branches = true;
+
         pars = p;
         rho = p->rho;
 

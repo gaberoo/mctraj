@@ -194,7 +194,7 @@ namespace MCTraj {
 
       template<typename T> 
       void state_json(size_t i, rapidjson::Writer<T>& json_w) const {
-        if (i < size) {
+        if ((int) i < size) {
           json_w.StartObject(); {
             json_w.String("id");    json_w.Int(i); 
             json_w.String("alive"); json_w.Int(isAlive[i]); 

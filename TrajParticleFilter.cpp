@@ -160,8 +160,10 @@ namespace MCTraj {
       cerr << ascii::end << endl;
     }
 
-    // make sure the model is specified, otherwise stop
-    if (modelType < 0) return tree->ttypes[nextStep];
+    // make sure the model is specified, otherwise don't do anything
+    if (modelType < 0) {
+      return tree->ttypes[nextStep];
+    }
 
     size_t j;
     double dw;
@@ -232,7 +234,7 @@ namespace MCTraj {
     cout << "Number of zero-weight particles = " << cnt_zero << endl;
     cout << endl;
 #else
-    if (vflag > 0) {
+    if (vflag > 1 && cnt_zero > 0) {
       cerr << "Number of zero-weight particles = " << cnt_zero << endl;
     }
 #endif

@@ -65,13 +65,12 @@ double MCTraj::SISModel::treeObsInf(const EpiState& es, const void* pars, double
   return trueRate;
 }
 
-/************************************************************************/
+//----------------------------------------------------------------------------
 
 double MCTraj::SISModel::treeObsRecov(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[1];
-  trueRate = (ep.psi > 0) ? ep.psi*I : 1.0;
+  trueRate = (ep.psi > 0) ? ep.psi*es[1] : 1.0;
   return trueRate;
 }
 

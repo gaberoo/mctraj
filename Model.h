@@ -29,7 +29,9 @@ namespace MCTraj {
 
   class Model {
     public:
-      Model() : nstates(0), pars(NULL), rho(0.0) {
+      Model() 
+        : nstates(0), pars(NULL), rho(0.0), do_branches(false)
+      {
         typeMap = new int[100];
         for (int i(0); i < 100; ++i) typeMap[i] = -1;
       }
@@ -37,7 +39,7 @@ namespace MCTraj {
       Model(const Model& m)
         : nstates(m.nstates), pars(m.pars), rho(m.rho),
           transTypes(m.transTypes), obsTypes(m.obsTypes), 
-          simEvent(m.simEvent)
+          simEvent(m.simEvent), do_branches(m.do_branches)
       {
         typeMap = new int[100];
         memcpy(typeMap,m.typeMap,100*sizeof(int));
@@ -96,6 +98,9 @@ namespace MCTraj {
       vector<const TransitionType*> transTypes;
       vector<const TransitionType*> obsTypes;
       vector<int> simEvent;
+
+    public:
+      bool do_branches;
   };
 }
 

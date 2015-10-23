@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
   TCLAP::ValueArg<double> rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
   TCLAP::ValueArg<double> gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
 
+  TCLAP::ValueArg<int> nroot("","nroot","Number of lineages at the root",false,1,"int",cmd);
   TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
   TCLAP::ValueArg<int> reps("r","nreps","Number of repetitions",false,1,"int",cmd);
   TCLAP::ValueArg<int> seed("S","seed","Random number seed",false,-1,"int",cmd);
@@ -46,8 +47,7 @@ int main(int argc, char** argv) {
   TCLAP::SwitchArg history("H","history","Store trajectories",cmd,false);
   TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
 
-  TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",false);
-  cmd.add(multi);
+  TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",cmd,false);
 
   try {
     cmd.parse(argc,argv);
@@ -61,7 +61,14 @@ int main(int argc, char** argv) {
   }
 
   vector<string> fileNames = multi.getValue();
-  Tree tree(fileNames.front().c_str());
+  Tree tree(fileNames.front().c_str(),nroot.getValue());
+
+  if (tree.getExtant() < 0) {
+    cerr << "Cannot run with negative extant lineages at the root." << endl;
+    cerr << "0: " << tree.countTypes(0) << endl;
+    cerr << "1: " << tree.countTypes(1) << endl;
+    return 0;
+  }
 
   // =========================================================================
 
@@ -138,7 +145,9 @@ int main(int argc, char** argv) {
       if (vflag.getValue() > 1) cerr << "SIS model." << endl;
       mpt = new SIS(&pars);
       es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) pars.N;
+      (*es)[0] = (int) pars.N - nroot.getValue();
+      (*es)[1] = nroot.getValue();
+      (*es)[2] = nroot.getValue();
       break;
 
     case 'R':
@@ -146,7 +155,9 @@ int main(int argc, char** argv) {
       if (vflag.getValue() > 1) cerr << "SIR model." << endl;
       mpt = new SIR(&pars);
       es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) pars.N;
+      (*es)[0] = (int) pars.N - nroot.getValue();
+      (*es)[1] = nroot.getValue();
+      (*es)[2] = nroot.getValue();
       break;
 
     case 'E':

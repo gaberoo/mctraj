@@ -9,8 +9,8 @@ namespace MCTraj {
       else wake(bsc.id);
 
       // add branch state changes
-      for (size_t j = 0; j <= nstates; ++j) {
-        if (j < bsc.change.size()) {
+      for (int j = 0; j <= nstates; ++j) {
+        if (j < (int) bsc.change.size()) {
           state(bsc.id,j) += bsc.change[j];
         }
       }
@@ -55,7 +55,7 @@ namespace MCTraj {
         w[alive[i]] = state(alive[i],col);
       }
     } else {
-      for (size_t i = 0; i < size; ++i) {
+      for (int i = 0; i < size; ++i) {
         w[i] = state(i,col);
       }
     }
@@ -74,7 +74,7 @@ namespace MCTraj {
       for (size_t i = 1; i < w.size(); ++i) w[i] += w[i-1];
     } else {
       w[0] = state(0,col);
-      for (size_t i = 1; i < size; ++i) {
+      for (int i = 1; i < size; ++i) {
         w[i] = w[i-1] + state(i,col);
       }
     }

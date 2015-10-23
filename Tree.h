@@ -35,11 +35,19 @@ public:
   /* CONSTRUCTORS-DESTRUCTORS */
 
   // 1. Default
-  Tree() : extant(0), maxExtant(0), nroot(0), fn(""), is_rev(0), numBranches(0) {}
+  Tree() 
+    : extant(0), maxExtant(0), nroot(0), fn(""), 
+      is_rev(0), numBranches(0) 
+  {}
 
   // 2. Read tree from file
-  Tree(const char* fn) : nroot(0), is_rev(0) { read(string(fn)); }
-  Tree(string fn) : nroot(0), is_rev(0) { read(fn); }
+  Tree(const char* fn, int nroot = 0) 
+    : nroot(nroot), is_rev(0)
+  { read(string(fn)); }
+
+  Tree(string fn, int nroot = 0) 
+    : nroot(nroot), is_rev(0)
+  { read(fn); }
 
   // 3. Copy constructor
   Tree(const Tree& T) 
@@ -58,12 +66,12 @@ public:
   // METHODS
   
   // read tree from file
-  inline void read(string filename) { 
+  inline int read(string filename) { 
     fn = filename;
     // readTimes(fn,times,ttypes,extant,maxExtant); 
-    readFromFile(fn);
+    return readFromFile(fn);
   }
-  void readFromFile(string fn);
+  int readFromFile(string fn);
 
   // get pointers
   inline double* ti() { return times.data(); }
@@ -80,30 +88,14 @@ public:
   inline int getMaxExtant() const { return maxExtant; }
   inline int getExtant() const { return extant; }
 
-  inline size_t countTypes(int type) const {
-    size_t c = 0;
-    for (size_t i = 0; i < ttypes.size(); ++i) {
-      if (ttype(i) == type) ++c;
-    }
-    return c;
-  }
-
+  size_t countTypes(int type) const;
   inline int num_branches() const { return numBranches; }
-
-  inline int max_id() const {
-    int max = 0;
-    for (size_t i = 0; i < ids.size(); ++i) {
-      if (ids[i].size() > 0) {
-        if (ids[i][0] > max) max = ids[i][0];
-      }
-    }
-    return max;
-  }
+  int max_id() const;
 
   // ========================================================================
   // OPERATORS
 
-  const Tree& operator=(const Tree& t) {
+  inline const Tree& operator=(const Tree& t) {
     times = t.times;
     ttypes = t.ttypes;
     extant = t.extant;

@@ -68,7 +68,7 @@ double MCTraj::SEISModel::infTreeObs(const EpiState& es, const void* pars, doubl
   EpiPars* ep = (EpiPars*) pars;
 
   // get number of infecteds in the branch group
-  double nE = es.branchState(es.cur(0),1);
+  // double nE = es.branchState(es.cur(0),1);
   double nI = es.branchState(es.cur(0),2);
 
   // get infectious force for the group:
@@ -176,7 +176,7 @@ double MCTraj::SEISModel::recovTreeObs(const EpiState& es, const void* pars,
   EpiPars* ep = (EpiPars*) pars;
 
   // get number of I in group
-  double nE = es.branchState(es.cur(0),1);
+  // double nE = es.branchState(es.cur(0),1);
   double nI = es.branchState(es.cur(0),2);
 
   // sampling rate for this group

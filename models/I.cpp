@@ -1,15 +1,15 @@
 #include "I.h"
 
-double MCTraj::IModel::infRateFun(const EpiState& es, 
-                                  const void* pars, 
-                                  double& trueRate) 
+double MCTraj::IModel::infRateFun(const EpiState& es, const void* pars, double& trueRate) 
 {
   // cerr << "I:INF" << endl;
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[0];
-  double lambdaI = ep.beta*I;
-  return (lambdaI > 0.0) ? lambdaI : 0.0;
+  trueRate = ep.beta*es[0];
+  if (trueRate < 0.0) trueRate = 0.0;
+  return trueRate;
 }
+
+//----------------------------------------------------------------------------
 
 double MCTraj::IModel::treeProbInf(const EpiState& es, const void* pars) 
 {
@@ -26,17 +26,17 @@ double MCTraj::IModel::treeProbInf(const EpiState& es, const void* pars)
   return (I >= k) ? p : 0.0;
 }
 
-/************************************************************************/
+//----------------------------------------------------------------------------
 
-double MCTraj::IModel::recovRateFun(const EpiState& es, 
-                                    const void* pars, 
-                                    double& trueRate) 
+double MCTraj::IModel::recovRateFun(const EpiState& es, const void* pars, double& trueRate) 
 {
   // cerr << "I:RECOV" << endl;
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[0];
-  return (ep.mu+ep.psi)*I;
+  trueRate = (ep.mu+ep.psi)*es[0];
+  return trueRate;
 }
+
+//----------------------------------------------------------------------------
 
 double MCTraj::IModel::treeProbRecov(const EpiState& es, const void* pars) 
 {
@@ -48,31 +48,29 @@ double MCTraj::IModel::treeProbRecov(const EpiState& es, const void* pars)
    * The probability that it's a recovery in a non-tree branch is
    *   p = (1-s) 
    */
-  double I = es[0];
-  double k = es[1];
   EpiPars ep = *(EpiPars*) pars;
   double s = ep.psi/(ep.psi+ep.mu);
-  return (I+1 > k) ? (1.-s) : 0.0;
+  return (es[0]+1 > es[1]) ? (1.-s) : 0.0;
 }
 
-/************************************************************************/
+//----------------------------------------------------------------------------
 
 double MCTraj::IModel::treeObsInf(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
   double I = es[0];
   double lambda = ep.beta;
-  return 2.0*lambda/(I+1.);
-  // return lambda;
+  trueRate = 2.0*lambda/(I+1.);
+  return trueRate;
 }
 
-/************************************************************************/
+//----------------------------------------------------------------------------
 
 double MCTraj::IModel::treeObsRecov(const EpiState& es, const void* pars, double& trueRate) 
 {
   EpiPars ep = *(EpiPars*) pars;
-  double I = es[0];
-  return (ep.psi > 0) ? ep.psi*I : 1.0;
+  trueRate = (ep.psi > 0) ? ep.psi*es[0] : 1.0;
+  return trueRate;
 }
 
 /************************************************************************/
