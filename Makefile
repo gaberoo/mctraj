@@ -108,6 +108,9 @@ build/pfMH: pfMH.cpp build/libmctraj.a cdream/dream.a Tree.o
 build/pfPSO: pfPSO.cpp build/libmctraj.a cpso/libpso.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
+debug/pfPSO: pfPSO.cpp debug/libmctraj.a cpso/libpso.a Tree.o
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
 pfPSO_mpi: pfPSO.cpp libmctraj.a cpso/libpso_mpi.a Tree.o
 	$(MPICPP) $(MPICFLAGS) -o $@ $^ -lgsl $(MPILDFLAGS)
 

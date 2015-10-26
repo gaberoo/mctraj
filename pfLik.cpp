@@ -46,7 +46,6 @@ namespace MCTraj {
       ret = pf->stepTree(m->getPars(),rng,pars.adj_zero,pars.step_size);
       if (pars.vflag > 1) cerr << "Finished advancing tree." << endl;
 
-
       if (ret >= 0) {
 //        if (vflag > 1) cerr << "Calculating weights..." << endl;
 //        pf.calcWeights(m->getPars());

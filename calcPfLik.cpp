@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
       i_pars.beta = pars.beta;
       i_pars.mu   = pars.mu;
       i_pars.psi  = pars.psi;
-      i_pars.rho  = pars.psi;
+      i_pars.rho  = pars.rho;
       mpt = new I(&i_pars);
       es = new EpiState(IModel::nstates);
       (*es)[0] = 0;
@@ -186,6 +186,7 @@ int main(int argc, char** argv) {
   double lik = 0.0;
 
   tree.reverse();
+
   es->init_branches(tree.max_id()+1,2);
   es->branches.wake(0);
   es->branches.setCol(0,0);

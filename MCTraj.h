@@ -33,19 +33,19 @@ namespace MCTraj {
                            StateTransition& st, const void* pars);
 
   typedef struct {
-    size_t num_particles;
-    int print_particles;
-    int vflag;
-    int skip;
-    int reps;
-    int model_type;
-    int print_traj;
-    int full_tree;
-    int history;
-    long unsigned seed;
-    double filter_time;
-    double step_size;
-    bool adj_zero;
+    size_t num_particles = 10;
+    int print_particles = 0;
+    int vflag = 0;
+    int skip = 0;
+    int reps = 1;
+    int print_traj = 0;
+    int full_tree = 0;
+    int history = 0;
+    char model_type = 'S';
+    long unsigned seed = time(NULL);
+    double filter_time = 0.0;
+    double step_size = INFINITY;
+    bool adj_zero = true;
   } PFPars;
 
   void pf_pars_read_json(PFPars* p, rapidjson::Value& json);

@@ -10,69 +10,19 @@ using namespace std;
 #include <cpso/Swarm.h>
 
 #include "pfLik.h"
-#include "models/SIS.h"
-#include "models/SIR.h"
-#include "models/SEIS.h"
+#include "models/Models.h"
 using namespace MCTraj;
 
-typedef struct {
-  Model* mpt;
-  const Tree* tree;
-  const PFPars* pars;
-  const EpiState* es;
-  rng::Rng* rng;
-  const PSO::Parameters* mpar;
-  ostream* otraj;
-  ostream* obranch;
-} pf_pars_t;
+#include "pf_pars.h"
 
-double pf_lik(const PSO::Point& state, const void* pars) 
-{
-  pf_pars_t& p = *(pf_pars_t*) pars;
-
-  const Pars* oldPt = p.mpt->getPars();
-  const SEISModel::EpiPars* oldPars;
-
-  try {
-    oldPars = dynamic_cast<const SEISModel::EpiPars*>(oldPt);
-  } catch (exception& e) {
-    cerr << "Error casting pointer!" << endl;
-    abort();
-  }
-
-  SEISModel::EpiPars epi(*oldPars);
-  epi.N     = (p.mpar->scale[0] == 'l') ? exp(state[0]) : state[0];
-  epi.beta  = (p.mpar->scale[1] == 'l') ? exp(state[1]) : state[1];
-  epi.mu    = (p.mpar->scale[2] == 'l') ? exp(state[2]) : state[2];
-  epi.psi   = (p.mpar->scale[3] == 'l') ? exp(state[3]) : state[3];
-  epi.gamma = (p.mpar->scale[4] == 'l') ? exp(state[4]) : state[4];
-
-  EpiState init(*p.es);
-  init[0] = (int) ceil(epi.N) - 1;
-  if (init[0] < 0) return -INFINITY;
-
-  if (p.pars->vflag) cerr << epi.to_json() << endl;
-  p.mpt->setPars(&epi);
-
-  Trajectory* traj = NULL;
-  if (p.otraj != NULL) traj = new Trajectory(init,p.mpt);
-
-  if (p.pars->vflag > 1) cerr << "Starting calculation." << endl;
-  double lik = pfLik(p.mpt,init,*(p.tree),*(p.pars),p.rng,traj);
-
-  if (p.pars->vflag > 1) cerr << "Finished calculation." << endl;
-
-//  if (p.obranch != NULL) traj->printBranches(*p.obranch) << endl;
-//  if (p.otraj != NULL) traj->printFromFirst(*p.otraj) << endl;
-
-  p.mpt->setPars(oldPt);
-
-  return lik;
-}
-
+#include "funcs/I.h"
+#include "funcs/SIS.h"
 
 int main(int argc, char** argv) {
-  TCLAP::CmdLine cmd("Particle filter DREAM", ' ', "0.1");
+  // =========================================================================
+  // read command line arguments
+
+  TCLAP::CmdLine cmd("Particle filter PSO", ' ', "0.2");
   TCLAP::ValueArg<string> json_fn("J","json","JSON input file",true,"","string",cmd);
   TCLAP::ValueArg<string> out_fn("o","out","output file",false,"","string",cmd);
   TCLAP::ValueArg<string> hist_fn("H","hist","history file",false,"","string",cmd);
@@ -88,6 +38,9 @@ int main(int argc, char** argv) {
 
   vector<string> fileNames = multi.getValue();
 
+  // =========================================================================
+  // read JSON file
+
   ifstream in;
   string json_input;
   if (json_fn.getValue() != "") {
@@ -100,7 +53,7 @@ int main(int argc, char** argv) {
   }
 
   // =========================================================================
-  // Reading parameters from JSON
+  // Extract parameters from JSON
 
   rapidjson::Document jpars;
   try {
@@ -112,13 +65,7 @@ int main(int argc, char** argv) {
   }
 
   // =========================================================================
-  // Reading trees
-
-  Tree tree(fileNames.front().c_str());
-  tree.reverse();
-
-  // =========================================================================
-  // read DREAM parameters
+  // Extract main PSO parameter structure
 
   PSO::Parameters p;
 
@@ -132,54 +79,6 @@ int main(int argc, char** argv) {
     cerr << "JSON exception: " << str << endl;
   }
   cerr << "done" << endl;
-
-  PFPars pf_pars;
-  try {
-    pf_pars_read_json(&pf_pars,jpars);
-  } catch (const char* str) {
-    cerr << "PFPars exception: " << str << endl;
-  }
-
-  SEISModel::EpiPars seis_pars;
-  seis_pars.N     = (p.ub[0]+p.lb[0])/2.0;
-  seis_pars.beta  = (p.ub[1]+p.lb[1])/2.0;
-  seis_pars.mu    = (p.ub[2]+p.lb[2])/2.0;
-  seis_pars.psi   = (p.ub[3]+p.lb[3])/2.0;
-  seis_pars.gamma = (p.ub[4]+p.lb[4])/2.0;
-  seis_pars.rho   = 0.0;
-
-  Model* mpt = new SEIS(&seis_pars);
-  EpiState* es = new EpiState(SEISModel::nstates);
-  (*es)[0] = ((int) seis_pars.N)-1;
-  (*es)[1] = 1;
-  (*es)[2] = 0;
-  (*es)[3] = 1;
-  (*es)[4] = 0;
-  es->init_branches(tree.max_id()+1);
-  es->branches.wake(0);
-  es->branches.setCol(0,0);
-  // cout << es->to_json() << endl;
-
-#if defined(_OPENMP)
-  int max_threads = omp_get_max_threads();
-#else
-  int max_threads = 1;
-#endif
-
-  rng::Rng* rng = new rng::GSLRng;
-  rng->set_seed(time(NULL));
-  rng->alloc(max_threads);
-
-  pf_pars_t lik_pars;
-  lik_pars.mpt = mpt;
-  lik_pars.tree = &tree;
-  lik_pars.pars = &pf_pars;
-  lik_pars.rng = rng;
-  lik_pars.mpar = &p;
-  lik_pars.es = es;
-
-  p.evalFunc = &pf_lik;
-  p.evalParams = &lik_pars;
 
   // =========================================================================
   // PSO parameters
@@ -221,6 +120,98 @@ int main(int argc, char** argv) {
       out = new ofstream(hist_fn.getValue().c_str());
     }
   }
+
+  // =========================================================================
+
+  PFPars pf_pars;
+  try {
+    pf_pars_read_json(&pf_pars,jpars);
+  } catch (const char* str) {
+    cerr << "PFPars exception: " << str << endl;
+  }
+
+#if defined(_OPENMP)
+  int max_threads = omp_get_max_threads();
+#else
+  int max_threads = 1;
+#endif
+
+  rng::Rng* rng = new rng::GSLRng;
+  rng->set_seed(time(NULL));
+  rng->alloc(max_threads);
+
+  int nroot = 0;
+  it = jpars.FindMember("nroot");
+  if (it != jpars.MemberEnd()) nroot = it->value.GetInt();
+
+  IModel::EpiPars       i_pars;
+  SISModel::EpiPars   sis_pars;
+  SEISModel::EpiPars seis_pars;
+
+  Tree tree(fileNames.front().c_str(),nroot);
+  tree.reverse();
+
+  // =========================================================================
+
+  EpiState* es = NULL;
+  Model* mpt = NULL;
+
+  int kase = 0;
+
+  switch (pf_pars.model_type) {
+    case 'I':
+    case 0:
+      if (vflag > 1) cerr << "I model." << endl;
+      i_pars.beta = p.initVar(0);
+      i_pars.mu   = p.initVar(1);
+      i_pars.psi  = p.initVar(2);
+      i_pars.rho  = p.initVar(3);
+      mpt = new I(&i_pars);
+      es = new EpiState(IModel::nstates);
+      (*es)[0] = nroot;
+      (*es)[1] = nroot;
+      p.evalFunc = &pf_i;
+      break;
+
+    case 'R':
+    case 2:
+      kase = 1;
+    case 'S':
+    case 1:
+    default:
+      if (vflag > 1) cerr << "SIS/SIR model." << endl;
+      sis_pars.N    = p.initVar(0);
+      sis_pars.beta = p.initVar(1);
+      sis_pars.mu   = p.initVar(2);
+      sis_pars.psi  = p.initVar(3);
+      sis_pars.rho  = p.initVar(4);
+
+      if (kase == 1) mpt = new SIR(&sis_pars);
+      else mpt = new SIS(&sis_pars);
+
+      es = new EpiState(SISModel::nstates);
+      (*es)[0] = (int) sis_pars.N - nroot;
+      (*es)[1] = nroot;
+      (*es)[2] = nroot;
+
+      p.evalFunc = &pf_sis;
+
+      break;
+
+    case 'E':
+    case 3:
+      cerr << "SEIS not yet implemented!" << endl;
+      break;
+  }
+
+  pf_pars_t lik_pars;
+  lik_pars.mpt  = mpt;
+  lik_pars.tree = &tree;
+  lik_pars.pars = &pf_pars;
+  lik_pars.rng  = rng;
+  lik_pars.mpar = &p;
+  lik_pars.es   = es;
+  p.evalParams = &lik_pars;
 
   // =========================================================================
   // Run PSO

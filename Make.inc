@@ -7,10 +7,11 @@ LD = g++
 #CPP = clang++
 #LD = clang++
 
-CFLAGS += -Imodels -I. -I.. -isystem ./include -g 
+CFLAGS += -std=c++11
+CFLAGS += -Imodels -I. -I.. -isystem ./include
 #CFLAGS += -DDEBUG
 #CFLAGS += -fopenmp 
-#CFLAGS += -std=c++0x -DMKLRNG 
+#CFLAGS += -DMKLRNG 
 #CFLAGS += -DUNROLL
 CFLAGS += -g -m64 -Wall -O3
 FFLAGS += -g -m64 -Wall -O3

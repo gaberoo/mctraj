@@ -9,7 +9,7 @@
 namespace MCTraj {
   namespace SIRModel {
     typedef SISModel::EpiPars EpiPars;
-
+    
     /* S, I(all), I(tree) */
     const size_t nstates = 4;
 

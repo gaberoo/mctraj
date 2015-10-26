@@ -15,8 +15,8 @@ void MCTraj::pf_pars_read_json(PFPars* p, rapidjson::Value& json) {
 
   m1 = d.FindMember("model_type");
   if (m1 != d.MemberEnd()) {
-    if (! m1->value.IsInt()) throw "model_type";
-    p->model_type = m1->value.GetInt();
+    if (! m1->value.IsString()) throw "model_type";
+    p->model_type = m1->value.GetString()[0];
   }
 
   m1 = d.FindMember("num_particles");
@@ -53,6 +53,12 @@ void MCTraj::pf_pars_read_json(PFPars* p, rapidjson::Value& json) {
   if (m1 != d.MemberEnd()) {
     if (! m1->value.IsDouble()) throw "filter_time";
     p->filter_time = m1->value.GetDouble();
+  }
+
+  m1 = d.FindMember("step_size");
+  if (m1 != d.MemberEnd()) {
+    if (! m1->value.IsDouble()) throw "step_size";
+    p->step_size = m1->value.GetDouble();
   }
 
   m1 = d.FindMember("adj_zero");

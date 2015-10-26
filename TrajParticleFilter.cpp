@@ -313,7 +313,8 @@ namespace MCTraj {
 
 #ifdef DEBUG
           cout << ascii::green
-               << "  Particle (" << particle(j).getId() << "/" 
+               << "  [" << step_time << "|" << time << "]"
+               << " Particle (" << particle(j).getId() << "/" 
                << particle(j).getParent() << "): " 
                << particle(j).getState() 
                << ascii::end << endl;

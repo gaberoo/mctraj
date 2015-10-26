@@ -37,6 +37,7 @@ void Tree::addRateShift(double t) {
 
 int Tree::readFromFile(string fn) {
   ifstream in(fn.c_str());
+
   if (! in.is_open()) {
     cerr << "Problem opening file '" << fn << "'. Aborting." << endl;
     return -2;
@@ -58,7 +59,7 @@ int Tree::readFromFile(string fn) {
       ttypes.push_back(x2);
       ids.push_back(vector<int>());
     } else {
-      cerr << "Error reading times/type:" << endl << " > " << in << endl;
+      cerr << "Error reading times/type:" << endl << " > " << fn << endl;
     }
 
     while (1) {

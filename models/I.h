@@ -1,14 +1,39 @@
 #ifndef __IMODEL_H__
 #define __IMODEL_H__
 
-#include <rng/Rng.h>
+#include <rng/RngStream.h>
+#include <gsl/gsl_math.h>
+
 #include "../Model.h"
 #include "../EpiState.h"
-#include "SEIS.h"
+#include "../StateTransition.h"
+#include "../ascii.h"
 
 namespace MCTraj {
   namespace IModel {
-    typedef SEISModel::EpiPars EpiPars;
+    class EpiPars : public Pars {
+    public:
+      EpiPars() {}
+      EpiPars(const EpiPars& e) 
+        : Pars(e), beta(e.beta), mu(e.mu), psi(e.psi), rho(e.rho)
+      {}
+      virtual ~EpiPars() {}
+
+      void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
+        w.StartObject(); {
+          w.String("name");  w.String("I");
+          w.String("beta");  w.Double(beta);
+          w.String("mu");    w.Double(mu);
+          w.String("psi");   w.Double(psi);
+          w.String("rho");   w.Double(rho);
+        } w.EndObject();
+      }
+
+      double beta;   // per-contact infection rate
+      double mu;     // recovery rate
+      double psi;    // sampling rate
+      double rho;
+    };
 
     /* I(all), I(tree) */
     const size_t nstates = 2;
