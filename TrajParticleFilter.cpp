@@ -84,6 +84,7 @@ namespace MCTraj {
           p = (*rng)[0]->discrete_x(n,x.data());
 #endif
           // copyFromPrev(i,p);
+          // only copies the final state (faster!)
           particle(i).copy(prev(p));
           particle(i).setId(i);
           particle(i).setParent(p);

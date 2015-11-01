@@ -11,10 +11,10 @@ namespace MCTraj {
 
     TrajParticleFilter* pf;
     if (pars.history) {
-      if (pars.vflag > 1) cerr << "History filter." << endl;
+      if (pars.vflag > 0) cerr << "History filter." << endl;
       pf = new HistoryFilter(m);
     } else {
-      if (pars.vflag > 1) cerr << "Static filter." << endl;
+      if (pars.vflag > 0) cerr << "Static filter." << endl;
       pf = new StaticFilter(m);
     }
     pf->setVerbosity(pars.vflag);
@@ -27,7 +27,7 @@ namespace MCTraj {
       sprintf(name,"P%lu",i);
       pf->push_back(TrajParticle(string(name),1.0,T));
       (*pf)[i].setId(i);
-      (*pf)[i].storeTrans(false);
+      (*pf)[i].storeTrans(pars.history);
     }
 
     // pf->copyFromPrev();
@@ -113,7 +113,13 @@ namespace MCTraj {
 
     // pf.printMeanTraj(cout);
     // pf.printFromFirst();
-    // if (out != NULL) *out = pf.singleTraj((*rng)[0]);
+    if (out != NULL) {
+      int traj_id = 0;
+      (*rng)[0]->uniform_int(1,&traj_id,0,pf->size());
+      *out = pf->singleTraj(traj_id);
+//      cerr << pf->cparticle(traj_id).getState() << endl;
+//      cerr << out->getState() << endl;
+    }
 
 //    {
 //      vector<double> mu;

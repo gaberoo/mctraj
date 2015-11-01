@@ -3,225 +3,229 @@
 namespace MCTraj {
   Trajectory& Trajectory::copyState(const Trajectory& T) {
     time = T.time;
-  last_event_time = T.time;
-  initialState = T.curState;
-  curState = T.curState;
-  model = T.model;
-  transRates = T.transRates;
-  prob = T.prob;
-  return *this;
-}
+    last_event_time = T.time;
+    initialState = T.curState;
+    curState = T.curState;
+    model = T.model;
+    transRates = T.transRates;
+    trueRates = T.trueRates;
+    prob = T.prob;
+    return *this;
+  }
 
-// =========================================================================
+  // =========================================================================
 
-Trajectory& Trajectory::operator=(const Trajectory& T) {
-  time = T.time;
-  last_event_time = T.last_event_time;
-  initialState = T.initialState;
-  curState = T.curState;
-  transitions = T.transitions;
-  model = T.model;
-  transRates = T.transRates;
-  prob = T.prob;
-  return *this;
-}
+  Trajectory& Trajectory::operator=(const Trajectory& T) {
+    time = T.time;
+    last_event_time = T.last_event_time;
+    initialState = T.initialState;
+    curState = T.curState;
+    transitions = T.transitions;
+    model = T.model;
+    transRates = T.transRates;
+    trueRates = T.trueRates;
+    prob = T.prob;
+    return *this;
+  }
 
-// =========================================================================
+  // =========================================================================
 
-Trajectory& Trajectory::operator+=(const Trajectory& T) {
-  transitions.insert(transitions.end(),
+  Trajectory& Trajectory::operator+=(const Trajectory& T) {
+    vector<StateTransition>::const_iterator it = T.transitions.begin();
+    while (it != T.transitions.end()) { addTransition(*it++); }
+    transitions.insert(transitions.end(),
                       T.transitions.begin(),
                       T.transitions.end());
-  return *this;
-}
+    return *this;
+  }
 
-// =========================================================================
+  // =========================================================================
 
-void Trajectory::addTransition(const StateTransition& trans) {
-  curState += trans.trans;
-  curState.branches += trans.branchTrans;
-  last_event_time += trans.time;
-}
+  void Trajectory::addTransition(const StateTransition& trans) {
+    curState += trans.trans;
+    curState.branches += trans.branchTrans;
+    last_event_time += trans.time;
+  }
 
-// =========================================================================
+  // =========================================================================
 
-int Trajectory::step(double maxTime, 
+  int Trajectory::step(double maxTime, 
                       const void* pars, 
                       rng::RngStream* rng, 
                       bool adjZero) 
-{
-  // get array of next event rates
-  double nextTime = 0.0;
-  double transTime = 0.0;
-  double r = 0.0;
+  {
+    // get array of next event rates
+    double nextTime = 0.0;
+    double transTime = 0.0;
+    double r = 0.0;
 
-  int nextEvent = 0;
-  int num_events = 0;
+    int nextEvent = 0;
+    int num_events = 0;
 
-  double dw = 0.0;
-  double rate = 0.0;
-  double unrate = 0.0;
+    double dw = 0.0;
+    double rate = 0.0;
+    double unrate = 0.0;
 
-  int ret = 0;
+    int ret = 0;
 
-  const TransitionType* nextTrans;
+    const TransitionType* nextTrans;
 
-  // set time to EpiState
-  curState.time = time;
+    // set time to EpiState
+    curState.time = time;
 
-  // calculate all rates
-  double totalRate = model->calculateTransRates(curState,transRates,trueRates);
-  double totalTrue = std::accumulate(trueRates.begin(),trueRates.end(),0.0);
+    // calculate all rates
+    double totalRate = model->calculateTransRates(curState,transRates,trueRates);
+    double totalTrue = std::accumulate(trueRates.begin(),trueRates.end(),0.0);
 
-  while (ret <= 0) {
-    if (totalRate <= 0.0) {
-      time = maxTime;
-      ret = 4;
-      break;
-    }
+    while (ret <= 0) {
+      if (totalRate <= 0.0) {
+        time = maxTime;
+        ret = 4;
+        break;
+      }
 
-    // sample next event time
-    rng->uniform(1,&r);
-    nextTime =  -1.0/totalRate * log(r);
+      // sample next event time
+      rng->uniform(1,&r);
+      nextTime =  -1.0/totalRate * log(r);
 
-    if (time+nextTime < maxTime) {
-      // sample next event type and calculate rate of the event
-      nextEvent = model->chooseTransition(rng,transRates);
+      if (time+nextTime < maxTime) {
+        // sample next event type and calculate rate of the event
+        nextEvent = model->chooseTransition(rng,transRates);
 
-      // get rate of chosen event (transRates is a cumulative array)
-      rate = transRates[nextEvent] - ((nextEvent>0) ? transRates[nextEvent-1] : 0.0);
+        // get rate of chosen event (transRates is a cumulative array)
+        rate = transRates[nextEvent] - ((nextEvent>0) ? transRates[nextEvent-1] : 0.0);
 
-      // get the appropriate transition
-      nextTrans = model->getTType(nextEvent);
-      // - time interval
-      transTime = time+nextTime - lastEventTime();
-      // generate the transition
-      StateTransition st(transTime,*nextTrans,curState,pars,nextEvent,time+nextTime);
+        // get the appropriate transition
+        nextTrans = model->getTType(nextEvent);
+        // - time interval
+        transTime = time+nextTime - lastEventTime();
+        // generate the transition
+        StateTransition st(transTime,*nextTrans,curState,pars,nextEvent,time+nextTime);
 
-      // get potential new state (without copying branch information)
-      EpiState newState;
-      newState.copyNoBranches(curState);
-      newState += st.trans;
+        // get potential new state (without copying branch information)
+        EpiState newState;
+        newState.copyNoBranches(curState);
+        newState += st.trans;
 
-      // get probability of new state
-      newState.nextTime = nextTime;
+        // get probability of new state
+        newState.nextTime = nextTime;
 
-      dw = nextTrans->applyProb(newState,model->getPars());
+        dw = nextTrans->applyProb(newState,model->getPars());
 
-      if (dw > 0.0 || ! adjZero) 
-        // check if the proposed state is feasible (prob > 0)
-      {
-        // if yes,
-        // add branch transformations
-        if (model->do_branches) {
-          curState.nextTime = nextTime;
-          nextTrans->applyBranch(curState,rng,st,pars);
-          dw *= exp(st.relprob);
+        if (dw > 0.0 || ! adjZero) 
+          // check if the proposed state is feasible (prob > 0)
+        {
+          // if yes,
+          // add branch transformations
+          if (model->do_branches) {
+            curState.nextTime = nextTime;
+            nextTrans->applyBranch(curState,rng,st,pars);
+            dw *= exp(st.relprob);
+          }
+
+          // add transition to list
+          if (store_trans) transitions.push_back(st);
+
+          // adapt state
+          addTransition(st);
+
+          // multiply probability
+          updateProb(dw);
+          // updateLogProb(st.relprob);
+
+          // advance time
+          time += nextTime;
+          ++num_events;
+
+#ifdef DEBUG
+          if (ret < 0) {
+            cout << ascii::cyan << "      legal event" 
+                  << " (" << nextEvent << ")."
+                  << " w = " << dw << ", penalty = " << unrate 
+                  << ", total rate = " << totalRate << "."  
+                  << ascii::end << endl;
+          }
+#endif
+
+          ret = 1; // exit loop
+        } else {
+          // if no,
+          // make this transition illegal in this particular step
+#ifdef DEBUG
+          cout << ascii::cyan
+                << "      illegal event (" << nextEvent << ")."
+                << " w = " << dw << ", penalty = " << rate 
+                << ", total rate = " << totalRate << "." 
+                << ascii::end << endl;
+#endif
+          // adjust cumulative rates
+          for (size_t i = nextEvent; i < transRates.size(); ++i) {
+            transRates[i] -= rate;
+          }
+          totalRate = transRates.back();
+
+          // condition on not seeing this event
+          unrate += rate;
+
+          // redo loop with modified rates
+          ret = -1;
         }
-
-        // add transition to list
-        if (store_trans) transitions.push_back(st);
-
-        // adapt state
-        addTransition(st);
-
-        // multiply probability
-        updateProb(dw);
-        // updateLogProb(st.relprob);
-
-        // advance time
-        time += nextTime;
-        ++num_events;
-
+      } else {
 #ifdef DEBUG
         if (ret < 0) {
-          cout << ascii::cyan << "      legal event" 
-                << " (" << nextEvent << ")."
-                << " w = " << dw << ", penalty = " << unrate 
-                << ", total rate = " << totalRate << "."  
-                << ascii::end << endl;
+          cout << "No event. Total rate = " << totalRate << "." << endl;
         }
 #endif
 
-        ret = 1; // exit loop
-      } else {
-        // if no,
-        // make this transition illegal in this particular step
-#ifdef DEBUG
-        cout << ascii::cyan
-              << "      illegal event (" << nextEvent << ")."
-              << " w = " << dw << ", penalty = " << rate 
-              << ", total rate = " << totalRate << "." 
-              << ascii::end << endl;
-#endif
-        // adjust cumulative rates
-        for (size_t i = nextEvent; i < transRates.size(); ++i) {
-          transRates[i] -= rate;
-        }
-        totalRate = transRates.back();
-
-        // condition on not seeing this event
-        unrate += rate;
-
-        // redo loop with modified rates
-        ret = -1;
+        nextTime = maxTime - time;
+        time = maxTime;
+        ret = 2; // exit loop
       }
-    } else {
-#ifdef DEBUG
-      if (ret < 0) {
-        cout << "No event. Total rate = " << totalRate << "." << endl;
-      }
-#endif
-
-      nextTime = maxTime - time;
-      time = maxTime;
-      ret = 2; // exit loop
     }
-  }
-  
-  if (totalRate < 0.0) {
+    
+    if (totalRate < 0.0) {
 #ifdef DEBUG
-    cout << "\033[1;31m";
-    cout << "Negative rate (" << ret << "): " << totalRate
-          << "  ES = " << curState;
-    cout << "\033[0m" << endl;
+      cout << "\033[1;31m";
+      cout << "Negative rate (" << ret << "): " << totalRate
+            << "  ES = " << curState;
+      cout << "\033[0m" << endl;
 #endif
-    return -1;
+      return -1;
+    }
+
+    // condition on the illegal events ('prob' is in logarithmic scale)
+    // 'unrate' is the sum of all the rates that were conditioned on not
+    // happening
+    // if (unrate > 0.0) 
+    {
+      // updateLogProb(-unrate*nextTime);
+      double dR = totalTrue - totalRate;
+#ifdef DEBUG
+      if (dR != 0) {
+        cout << "      difference in rates: " << totalTrue << " - " << totalRate << endl;
+      }
+#endif
+      updateLogProb(-dR*nextTime);
+    }
+
+    return ret;
+    // return num_events;
+    // return (ret != 2) ? num_events : -2;
   }
 
-  // condition on the illegal events ('prob' is in logarithmic scale)
-  // 'unrate' is the sum of all the rates that were conditioned on not
-  // happening
-  // if (unrate > 0.0) 
+  // =========================================================================
+
+  double Trajectory::force(double nextTime, int nextEvent, 
+                            const vector<int>& ids, rng::RngStream* rng,
+                            const void* pars) 
   {
-    // updateLogProb(-unrate*nextTime);
-    double dR = totalTrue - totalRate;
-#ifdef DEBUG
-    if (dR != 0) {
-      cout << "      difference in rates: " << totalTrue << " - " << totalRate << endl;
-    }
-#endif
-    updateLogProb(-dR*nextTime);
-  }
+    // store this info so that it can be accessed by the model
+    curState.curBranch = ids;
+    curState.time = time;
+    curState.nextTime = nextTime-time;
 
-  return ret;
-  // return num_events;
-  // return (ret != 2) ? num_events : -2;
-}
-
-// =========================================================================
-
-double Trajectory::force(double nextTime, int nextEvent, 
-                          const vector<int>& ids, rng::RngStream* rng,
-                          const void* pars) 
-{
-  // store this info so that it can be accessed by the model
-  curState.curBranch = ids;
-  curState.time = time;
-  curState.nextTime = nextTime-time;
-
-  // get the transition of the next event
-  const TransitionType* tt = model->getObsType(model->mapType(nextEvent));
+    // get the transition of the next event
+    const TransitionType* tt = model->getObsType(model->mapType(nextEvent));
 
     // setup the transition
     StateTransition st(nextTime-lastEventTime(),*tt,getState(),pars,nextEvent);

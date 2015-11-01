@@ -42,6 +42,8 @@ namespace MCTraj {
       inline void copyAB() { *B = *A; }
       void copyFromPrev(size_t i, size_t j);
 
+      Trajectory singleTraj(int traj_id) const;
+
     protected:
       inline void swap() { TPArr* tmp = A; A = B; B = tmp; }
 

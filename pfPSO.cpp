@@ -14,6 +14,7 @@ using namespace std;
 using namespace MCTraj;
 
 #include "pf_pars.h"
+#include "pso_pars.h"
 
 #include "funcs/I.h"
 #include "funcs/SIS.h"
@@ -83,42 +84,16 @@ int main(int argc, char** argv) {
   // =========================================================================
   // PSO parameters
 
-  int max_evals = 100;
-  int num_particles = 20;
-  int init_type = 1;
-  int vflag = 0;
-  int slowdown = 0;
-  ostream* out = NULL;
-  ostream* hist = NULL;
-
+  pso_pars_t ppso;
   rapidjson::Value::MemberIterator it = jpars.FindMember("pso");
-  if (it != jpars.MemberEnd()) {
-    rapidjson::Value& d = it->value;
-    it = d.FindMember("max_evals");
-    if (it != d.MemberEnd()) max_evals = it->value.GetInt();
-    it = d.FindMember("num_particles");
-    if (it != d.MemberEnd()) num_particles = it->value.GetInt();
-    it = d.FindMember("init_type");
-    if (it != d.MemberEnd()) init_type = it->value.GetInt();
-    it = d.FindMember("vflag");
-    if (it != d.MemberEnd()) vflag = it->value.GetInt();
-    it = d.FindMember("slowdown");
-    if (it != d.MemberEnd()) slowdown = it->value.GetInt();
-    it = d.FindMember("out_fn");
-
-    if (out_fn.getValue() == "") {
-      it = d.FindMember("out_fn");
-      if (it != d.MemberEnd()) out = new ofstream(it->value.GetString());
-    } else {
-      out = new ofstream(out_fn.getValue().c_str());
-    }
-
-    if (hist_fn.getValue() == "") {
-      it = d.FindMember("hist_fn");
-      if (it != d.MemberEnd()) hist = new ofstream(it->value.GetString());
-    } else {
-      out = new ofstream(hist_fn.getValue().c_str());
-    }
+  if (it != jpars.MemberEnd()) ppso.from_json(it->value);
+  if (hist_fn.getValue() != "") {
+    delete ppso.hist;
+    ppso.hist = new ofstream(hist_fn.getValue().c_str());
+  }
+  if (out_fn.getValue() != "") {
+    delete ppso.out;
+    ppso.out = new ofstream(out_fn.getValue().c_str());
   }
 
   // =========================================================================
@@ -144,6 +119,14 @@ int main(int argc, char** argv) {
   it = jpars.FindMember("nroot");
   if (it != jpars.MemberEnd()) nroot = it->value.GetInt();
 
+  string pf_hist_fn = "";
+  it = jpars.FindMember("pf");
+  if (it != jpars.MemberEnd()) {
+    rapidjson::Value& d = it->value;
+    it = d.FindMember("hist_fn");
+    if (it != d.MemberEnd()) pf_hist_fn = it->value.GetString();
+  }
+
   IModel::EpiPars       i_pars;
   SISModel::EpiPars   sis_pars;
   SEISModel::EpiPars seis_pars;
@@ -161,7 +144,7 @@ int main(int argc, char** argv) {
   switch (pf_pars.model_type) {
     case 'I':
     case 0:
-      if (vflag > 1) cerr << "I model." << endl;
+      if (ppso.vflag > 1) cerr << "I model." << endl;
       i_pars.beta = p.initVar(0);
       i_pars.mu   = p.initVar(1);
       i_pars.psi  = p.initVar(2);
@@ -170,7 +153,7 @@ int main(int argc, char** argv) {
       es = new EpiState(IModel::nstates);
       (*es)[0] = nroot;
       (*es)[1] = nroot;
-      p.evalFunc = &pf_i;
+      p.evalFunc = &pf_i_pso;
       break;
 
     case 'R':
@@ -179,7 +162,7 @@ int main(int argc, char** argv) {
     case 'S':
     case 1:
     default:
-      if (vflag > 1) cerr << "SIS/SIR model." << endl;
+      if (ppso.vflag > 1) cerr << "SIS/SIR model." << endl;
       sis_pars.N    = p.initVar(0);
       sis_pars.beta = p.initVar(1);
       sis_pars.mu   = p.initVar(2);
@@ -194,7 +177,7 @@ int main(int argc, char** argv) {
       (*es)[1] = nroot;
       (*es)[2] = nroot;
 
-      p.evalFunc = &pf_sis;
+      p.evalFunc = &pf_sis_pso;
 
       break;
 
@@ -211,12 +194,14 @@ int main(int argc, char** argv) {
   lik_pars.rng  = rng;
   lik_pars.mpar = &p;
   lik_pars.es   = es;
+  if (pf_hist_fn != "") lik_pars.otraj = new ofstream(pf_hist_fn.c_str());
+
   p.evalParams = &lik_pars;
 
   // =========================================================================
   // Run PSO
 
-  PSO::Swarm s(num_particles,5,&p);
+  PSO::Swarm s(ppso.num_particles,5,&p);
 
   PSO::Point phi_p(5,1.49445);
   PSO::Point phi_g(5,1.49445);
@@ -224,15 +209,17 @@ int main(int argc, char** argv) {
   s.setVars(phi_p,phi_g,omega);
 
   s.begin(argc,argv);
-  s.initialize(init_type);
+  s.initialize(ppso.init_type);
   s.evaluate();
   s.display();
 #ifdef USE_MPI
-  s.run_mpi(max_evals,vflag,out,hist);
+  s.run_mpi(ppso.max_evals,ppso.vflag,ppso.out,ppso.hist);
 #else
-  s.run(max_evals,slowdown,vflag,out,hist);
+  s.run(ppso.max_evals,ppso.slowdown,ppso.vflag,ppso.out,ppso.hist);
 #endif
   s.end();
+
+  if (lik_pars.otraj != NULL) delete lik_pars.otraj;
 
   return 0;
 }

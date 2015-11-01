@@ -25,7 +25,7 @@ namespace MCTraj {
       void inc();
 
       void printMeanTraj(ostream& out) const;
-      Trajectory singleTraj(rng::RngStream* rng) const;
+      Trajectory singleTraj(int traj_id) const;
 
       void printFromLast(const void* pars = NULL, int offset = 0) const;
       void printFromFirst(const void* pars = NULL) const;

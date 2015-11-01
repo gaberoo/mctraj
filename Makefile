@@ -99,11 +99,18 @@ metrop_pf: metrop_pf.cpp libmctraj.a Tree.o
 build/pfSPSA: pfSPSA.cpp libmctraj.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
+build/pfMH: pfMH.cpp build/libmctraj.a cdream/dream.a Tree.o
+	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+# DREAM
+
 build/pfDREAM: pfDREAM.cpp build/libmctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-build/pfMH: pfMH.cpp build/libmctraj.a cdream/dream.a Tree.o
+debug/pfDREAM: pfDREAM.cpp debug/libmctraj.a cdream/dream.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
+
+# PSO
 
 build/pfPSO: pfPSO.cpp build/libmctraj.a cpso/libpso.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)

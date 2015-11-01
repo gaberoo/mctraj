@@ -92,6 +92,11 @@ namespace MCTraj {
 
       virtual void copyFromPrev(size_t i, size_t j) = 0;
 
+      // extract trajectories
+      virtual Trajectory singleTraj(int traj_id) const = 0;
+
+      inline const TrajParticle& cparticle(size_t i) const { return particle(i); }
+
     protected:
       const Model* model;
 

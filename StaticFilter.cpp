@@ -46,4 +46,10 @@ namespace MCTraj {
   void StaticFilter::copyFromPrev(size_t i, size_t j) {
     (*A)[i].setState((*B)[j].getState());
   }
+
+  // =========================================================================
+
+  Trajectory StaticFilter::singleTraj(int p) const {
+    return particle(p);
+  }
 }

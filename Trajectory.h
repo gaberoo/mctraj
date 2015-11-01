@@ -57,8 +57,7 @@ namespace MCTraj {
       Trajectory(const Trajectory& T)
         : time(T.time), last_event_time(T.last_event_time),
           initialState(T.initialState), curState(T.curState), 
-          transitions(T.transitions),
-          model(T.model), 
+          transitions(T.transitions), model(T.model), 
           transRates(T.transRates), trueRates(T.trueRates),
           prob(T.prob), store_trans(T.store_trans)
       {

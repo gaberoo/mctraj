@@ -50,16 +50,24 @@ namespace MCTraj {
 
   // =========================================================================
 
-  Trajectory HistoryFilter::singleTraj(rng::RngStream* rng) const {
-    vector<size_t> seq(pf.size(),0);
-    int p = 0;
+  Trajectory HistoryFilter::singleTraj(int p) const {
+#ifdef DEBUG
+    cerr << "Extracting Trajectory..." << endl;
+#endif
+
+    // choose a random particle from the current state
+
+    // get ancestry information
+    vector<int> seq(curStep+1,-1);
     size_t j = curStep;
-    rng->uniform_int(1,&p,0,pf[j].size());
     seq[j] = p;
+
     while (j > 0) {
-      seq[j-1] = pf[j][p].getParent();
+      seq[j-1] = pf[j][seq[j]].getParent();
       --j;
     }
+
+    // construct trajectory
     Trajectory out(pf[0][seq[0]]);
     for (j = 1; j <= curStep; ++j) {
       out += pf[j][seq[j]];

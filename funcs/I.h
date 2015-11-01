@@ -3,7 +3,13 @@
 #include "../models/Models.h"
 using namespace MCTraj;
 
-double pf_i(const PSO::Point& state, const void* pars) 
+double pf_i(const double* state, const void* pars);
+
+inline double pf_i_pso(const PSO::Point& state, const void* pars) {
+  return pf_i(state.data(),pars);
+}
+
+double pf_i(const double* state, const void* pars) 
 {
   pf_pars_t& p = *(pf_pars_t*) pars;
 
@@ -42,7 +48,7 @@ double pf_i(const PSO::Point& state, const void* pars)
   }
 
 //  if (p.obranch != NULL) traj->printBranches(*p.obranch) << endl;
-//  if (p.otraj != NULL) traj->printFromFirst(*p.otraj) << endl;
+  if (p.otraj != NULL) *p.otraj << traj->to_json() << endl;
 
   p.mpt->setPars(oldPt);
 
