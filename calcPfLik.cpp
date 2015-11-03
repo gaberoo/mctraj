@@ -15,9 +15,10 @@ using namespace std;
 using namespace MCTraj;
 
 #include <tclap/CmdLine.h>
-#include "Parameters.h"
-#include "pf_pars.h"
 
+#include "Parameters.h"
+#include "JSON.h"
+#include "pf_pars.h"
 
 int main(int argc, char** argv) {
   // =========================================================================
@@ -43,34 +44,14 @@ int main(int argc, char** argv) {
   vector<string> fileNames = multi.getValue();
 
   // =========================================================================
-  // read JSON file
 
-  ifstream in;
-  string json_input;
-  if (json_fn.getValue() != "") {
-    in.open(json_fn.getValue().c_str());
-    in.seekg(0,ios::end);
-    json_input.reserve(in.tellg());
-    in.seekg(0,ios::beg);
-    json_input.assign(istreambuf_iterator<char>(in), 
-                      istreambuf_iterator<char>());
-  }
-
-  // =========================================================================
-  // Extract parameters from JSON
-
+  string json_input = read_json(json_fn.getValue());
   rapidjson::Document jpars;
-  try {
-    jpars.Parse<0>(json_input.c_str());
-    if (! jpars.IsObject()) throw 10;
-  } catch (int e) {
-    cerr << "Coudln't create JSON document:" << endl;
-    cerr << json_input << endl;
-  }
-
-  // =========================================================================
+  get_json(jpars,json_input);
 
   PFPars pf_pars;
+  Parameters p;
+
   try {
     pf_pars_read_json(&pf_pars,jpars);
   } catch (const char* str) {
@@ -79,21 +60,13 @@ int main(int argc, char** argv) {
 
   pf_pars.vflag += vflag.getValue();
 
-  // =========================================================================
-  // Extract main parameter structure
-
-  Parameters p;
-
-  cerr << "Reading parameters..." << flush;
   try {
     p.from_json(jpars);
   } catch (int e) {
-    cerr << "Coudln't create JSON document:" << endl;
-    cerr << json_input << endl;
+    cerr << "Coudln't create JSON document:" << endl << json_input << endl;
   } catch (const char* str) {
     cerr << "JSON exception: " << str << endl;
   }
-  cerr << "done" << endl;
 
   // =========================================================================
 
@@ -128,9 +101,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  IModel::EpiPars    *i_pars = NULL;
-  SISModel::EpiPars  *sis_pars = NULL;
-  SEISModel::EpiPars *seis_pars = NULL;
+  vector<Pars*> vpars;
 
   string branch_file = _branchfn.getValue();
   string traj_file = _trajfn.getValue();
@@ -160,74 +131,7 @@ int main(int argc, char** argv) {
 
   EpiState* es = NULL;
   Model* mpt = NULL;
-
-  size_t ip = 0;
-
-  switch (pf_pars.model_type) {
-    case 'I':
-    case 0:
-      if (pf_pars.vflag > 1) cerr << "I model." << endl;
-      mpt = new I;
-      i_pars = new IModel::EpiPars[npars];
-      for (ip = 0; ip < npars; ++ip) {
-        i_pars[ip].from_parameters(p,ip);
-        mpt->addPars(i_pars+ip);
-      }
-      es = new EpiState(IModel::nstates);
-      (*es)[0] = 0;
-      break;
-
-    case 'S':
-    case 1:
-    default:
-      if (pf_pars.vflag > 1) cerr << "SIS model." << endl;
-      mpt = new SIS;
-      sis_pars = new SISModel::EpiPars[npars];
-      for (ip = 0; ip < npars; ++ip) {
-        sis_pars[ip].from_parameters(p,ip);
-        mpt->addPars(sis_pars+ip);
-      }
-      es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) sis_pars[0].N - p.nroot;
-      (*es)[1] = p.nroot;
-      (*es)[2] = p.nroot;
-      break;
-
-    case 'R':
-    case 2:
-      if (pf_pars.vflag > 1) cerr << "SIR model." << endl;
-      mpt = new SIR;
-      sis_pars = new SISModel::EpiPars[npars];
-      for (ip = 0; ip < npars; ++ip) {
-        sis_pars[ip].from_parameters(p,ip);
-        mpt->addPars(sis_pars+ip);
-      }
-      es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) sis_pars[0].N - p.nroot;
-      (*es)[1] = p.nroot;
-      (*es)[2] = p.nroot;
-      break;
-
-    case 'E':
-    case 3:
-      if (pf_pars.vflag > 1) cerr << "SEIS model." << endl;
-      mpt = new SEIS;
-      seis_pars = new SEISModel::EpiPars[npars];
-      for (ip = 0; ip < npars; ++ip) {
-        seis_pars[ip].from_parameters(p,ip);
-        seis_pars[ip].tree = &tree;
-        mpt->addPars(seis_pars+ip);
-      }
-      es = new EpiState(SEISModel::nstates);
-      (*es)[0] = ((int) seis_pars[0].N)-1;
-      (*es)[1] = 1;
-      (*es)[2] = 0;
-      if (pf_pars.full_tree) {
-        mpt->sim_event(0) = 0;
-        mpt->sim_event(1) = 0;
-      }
-      break;
-  }
+  choose_model(mpt,es,pf_pars,vpars,p);
 
   double lik = 0.0;
 
@@ -267,24 +171,9 @@ int main(int argc, char** argv) {
 
   // if (pf_pars.print_traj) cout << *traj << endl;
 
-  switch (pf_pars.model_type) {
-    case 'I':
-    case 0:
-      delete[] i_pars;
-      break;
-
-    case 'S':
-    case 1:
-    case 'R':
-    case 2:
-    default:
-      delete[] sis_pars;
-      break;
-
-    case 'E':
-    case 3:
-      delete[] seis_pars;
-      break;
+  while (vpars.size() > 0) {
+    delete vpars.back();
+    vpars.pop_back();
   }
 
   delete traj;

@@ -27,51 +27,51 @@ class parameter_t {
 };
 
 class Parameters {
-public:
-  Parameters() : model_type("") {}
-  virtual ~Parameters() {}
+  public:
+    Parameters() : model_type("") {}
+    virtual ~Parameters() {}
 
-  void from_json(rapidjson::Document&);
+    void from_json(rapidjson::Document&);
 
-  const parameter_t* by_name(string name) const;
-  size_t nfree() const;
+    const parameter_t* by_name(string name) const;
+    size_t nfree() const;
 
-  inline size_t nval(string name) const {
-    const parameter_t* pt = by_name(name);
-    return (pt != NULL) ? pt->init.size() : 0;
-  }
-
-  inline double value(string name, size_t pos = 0) const { 
-    const parameter_t* pt = by_name(name);
-    double x = 0.0;
-    if (pt != NULL) {
-      if (pt->init.size() == 0) return 0.0;
-      else if (pos >= pt->init.size()) pos = pt->init.size()-1;
-      switch (pt->scale) {
-        case 'l':
-        case 'L': x = exp(pt->init.at(pos)); break;
-        default:  x = pt->init.at(pos);      break;
-      }
-    } else {
-#ifdef DEBUG
-      cerr << "Field '" << name << "' not found!" << endl;
-#endif
+    inline size_t nval(string name) const {
+      const parameter_t* pt = by_name(name);
+      return (pt != NULL) ? pt->init.size() : 0;
     }
-    return x;
-  }
 
-  void init_free_map();
-  inline size_t free(size_t i) const { return free_map[i]; }
-  inline double lower(size_t j) const { return pars[free_map[j]].lo; }
-  inline double upper(size_t j) const { return pars[free_map[j]].hi; }
-  double limits(size_t j, double x, char trans = 'n') const;
+    inline double value(string name, size_t pos = 0) const { 
+      const parameter_t* pt = by_name(name);
+      double x = 0.0;
+      if (pt != NULL) {
+        if (pt->init.size() == 0) return 0.0;
+        else if (pos >= pt->init.size()) pos = pt->init.size()-1;
+        switch (pt->scale) {
+          case 'l':
+          case 'L': x = exp(pt->init.at(pos)); break;
+          default:  x = pt->init.at(pos);      break;
+        }
+      } else {
+#ifdef DEBUG
+        cerr << "Field '" << name << "' not found!" << endl;
+#endif
+      }
+      return x;
+    }
 
-  string model_type;
-  int nroot;
-  vector<double> shifts;
-  vector<parameter_t> pars;
-  map<string,int> name_map;
-  vector<int> free_map;
+    void init_free_map();
+    inline size_t free(size_t i) const { return free_map[i]; }
+    inline double lower(size_t j) const { return pars[free_map[j]].lo; }
+    inline double upper(size_t j) const { return pars[free_map[j]].hi; }
+    double limits(size_t j, double x, char trans = 'n') const;
+
+    string model_type;
+    int nroot;
+    vector<double> shifts;
+    vector<parameter_t> pars;
+    map<string,int> name_map;
+    vector<int> free_map;
 };
 
 // ===========================================================================

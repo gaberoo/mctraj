@@ -15,20 +15,14 @@ using namespace MCTraj;
 #endif
 
 #include <tclap/CmdLine.h>
+#include "JSON.h"
 
 int main(int argc, char** argv) {
-  TCLAP::CmdLine cmd("Simulate trees using particle filter models", ' ', "0.9");
+  TCLAP::CmdLine cmd("Simulate trees using particle filter models", ' ', "0.9.1");
 
-  TCLAP::ValueArg<double> N("N","popSize","Total population size",false,1.0,"double",cmd);
-  TCLAP::ValueArg<double> beta("b","beta","Transmission rate",true,1.0,"double",cmd);
-  TCLAP::ValueArg<double> mu("u","mu","Recovery rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> psi("s","psi","Sequential sampling rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
-  TCLAP::ValueArg<double> gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
-
+  TCLAP::ValueArg<string> json_fn("J","json","JSON input file",true,"","string",cmd);
+  TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
   TCLAP::ValueArg<double> mT("T","maxTime","Maximum simulation time",false,100.0,"double",cmd);
-  TCLAP::ValueArg<char> type("t","model","Model type",true,'I',"char",cmd);
-  TCLAP::ValueArg<unsigned long> seed("S","seed","Seed",false,time(NULL),"int",cmd);
 
   try {
     cmd.parse(argc,argv);
@@ -36,74 +30,28 @@ int main(int argc, char** argv) {
     cerr << "error: " << e.error() << " for arg " << e.argId() << endl; 
   }
 
-  EpiState* init;
-  Model* model;
+  string json_input = read_json(json_fn.getValue());
+  rapidjson::Document jpars;
+  get_json(jpars,json_input);
 
-  double maxTime = mT.getValue();
+  PFPars pf_pars;
+  Parameters p;
 
-  IModel::EpiPars i_pars;
-  i_pars.beta  = beta.getValue() / N.getValue();
-  i_pars.mu    = mu.getValue();
-  i_pars.psi   = psi.getValue();
-  i_pars.rho   = rho.getValue();
-
-  SISModel::EpiPars sis_pars;
-  sis_pars.N     = N.getValue();
-  sis_pars.beta  = beta.getValue();
-  sis_pars.mu    = mu.getValue();
-  sis_pars.psi   = psi.getValue();
-  sis_pars.rho   = rho.getValue();
-
-  SEISModel::EpiPars seis_pars;
-  seis_pars.N     = N.getValue();
-  seis_pars.beta  = beta.getValue();
-  seis_pars.mu    = mu.getValue();
-  seis_pars.psi   = psi.getValue();
-  seis_pars.rho   = rho.getValue();
-  seis_pars.gamma = gamma.getValue();
-
-  switch (type.getValue()) {
-    case 'I': // I
-      model = new I(&i_pars);
-      init = new EpiState(IModel::nstates);
-      (*init)[0] = 1;
-      (*init)[1] = 0;
-      break;
-
-    case 'S': // SIS
-      model = new SIS(&sis_pars);
-      init = new EpiState(SISModel::nstates);
-      (*init)[0] = sis_pars.N-1;
-      (*init)[1] = 1;
-      (*init)[2] = 0;
-      break;
-
-    case 'R': // SIR
-      model = new SIR(&sis_pars);
-      init = new EpiState(SISModel::nstates);
-      (*init)[0] = sis_pars.N-1;
-      (*init)[1] = 1;
-      (*init)[2] = 0;
-      (*init)[3] = 0;
-      break;
-
-    case 'E': // SEIR
-      model = new SEIS(&seis_pars);
-      init = new EpiState(SEISModel::nstates);
-      (*init)[0] = seis_pars.N-1;
-      (*init)[1] = 0;
-      (*init)[2] = 1;
-      (*init)[3] = 0;
-      (*init)[4] = 0;
-      break;
-
-    default:
-      cerr << "Not yet implemented!" << endl;
-      return 0;
-      break;
+  try {
+    pf_pars_read_json(&pf_pars,jpars);
+  } catch (const char* str) {
+    cerr << "PFPars exception: " << str << endl;
   }
 
-  Trajectory traj(*init,model);
+  pf_pars.vflag += vflag.getValue();
+
+  try {
+    p.from_json(jpars);
+  } catch (int e) {
+    cerr << "Coudln't create JSON document:" << endl << json_input << endl;
+  } catch (const char* str) {
+    cerr << "JSON exception: " << str << endl;
+  }
 
   // Setup random number generators
   rng::RngStream* rng = NULL;
@@ -112,14 +60,34 @@ int main(int argc, char** argv) {
 #else
   rng = new rng::GSLStream;
 #endif
-  rng->alloc(seed.getValue());
+  rng->alloc(pf_pars.seed);
 
-  traj.simulateTrajectory(maxTime,&seis_pars,rng,false);
+  size_t npars = p.shifts.size()+1;
+  if (npars > 1) {
+    if (pf_pars.vflag > 0) cerr << "Rate shifts supplied:" << endl;
+    for (size_t i = 0; i < p.shifts.size(); ++i) {
+      if (pf_pars.vflag > 0) cerr << "  " << p.shifts[i] << endl;
+    }
+  }
+  vector<Pars*> vpars;
+
+  EpiState* es = NULL;
+  Model* mpt = NULL;
+  choose_model(mpt,es,pf_pars,vpars,p);
+
+  Trajectory traj(*es,mpt);
+
+  p.shifts.push_back(mT.getValue());
+  sort(p.shifts.begin(),p.shifts.end());
+  size_t ti = 0;
+  do {
+    traj.simulateTrajectory(p.shifts[ti],&vpars[ti],rng,false);
+  } while (++ti < p.shifts.size());
 
   vector<TreeNode> tree;
   vector<TreeNode> phylo;
 
-  model->toTree(traj,rng,tree);
+  mpt->toTree(traj,rng,tree);
 
   // for (size_t i = 0; i < tree.size(); ++i) cout << tree[i] << endl;
 
@@ -136,15 +104,7 @@ int main(int argc, char** argv) {
   rapidjson::StringBuffer buf;
   rapidjson::Writer<rapidjson::StringBuffer> json_w(buf);
   json_w.StartObject(); {
-    json_w.String("model"); {
-      switch (type.getValue()) {
-        case 'E': seis_pars.json(json_w); break;
-        case 'R': 
-        case 'S': sis_pars.json(json_w); break;
-        case 'I': i_pars.json(json_w); break;
-        default: json_w.String(""); break;
-      }
-    }
+    json_w.String("model"); vpars[0]->json(json_w);
     json_w.String("traj"); traj.json(json_w);
     json_w.String("full_tree"); json_w.StartArray(); {
       for (size_t i = 0; i < tree.size(); ++i) tree[i].json(json_w);
@@ -156,8 +116,9 @@ int main(int argc, char** argv) {
 
   cout << buf.GetString() << endl;
 
-  delete model;
-  delete init;
+  while (vpars.size() > 0) { delete vpars.back(); vpars.pop_back(); }
+  delete mpt;
+  delete es;
 
   return 0;
 }
