@@ -77,11 +77,12 @@ int main(int argc, char** argv) {
 
   Trajectory traj(*es,mpt);
 
+  size_t ti = 0;
   p.shifts.push_back(mT.getValue());
   sort(p.shifts.begin(),p.shifts.end());
-  size_t ti = 0;
   do {
     traj.simulateTrajectory(p.shifts[ti],&vpars[ti],rng,false);
+    mpt->incPars();
   } while (++ti < p.shifts.size());
 
   vector<TreeNode> tree;
