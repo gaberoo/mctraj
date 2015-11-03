@@ -162,9 +162,7 @@ namespace MCTraj {
     }
 
     // make sure the model is specified, otherwise don't do anything
-    if (modelType < 0) {
-      return tree->ttypes[nextStep];
-    }
+    if (modelType < 0) return eventType;
 
     size_t j;
     double dw;

@@ -79,10 +79,10 @@ double MCTraj::I::sample_rho(const EpiState& es, rng::RngStream* rng, void* pars
   int k = es[1];
   int I = es[0];
   double w = 0.0;
-  if (rho >= 1.0 && I == k) {
+  if (rho() >= 1.0 && I == k) {
     w = 1.0;
-  } else if (rho < 1.0 && I >= k) {
-    w = gsl_ran_binomial_pdf(k,rho,I);
+  } else if (rho() < 1.0 && I >= k) {
+    w = gsl_ran_binomial_pdf(k,rho(),I);
   }
   return w;
 }

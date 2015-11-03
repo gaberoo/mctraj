@@ -10,34 +10,38 @@
 #include "BranchState.h"
 #include "Tree.h"
 #include "TreeNode.h"
+#include "Parameters.h"
 
 namespace MCTraj {
   inline double oneProb(const EpiState& es, const void* pars) { return 1.0; }
 
   class Pars {
     public:
-      Pars() : tree(NULL) {}
-      Pars(const Pars& p) : tree(p.tree) {}
+      Pars() : tree(NULL), rho(1.0) {}
+      Pars(const Pars& p) : tree(p.tree), rho(p.rho) {}
       virtual ~Pars() {}
 
       virtual void json(rapidjson::Writer<rapidjson::StringBuffer>&) const {}
       string to_json() const;
 
+      virtual void from_parameters(const Parameters& p, size_t pos = 0) = 0;
+
     public:
       const Tree* tree;
+      double rho;
   };
 
   class Model {
     public:
       Model() 
-        : nstates(0), pars(NULL), rho(0.0), do_branches(false)
+        : nstates(0), pars_cnt(0), do_branches(false)
       {
         typeMap = new int[100];
         for (int i(0); i < 100; ++i) typeMap[i] = -1;
       }
 
       Model(const Model& m)
-        : nstates(m.nstates), pars(m.pars), rho(m.rho),
+        : nstates(m.nstates), pars(m.pars), pars_cnt(m.pars_cnt), 
           transTypes(m.transTypes), obsTypes(m.obsTypes), 
           simEvent(m.simEvent), do_branches(m.do_branches)
       {
@@ -48,7 +52,9 @@ namespace MCTraj {
       virtual ~Model() { delete[] typeMap; }
 
       size_t n() const { return nstates; }
-      const void* p() const { return pars; }
+      const void* p() const { 
+        return (pars.size() > 0) ? pars.at(pars_cnt) : NULL; 
+      }
       size_t ntrans() const { return transTypes.size(); }
       const TransitionType* getTType(size_t i) const { return transTypes[i]; }
       const TransitionType* getObsType(size_t i) const { return obsTypes[i]; }
@@ -68,12 +74,21 @@ namespace MCTraj {
                                  vector<double>& trueRates) const;
       double delTransRate(vector<double>& transRates, size_t i) const;
 
-      inline const Pars* getPars() const { return pars; }
-      inline void setPars(const Pars* p) { pars = p; }
-      inline string pars_json() const { return pars->to_json(); }
+      inline const Pars* getPars() const { 
+        return (pars.size() > 0) ? pars.at(pars_cnt) : NULL; 
+      }
+      inline void addPars(const Pars* p) { pars.push_back(p); }
+      inline string pars_json(size_t pos = 0) const { 
+        return (pars.size() > 0) ? pars.at(pos)->to_json() : ""; 
+      }
+      inline void incPars() {
+        if ((int) pars.size() > pars_cnt+1) pars_cnt++;
+      }
       
-      inline double getRho() const { return rho; }
-      inline void setRho(double x) { rho = x; }
+      inline double rho() const { 
+        const Pars* p = getPars();
+        return (p != NULL) ? p->rho : 1.0;
+      }
 
       int chooseTransition(rng::RngStream* rng, const vector<double>& transRates) const;
 
@@ -91,9 +106,8 @@ namespace MCTraj {
 
     protected:
       size_t nstates;
-      // const void* pars;
-      const Pars* pars;
-      double rho;
+      vector<const Pars*> pars;
+      int pars_cnt;
       int* typeMap;
       vector<const TransitionType*> transTypes;
       vector<const TransitionType*> obsTypes;

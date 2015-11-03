@@ -27,10 +27,13 @@ void Tree::addRateShift(double t) {
   } while (pos < times.size());
   vector<double>::iterator p1(times.begin());
   vector<int>::iterator p2(ttypes.begin());
+  vector< vector<int> >::iterator p3(ids.begin());
   p1 += pos;
   p2 += pos;
+  p3 += pos;
   times.insert(p1,t);
   ttypes.insert(p2,20);
+  ids.insert(p3,vector<int>(3,-1));
 }
 
 // ========================================================================

@@ -2,11 +2,15 @@ include ../Make.inc
 
 CPPFLAGS += -isystem ../include
 
-../build/mctraj.a:
+../debug/libmctraj.a:
 	cd ..
-	make build/mctraj.a
+	make debug/libmctraj.a
 
-build/%: %.cpp ../build/mctraj.a
+build/%: %.cpp ../build/libmctraj.a
+	cd ..; make build/libmctraj.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
+debug/%: %.cpp
+	cd ..; make debug/libmctraj.a
+	$(CPP) -DDEBUG $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 

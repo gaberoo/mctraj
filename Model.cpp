@@ -6,10 +6,10 @@ namespace MCTraj {
                                     vector<double>& trueRates) const
   {
     size_t i = 0;
-    transRates[i] = transTypes[i]->applyRate(state,pars,trueRates[i]);
+    transRates[i] = transTypes[i]->applyRate(state,getPars(),trueRates[i]);
     for (i = 1; i < transTypes.size(); ++i) {
       if (simEvent[i]) {
-        transRates[i] = transRates[i-1] + transTypes[i]->applyRate(state,pars,trueRates[i]);
+        transRates[i] = transRates[i-1] + transTypes[i]->applyRate(state,getPars(),trueRates[i]);
       } else {
         trueRates[i] = 0.0;
         transRates[i] = transRates[i-1];

@@ -17,8 +17,7 @@ namespace MCTraj {
       EpiPars() : alpha(10.0) {}
       EpiPars(const EpiPars& e) 
         : Pars(e), N(e.N), beta(e.beta), mu(e.mu), 
-          psi(e.psi), rho(e.rho), gamma(e.gamma),
-          alpha(e.alpha)
+          psi(e.psi), gamma(e.gamma), alpha(e.alpha)
       {}
       virtual ~EpiPars() {}
 
@@ -34,11 +33,20 @@ namespace MCTraj {
         } w.EndObject();
       }
 
+      void from_parameters(const Parameters& p, size_t pos = 0) {
+        N = p.value("N",pos);
+        beta = p.value("beta",pos);
+        mu = p.value("mu",pos);
+        psi = p.value("psi",pos);
+        rho = p.value("rho",pos);
+        gamma = p.value("gamma",pos);
+        alpha = p.value("alpha",pos);
+      }
+
       double N;      // total population size
       double beta;   // per-contact infection rate
       double mu;     // recovery rate
       double psi;    // sampling rate
-      double rho;    // present-day sampling rate
       double gamma;  // transition rate
 
       double alpha;  // damping coefficient of the potential
@@ -112,65 +120,30 @@ namespace MCTraj {
 
   class SEIS : public Model {
     public:
-      SEIS(const SEIS& m) : Model(m) { do_branches = true; }
-      SEIS(const SEISModel::EpiPars* p) {
+      SEIS() {
         nstates = SEISModel::nstates;
         do_branches = true;
 
-        pars = p;
-        rho = p->rho;
-
         /* recovery events */
         typeMap[0] = 0;
-        transTypes.push_back(new TransitionType("simRecov",
-                                                SEISModel::nstates,
-                                                SEISModel::recoverChange,
-                                                SEISModel::recovRateFun,
-                                                SEISModel::recovTreeProb,
-                                                SEISModel::recovBranch));
-        obsTypes.push_back(new TransitionType("obsRecov",
-                                              SEISModel::nstates,
-                                              SEISModel::recovChangeObs,
-                                              SEISModel::recovTreeObs,
-                                              oneProb,
-                                              SEISModel::recovBranchObs));
+        transTypes.push_back(new TransitionType("simRecov", SEISModel::nstates, SEISModel::recoverChange, SEISModel::recovRateFun, SEISModel::recovTreeProb, SEISModel::recovBranch));
+        obsTypes.push_back(new TransitionType("obsRecov", SEISModel::nstates, SEISModel::recovChangeObs, SEISModel::recovTreeObs, oneProb, SEISModel::recovBranchObs));
         simEvent.push_back(1);
 
         /* infection events */
         typeMap[1] = 1;
-        transTypes.push_back(new TransitionType("simInf",
-                                                SEISModel::nstates,
-                                                SEISModel::infChange,
-                                                SEISModel::infRateFun,
-                                                SEISModel::infTreeProb,
-                                                SEISModel::infBranch));
-        obsTypes.push_back(new TransitionType("obsInf",
-                                              SEISModel::nstates,
-                                              SEISModel::infObsChange,
-                                              SEISModel::infTreeObs,
-                                              oneProb,
-                                              SEISModel::infBranchObs));
+        transTypes.push_back(new TransitionType("simInf", SEISModel::nstates, SEISModel::infChange, SEISModel::infRateFun, SEISModel::infTreeProb, SEISModel::infBranch));
+        obsTypes.push_back(new TransitionType("obsInf", SEISModel::nstates, SEISModel::infObsChange, SEISModel::infTreeObs, oneProb, SEISModel::infBranchObs));
         simEvent.push_back(1);
 
         /* transition events */
         typeMap[70] = 2;
-        transTypes.push_back(new TransitionType("simTrans",
-                                                SEISModel::nstates,
-                                                SEISModel::transChange,
-                                                SEISModel::transRateFun,
-                                                SEISModel::transTreeProb,
-                                                SEISModel::transBranch));
-
-        obsTypes.push_back(new TransitionType("obsTrans",
-                                              SEISModel::nstates,
-                                              SEISModel::obsTransChange,
-                                              SEISModel::transTreeObs,
-                                              oneProb,
-                                              SEISModel::transBranchObs));
+        transTypes.push_back(new TransitionType("simTrans", SEISModel::nstates, SEISModel::transChange, SEISModel::transRateFun, SEISModel::transTreeProb, SEISModel::transBranch));
+        obsTypes.push_back(new TransitionType("obsTrans", SEISModel::nstates, SEISModel::obsTransChange, SEISModel::transTreeObs, oneProb, SEISModel::transBranchObs));
         simEvent.push_back(1);
 
       }
-
+      SEIS(const SEIS& m) : Model(m) { do_branches = true; }
       virtual ~SEIS() {}
 
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;

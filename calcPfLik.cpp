@@ -15,28 +15,89 @@ using namespace std;
 using namespace MCTraj;
 
 #include <tclap/CmdLine.h>
+#include "Parameters.h"
+#include "pf_pars.h"
+
 
 int main(int argc, char** argv) {
-  TCLAP::CmdLine cmd("Particle filter approximation for marginal tree likelihood", ' ', "0.9");
+  // =========================================================================
+  // read command line arguments
 
-  TCLAP::ValueArg<double> N("N","popSize","Total population size",true,100.0,"double",cmd);
-  TCLAP::ValueArg<double> beta("b","beta","Transmission rate",true,1.0,"double",cmd);
-  TCLAP::ValueArg<double> mu("u","mu","Recovery rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> psi("s","psi","Sequential sampling rate",true,0.1,"double",cmd);
-  TCLAP::ValueArg<double> rho("o","rho","Homochroneous sampling rate",true,0.5,"double",cmd);
-  TCLAP::ValueArg<double> gamma("g","gamma","transition rate (for SEIR)",false,0.1,"double",cmd);
-
-  TCLAP::ValueArg<int> nroot("","nroot","Number of lineages at the root",false,1,"int",cmd);
-  TCLAP::ValueArg<int> numParticles("n","nparticles","Number of particles",false,100,"int",cmd);
-  TCLAP::ValueArg<int> reps("r","nreps","Number of repetitions",false,1,"int",cmd);
-  TCLAP::ValueArg<int> seed("S","seed","Random number seed",false,-1,"int",cmd);
-  TCLAP::ValueArg<char> type("T","model","Model type",false,'S',"char",cmd);
-  TCLAP::ValueArg<double> alpha("a","alpha","Importance damping",false,10.0,"double",cmd);
-  TCLAP::ValueArg<double> stepSize("t","stepSize","Time increments for simulation",false,INFINITY,"double",cmd);
-
+  TCLAP::CmdLine cmd("Particle filter approximation for marginal tree likelihood", ' ', "0.9.1");
+  TCLAP::ValueArg<string> json_fn("J","json","JSON input file",true,"","string",cmd);
+  TCLAP::ValueArg<string> out_fn("o","out","output file",false,"","string",cmd);
+  TCLAP::ValueArg<string> hist_fn("H","hist","history file",false,"","string",cmd);
   TCLAP::ValueArg<string> _branchfn("B","branchFn","Filename for branch colors",false,"","string",cmd);
   TCLAP::ValueArg<string> _trajfn("C","trajFn","Filename for trajectory",false,"","string",cmd);
+  TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
 
+  TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",false);
+  cmd.add(multi);
+
+  try {
+    cmd.parse(argc,argv);
+  } catch (TCLAP::ArgException &e) { 
+    cerr << "error: " << e.error() << " for arg " << e.argId() << endl; 
+  }
+
+  vector<string> fileNames = multi.getValue();
+
+  // =========================================================================
+  // read JSON file
+
+  ifstream in;
+  string json_input;
+  if (json_fn.getValue() != "") {
+    in.open(json_fn.getValue().c_str());
+    in.seekg(0,ios::end);
+    json_input.reserve(in.tellg());
+    in.seekg(0,ios::beg);
+    json_input.assign(istreambuf_iterator<char>(in), 
+                      istreambuf_iterator<char>());
+  }
+
+  // =========================================================================
+  // Extract parameters from JSON
+
+  rapidjson::Document jpars;
+  try {
+    jpars.Parse<0>(json_input.c_str());
+    if (! jpars.IsObject()) throw 10;
+  } catch (int e) {
+    cerr << "Coudln't create JSON document:" << endl;
+    cerr << json_input << endl;
+  }
+
+  // =========================================================================
+
+  PFPars pf_pars;
+  try {
+    pf_pars_read_json(&pf_pars,jpars);
+  } catch (const char* str) {
+    cerr << "PFPars exception: " << str << endl;
+  }
+
+  pf_pars.vflag += vflag.getValue();
+
+  // =========================================================================
+  // Extract main parameter structure
+
+  Parameters p;
+
+  cerr << "Reading parameters..." << flush;
+  try {
+    p.from_json(jpars);
+  } catch (int e) {
+    cerr << "Coudln't create JSON document:" << endl;
+    cerr << json_input << endl;
+  } catch (const char* str) {
+    cerr << "JSON exception: " << str << endl;
+  }
+  cerr << "done" << endl;
+
+  // =========================================================================
+
+  /*
   TCLAP::ValueArg<int> skip("x","skip","Skip lines of times files",false,0,"string",cmd);
   TCLAP::ValueArg<double> filterTime("f","filter","Min time between filters",false,0.0,"double",cmd);
 
@@ -45,23 +106,9 @@ int main(int argc, char** argv) {
   TCLAP::SwitchArg _fullTree("F","fullTree","Full tree",cmd,false);
   TCLAP::SwitchArg adjZero("z","adjZero","Adjust zero-weight trajectory",cmd,false);
   TCLAP::SwitchArg history("H","history","Store trajectories",cmd,false);
-  TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
+  */
 
-  TCLAP::UnlabeledMultiArg<string> multi("files","Trees",true,"Input Tree files",cmd,false);
-
-  try {
-    cmd.parse(argc,argv);
-  } catch (TCLAP::ArgException &e) { 
-    cerr << "error: " << e.error() << " for arg " << e.argId() << endl; 
-  }
-
-  if (optind == argc) {
-    cout << "Please supply a tree file." << endl;
-    return 0;
-  }
-
-  vector<string> fileNames = multi.getValue();
-  Tree tree(fileNames.front().c_str(),nroot.getValue());
+  Tree tree(fileNames.front().c_str(),p.nroot);
 
   if (tree.getExtant() < 0) {
     cerr << "Cannot run with negative extant lineages at the root." << endl;
@@ -72,37 +119,25 @@ int main(int argc, char** argv) {
 
   // =========================================================================
 
-  SISModel::EpiPars pars;
-  pars.N    = N.getValue();
-  pars.beta = beta.getValue();
-  pars.mu   = mu.getValue();
-  pars.psi  = psi.getValue();
-  pars.rho  = rho.getValue();
+  size_t npars = p.shifts.size()+1;
+  if (npars > 1) {
+    if (pf_pars.vflag > 0) cerr << "Rate shifts supplied:" << endl;
+    for (size_t i = 0; i < p.shifts.size(); ++i) {
+      if (pf_pars.vflag > 0) cerr << "  " << p.shifts[i] << endl;
+      tree.addRateShift(p.shifts[i]);
+    }
+  }
 
-  IModel::EpiPars i_pars;
-  SEISModel::EpiPars seis_pars;
-
-  PFPars pf_pars;
-  pf_pars.num_particles = numParticles.getValue();
-  pf_pars.print_particles = printParticles.getValue();
-  pf_pars.skip = skip.getValue();
-  pf_pars.vflag = vflag.getValue();
-  pf_pars.filter_time = filterTime.getValue();
-  pf_pars.reps = reps.getValue();
-  pf_pars.model_type = type.getValue();
-  pf_pars.print_traj = _printTraj.getValue();
-  pf_pars.full_tree = _fullTree.getValue();
-  pf_pars.seed = (seed.getValue() > 0) ? seed.getValue() : time(NULL);
-  pf_pars.adj_zero = adjZero.getValue();
-  pf_pars.history = history.getValue();
-  pf_pars.step_size = stepSize.getValue();
+  IModel::EpiPars    *i_pars = NULL;
+  SISModel::EpiPars  *sis_pars = NULL;
+  SEISModel::EpiPars *seis_pars = NULL;
 
   string branch_file = _branchfn.getValue();
   string traj_file = _trajfn.getValue();
 
   // =========================================================================
   
-  if (vflag.getValue() > 0) {
+  if (pf_pars.vflag > 0) {
     cerr << "# seed        = " << pf_pars.seed << endl;
     cerr << "# adjust zero = " << pf_pars.adj_zero << endl;
   }
@@ -126,15 +161,18 @@ int main(int argc, char** argv) {
   EpiState* es = NULL;
   Model* mpt = NULL;
 
+  size_t ip = 0;
+
   switch (pf_pars.model_type) {
     case 'I':
     case 0:
-      if (vflag.getValue() > 1) cerr << "I model." << endl;
-      i_pars.beta = pars.beta;
-      i_pars.mu   = pars.mu;
-      i_pars.psi  = pars.psi;
-      i_pars.rho  = pars.rho;
-      mpt = new I(&i_pars);
+      if (pf_pars.vflag > 1) cerr << "I model." << endl;
+      mpt = new I;
+      i_pars = new IModel::EpiPars[npars];
+      for (ip = 0; ip < npars; ++ip) {
+        i_pars[ip].from_parameters(p,ip);
+        mpt->addPars(i_pars+ip);
+      }
       es = new EpiState(IModel::nstates);
       (*es)[0] = 0;
       break;
@@ -142,38 +180,46 @@ int main(int argc, char** argv) {
     case 'S':
     case 1:
     default:
-      if (vflag.getValue() > 1) cerr << "SIS model." << endl;
-      mpt = new SIS(&pars);
+      if (pf_pars.vflag > 1) cerr << "SIS model." << endl;
+      mpt = new SIS;
+      sis_pars = new SISModel::EpiPars[npars];
+      for (ip = 0; ip < npars; ++ip) {
+        sis_pars[ip].from_parameters(p,ip);
+        mpt->addPars(sis_pars+ip);
+      }
       es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) pars.N - nroot.getValue();
-      (*es)[1] = nroot.getValue();
-      (*es)[2] = nroot.getValue();
+      (*es)[0] = (int) sis_pars[0].N - p.nroot;
+      (*es)[1] = p.nroot;
+      (*es)[2] = p.nroot;
       break;
 
     case 'R':
     case 2:
-      if (vflag.getValue() > 1) cerr << "SIR model." << endl;
-      mpt = new SIR(&pars);
+      if (pf_pars.vflag > 1) cerr << "SIR model." << endl;
+      mpt = new SIR;
+      sis_pars = new SISModel::EpiPars[npars];
+      for (ip = 0; ip < npars; ++ip) {
+        sis_pars[ip].from_parameters(p,ip);
+        mpt->addPars(sis_pars+ip);
+      }
       es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) pars.N - nroot.getValue();
-      (*es)[1] = nroot.getValue();
-      (*es)[2] = nroot.getValue();
+      (*es)[0] = (int) sis_pars[0].N - p.nroot;
+      (*es)[1] = p.nroot;
+      (*es)[2] = p.nroot;
       break;
 
     case 'E':
     case 3:
-      if (vflag.getValue() > 1) cerr << "SEIS model." << endl;
-      seis_pars.N = pars.N;
-      seis_pars.beta = pars.beta;
-      seis_pars.mu = pars.mu;
-      seis_pars.psi = pars.psi;
-      seis_pars.rho = pars.rho;
-      seis_pars.gamma = gamma.getValue();
-      seis_pars.alpha = alpha.getValue();
-      seis_pars.tree = &tree;
-      mpt = new SEIS(&seis_pars);
+      if (pf_pars.vflag > 1) cerr << "SEIS model." << endl;
+      mpt = new SEIS;
+      seis_pars = new SEISModel::EpiPars[npars];
+      for (ip = 0; ip < npars; ++ip) {
+        seis_pars[ip].from_parameters(p,ip);
+        seis_pars[ip].tree = &tree;
+        mpt->addPars(seis_pars+ip);
+      }
       es = new EpiState(SEISModel::nstates);
-      (*es)[0] = ((int) seis_pars.N)-1;
+      (*es)[0] = ((int) seis_pars[0].N)-1;
       (*es)[1] = 1;
       (*es)[2] = 0;
       if (pf_pars.full_tree) {
@@ -220,6 +266,26 @@ int main(int argc, char** argv) {
   if (traj_out != NULL) { traj_out->close(); delete traj_out; }
 
   // if (pf_pars.print_traj) cout << *traj << endl;
+
+  switch (pf_pars.model_type) {
+    case 'I':
+    case 0:
+      delete[] i_pars;
+      break;
+
+    case 'S':
+    case 1:
+    case 'R':
+    case 2:
+    default:
+      delete[] sis_pars;
+      break;
+
+    case 'E':
+    case 3:
+      delete[] seis_pars;
+      break;
+  }
 
   delete traj;
   delete mpt;

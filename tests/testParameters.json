@@ -1,0 +1,10 @@
+{
+  "pars": [
+    { "name": "N",    "init": [ 4.6, 3.0 ],  "limits": [4.0,7.0],  "scale": "l", "sigma": 0.01 },
+    { "name": "beta", "init": [ -1.5, -1.0 ], "limits": [-3.0,1.0], "scale": "l", "sigma": 0.01 },
+    { "name": "mu",   "lock": 0.1 },
+    { "name": "psi",  "init": [ -0.4, 1.0 ], "limits": [-4.6,1.0], "scale": "l", "sigma": 0.01 },
+    { "name": "rho",  "lock": 0.0 }
+  ]
+}
+

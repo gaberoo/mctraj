@@ -40,44 +40,22 @@ namespace MCTraj {
 
   class SIR : public Model {
     public:
-      SIR(const SIR& m) : Model(m) {}
-      SIR(const SIRModel::EpiPars* p) {
+      SIR() {
         nstates = SIRModel::nstates;
-        pars = p;
-        rho = p->rho;
 
         /* recovery events */
         typeMap[0] = 0;
-        transTypes.push_back(new TransitionType("simRecov",
-                                                SIRModel::nstates,
-                                                SIRModel::recoverChange,
-                                                SIRModel::recovRateFun,
-                                                SIRModel::treeProbRecov));
-        obsTypes.push_back(new TransitionType("obsRecov",
-                                              SIRModel::nstates,
-                                              SIRModel::obsRecovChange,
-                                              SIRModel::treeObsRecov,
-                                              oneProb));
+        transTypes.push_back(new TransitionType("simRecov", SIRModel::nstates, SIRModel::recoverChange, SIRModel::recovRateFun, SIRModel::treeProbRecov));
+        obsTypes.push_back(new TransitionType("obsRecov", SIRModel::nstates, SIRModel::obsRecovChange, SIRModel::treeObsRecov, oneProb));
         simEvent.push_back(1);
-
 
         /* infection events */
         typeMap[1] = 1;
-        transTypes.push_back(new TransitionType("simInf",
-                                                SIRModel::nstates,
-                                                SIRModel::infChange,
-                                                SIRModel::infRateFun,
-                                                SIRModel::treeProbInf));
-
-        obsTypes.push_back(new TransitionType("obsInf",
-                                              SIRModel::nstates,
-                                              SIRModel::obsInfChange,
-                                              SIRModel::treeObsInf,
-                                              oneProb));
+        transTypes.push_back(new TransitionType("simInf", SIRModel::nstates, SIRModel::infChange, SIRModel::infRateFun, SIRModel::treeProbInf));
+        obsTypes.push_back(new TransitionType("obsInf", SIRModel::nstates, SIRModel::obsInfChange, SIRModel::treeObsInf, oneProb));
         simEvent.push_back(1);
-
       }
-
+      SIR(const SIR& m) : Model(m) {}
       virtual ~SIR() {}
 
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;

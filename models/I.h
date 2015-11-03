@@ -15,7 +15,7 @@ namespace MCTraj {
     public:
       EpiPars() {}
       EpiPars(const EpiPars& e) 
-        : Pars(e), beta(e.beta), mu(e.mu), psi(e.psi), rho(e.rho)
+        : Pars(e), beta(e.beta), mu(e.mu), psi(e.psi)
       {}
       virtual ~EpiPars() {}
 
@@ -29,10 +29,16 @@ namespace MCTraj {
         } w.EndObject();
       }
 
+      void from_parameters(const Parameters& p, size_t pos = 0) {
+        beta = p.value("beta",pos);
+        mu = p.value("mu",pos);
+        psi = p.value("psi",pos);
+        rho = p.value("rho",pos);
+      }
+
       double beta;   // per-contact infection rate
       double mu;     // recovery rate
       double psi;    // sampling rate
-      double rho;
     };
 
     /* I(all), I(tree) */
@@ -65,42 +71,22 @@ namespace MCTraj {
 
   class I : public Model {
     public:
-      I(const I& m) : Model(m) {}
-      I(const IModel::EpiPars* p) {
+      I() {
         nstates = IModel::nstates;
-        pars = p;
-        rho = p->rho;
 
         /* recovery events */
         typeMap[0] = 0;
-        transTypes.push_back(new TransitionType("simRecov",
-                                                IModel::nstates,
-                                                IModel::recoverChange,
-                                                IModel::recovRateFun,
-                                                IModel::treeProbRecov));
-        obsTypes.push_back(new TransitionType("obsRecov",
-                                              IModel::nstates,
-                                              IModel::obsRecovChange,
-                                              IModel::treeObsRecov,
-                                              oneProb));
+        transTypes.push_back(new TransitionType("simRecov", IModel::nstates, IModel::recoverChange, IModel::recovRateFun, IModel::treeProbRecov));
+        obsTypes.push_back(new TransitionType("obsRecov", IModel::nstates, IModel::obsRecovChange, IModel::treeObsRecov, oneProb));
         simEvent.push_back(1);
 
         /* infection events */
         typeMap[1] = 1;
-        transTypes.push_back(new TransitionType("simInf",
-                                                IModel::nstates,
-                                                IModel::infChange,
-                                                IModel::infRateFun,
-                                                IModel::treeProbInf));
-
-        obsTypes.push_back(new TransitionType("obsInf",
-                                              IModel::nstates,
-                                              IModel::obsInfChange,
-                                              IModel::treeObsInf,
-                                              oneProb));
+        transTypes.push_back(new TransitionType("simInf", IModel::nstates, IModel::infChange, IModel::infRateFun, IModel::treeProbInf));
+        obsTypes.push_back(new TransitionType("obsInf", IModel::nstates, IModel::obsInfChange, IModel::treeObsInf, oneProb));
         simEvent.push_back(1);
       }
-
+      I(const I& m) : Model(m) {}
       virtual ~I() {}
 
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;

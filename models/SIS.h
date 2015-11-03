@@ -11,6 +11,10 @@ namespace MCTraj {
     class EpiPars : public Pars {
     public:
       EpiPars() {}
+      EpiPars(const EpiPars& p) 
+        : Pars(p), N(p.N), beta(p.beta), mu(p.mu), 
+          psi(p.psi)
+      {}
       virtual ~EpiPars() {}
 
       void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
@@ -24,11 +28,18 @@ namespace MCTraj {
         } w.EndObject();
       }
 
+      void from_parameters(const Parameters& p, size_t pos = 0) {
+        N = p.value("N",pos);
+        beta = p.value("beta",pos);
+        mu = p.value("mu",pos);
+        psi = p.value("psi",pos);
+        rho = p.value("rho",pos);
+      }
+
       double N;
       double beta;
       double mu;
       double psi;
-      double rho;
     };
 
     /* S, I(all), I(tree) */
@@ -61,41 +72,22 @@ namespace MCTraj {
 
   class SIS : public Model {
     public:
-      SIS(const SIS& m) : Model(m) {}
-      SIS(const SISModel::EpiPars* p) {
+      SIS() {
         nstates = SISModel::nstates;
-        pars = p;
-        rho = p->rho;
 
         /* recovery events */
         typeMap[0] = 0;
-        transTypes.push_back(new TransitionType("simRecov",
-                                                SISModel::nstates,
-                                                SISModel::recoverChange,
-                                                SISModel::recovRateFun,
-                                                SISModel::treeProbRecov));
-        obsTypes.push_back(new TransitionType("obsRecov",
-                                              SISModel::nstates,
-                                              SISModel::obsRecovChange,
-                                              SISModel::treeObsRecov,
-                                              oneProb));
+        transTypes.push_back(new TransitionType("simRecov", SISModel::nstates, SISModel::recoverChange, SISModel::recovRateFun, SISModel::treeProbRecov));
+        obsTypes.push_back(new TransitionType("obsRecov", SISModel::nstates, SISModel::obsRecovChange, SISModel::treeObsRecov, oneProb));
         simEvent.push_back(1);
 
         /* infection events */
         typeMap[1] = 1;
-        transTypes.push_back(new TransitionType("simInf",
-                                                SISModel::nstates,
-                                                SISModel::infChange,
-                                                SISModel::infRateFun,
-                                                SISModel::treeProbInf));
-
-        obsTypes.push_back(new TransitionType("obsInf",
-                                              SISModel::nstates,
-                                              SISModel::obsInfChange,
-                                              SISModel::treeObsInf,
-                                              oneProb));
+        transTypes.push_back(new TransitionType("simInf", SISModel::nstates, SISModel::infChange, SISModel::infRateFun, SISModel::treeProbInf));
+        obsTypes.push_back(new TransitionType("obsInf", SISModel::nstates, SISModel::obsInfChange, SISModel::treeObsInf, oneProb));
         simEvent.push_back(1);
       }
+      SIS(const SIS& m) : Model(m) {}
 
       virtual ~SIS() {}
 

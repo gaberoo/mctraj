@@ -2,7 +2,7 @@
 #include "ascii.h"
 
 namespace MCTraj {
-  double pfLik(const Model* m, const EpiState& init, const Tree& tree,
+  double pfLik(Model* m, const EpiState& init, const Tree& tree,
                const PFPars& pars, rng::Rng* rng, Trajectory* out) 
   {
     if (pars.vflag > 1) cerr << "Starting..." << flush;
@@ -54,6 +54,15 @@ namespace MCTraj {
         pf->addTreeEvent(m->getPars(),rng);
         if (pars.vflag > 1) cerr << "Finished adding tree event." << endl;
 
+        switch (pf->tree_ttype()) {
+          case 20:
+            m->incPars();
+            break;
+
+          default:
+            break;
+        }
+
         // if (pars.print_particles) pf.printFromLast();
 
         pf->setLast();
@@ -86,7 +95,7 @@ namespace MCTraj {
 
     if (tree.extant > 0) {
       if (pars.vflag) cerr << "There are " << tree.extant << " extant nodes." << endl;
-      if (m->getRho() > 0.0) {
+      if (m->rho() > 0.0) {
         // Sampling at present
         for (size_t i = 0; i < pars.num_particles; ++i) {
           double w = m->sample_rho((*pf)[i].getState(),(*rng)[i]);

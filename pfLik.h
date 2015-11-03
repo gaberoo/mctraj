@@ -16,7 +16,7 @@ using namespace std;
 #include <gsl/gsl_sf.h>
 
 namespace MCTraj {
-  double pfLik(const Model* m, const EpiState& init, const Tree& tree,
+  double pfLik(Model* m, const EpiState& init, const Tree& tree,
                const PFPars& pars, rng::Rng* rng, Trajectory* out);
 }
 
