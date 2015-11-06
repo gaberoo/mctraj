@@ -1,6 +1,6 @@
 #include "likfun.h"
 
-double pf_likfun(const double* state, const void* pars) 
+double pf_likfun(int chain, int gen, const double* state, const void* pars) 
 {
   double lik = -INFINITY;
 
@@ -15,7 +15,9 @@ double pf_likfun(const double* state, const void* pars)
   EpiState init(p.mpt->initState(*(p.pfpar)));
 
   Trajectory* traj = NULL;
-  if (p.otraj != NULL) traj = new Trajectory(init,p.mpt);
+  if (p.otraj != NULL && gen >= 0) {
+    traj = new Trajectory(init,p.mpt);
+  }
 
   try {
     if (p.pars->vflag > 1) cerr << "Starting calculation." << endl;
@@ -25,8 +27,18 @@ double pf_likfun(const double* state, const void* pars)
     cout << "EXCEPTION: " << e.what() << endl;
   }
 
+  if (traj != NULL) {
+    string out;
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    writer.StartObject();
+    writer.String("gen"); writer.Int(gen);
+    writer.String("chain"); writer.Int(chain);
+    writer.String("traj"); traj->json(writer);
+    writer.EndObject();
+    *p.otraj << buffer.GetString() << endl;
+  }
 //  if (p.obranch != NULL) traj->printBranches(*p.obranch) << endl;
-  if (p.otraj != NULL) *p.otraj << traj->to_json() << endl;
 
   return lik;
 }

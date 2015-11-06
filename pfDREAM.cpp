@@ -118,6 +118,7 @@ int main(int argc, char** argv) {
   }
 
   pf_pars_t lik_pars;
+
   lik_pars.mpt = mpt;
   lik_pars.tree = &tree;
   lik_pars.pars = &pf_pars;
@@ -125,6 +126,7 @@ int main(int argc, char** argv) {
   lik_pars.pfpar = &pars;
   lik_pars.dpar = &p;
   lik_pars.es = es;
+
   if (pf_hist_fn != "") lik_pars.otraj = new ofstream(pf_hist_fn.c_str());
 
   p.fun = &pf_likfun;
@@ -138,6 +140,7 @@ int main(int argc, char** argv) {
   dream(&p,(*rng)[0]);
 
   dream_pars_free_vars(&p);
+
   return 0;
 }
 

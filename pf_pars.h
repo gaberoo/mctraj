@@ -4,6 +4,7 @@
 #include "MCTraj.h"
 #include "Tree.h"
 #include "Parameters.h"
+#include "Trajectory.h"
 #include <cpso/Parameters.h>
 #include <cdream/dream.h>
 

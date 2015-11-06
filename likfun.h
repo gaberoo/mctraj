@@ -9,10 +9,14 @@ using namespace MCTraj;
 
 #include <cpso/Point.h>
 
-double pf_likfun(const double* state, const void* pars);
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+
+double pf_likfun(int chain, int gen, const double* state, const void* pars);
 
 inline double pf_likfun_pso(const PSO::Point& state, const void* pars) {
-  return pf_likfun(state.data(),pars);
+  return pf_likfun(-1,-1,state.data(),pars);
 }
 
 #endif
