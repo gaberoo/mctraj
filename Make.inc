@@ -19,7 +19,7 @@ FFLAGS += -g -m64 -Wall -O3
 
 CPPFLAGS = $(CFLAGS)
 
-BLAS = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
+BLAS = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
 #BLAS = -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 #BLAS = -llapack -lgoto2 -lpthread
 #BLAS = -framework Accelerate
