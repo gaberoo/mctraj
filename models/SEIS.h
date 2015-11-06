@@ -43,6 +43,24 @@ namespace MCTraj {
         alpha = p.value("alpha",pos);
       }
 
+      inline void from_state(const double* state, const char* scales) {
+        N     = (scales[0] == 'l') ? exp(state[0]) : state[0];
+        beta  = (scales[1] == 'l') ? exp(state[1]) : state[1];
+        mu    = (scales[2] == 'l') ? exp(state[2]) : state[2];
+        psi   = (scales[3] == 'l') ? exp(state[3]) : state[3];
+        rho   = (scales[4] == 'l') ? exp(state[4]) : state[4];
+        gamma = (scales[5] == 'l') ? exp(state[5]) : state[5];
+      }
+
+      inline void to_state(double* state, const char* scales) {
+        state[0] = (scales[0] == 'l') ? log(N)     : N;
+        state[1] = (scales[1] == 'l') ? log(beta)  : beta;
+        state[2] = (scales[2] == 'l') ? log(mu)    : mu;
+        state[3] = (scales[3] == 'l') ? log(psi)   : psi;
+        state[4] = (scales[4] == 'l') ? log(rho)   : rho;
+        state[5] = (scales[5] == 'l') ? log(gamma) : gamma;
+      }
+
       double N;      // total population size
       double beta;   // per-contact infection rate
       double mu;     // recovery rate
@@ -149,6 +167,25 @@ namespace MCTraj {
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
       bool validState(const EpiState& es) const;
       void toTree(const Trajectory& traj, rng::RngStream* rng, vector<TreeNode>& tree) const;
+
+      inline void addPars(Pars* p) {
+        try {
+          SEISModel::EpiPars* pp = dynamic_cast<SEISModel::EpiPars*>(p);
+          pars.push_back(new SEISModel::EpiPars(*pp));
+        } catch (exception& e) {
+          cerr << "Error casting pointer!" << endl;
+          abort();
+        }
+      }
+
+      inline EpiState initState(const Parameters& p) const {
+        SEISModel::EpiPars epi = *dynamic_cast<SEISModel::EpiPars*>(pars.front());
+        EpiState init(SEISModel::nstates);
+        init[0] = (int) epi.N - 1;
+        init[1] = 1;
+        init[2] = 0;
+        return init;
+      }
   };
 }
 

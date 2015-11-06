@@ -10,7 +10,7 @@ OBJS  = MCTraj.o Trajectory.o ParticleFilter.o TrajParticle.o
 OBJS += StateTransition.o TransitionType.o
 OBJS += TrajParticleFilter.o HistoryFilter.o StaticFilter.o
 OBJS += pfLik.o Model.o EpiState.o BranchState.o Tree.o TreeNode.o
-OBJS += Parameters.o JSON.o $(MODELS)
+OBJS += Parameters.o JSON.o likfun.o $(MODELS)
 
 .PHONY: all debug
 

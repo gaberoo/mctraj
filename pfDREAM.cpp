@@ -20,8 +20,7 @@ using namespace MCTraj;
 #include "pf_pars.h"
 #include "pso_pars.h"
 
-#include "funcs/I.h"
-#include "funcs/SIS.h"
+#include "likfun.h"
 
 int main(int argc, char** argv) {
   // =========================================================================
@@ -108,21 +107,6 @@ int main(int argc, char** argv) {
   Model* mpt = NULL;
   choose_model(mpt,es,pf_pars,vpars,pars);
 
-  switch (pf_pars.model_type) {
-    case 'I':
-    case 0:
-      p.fun = &pf_i;
-      break;
-
-    case 'S':
-    case 1:
-    case 'R':
-    case 2:
-    default:
-      p.fun = &pf_sis;
-      break;
-  }
-
   // =========================================================================
 
   string pf_hist_fn = "";
@@ -138,10 +122,12 @@ int main(int argc, char** argv) {
   lik_pars.tree = &tree;
   lik_pars.pars = &pf_pars;
   lik_pars.rng = rng;
+  lik_pars.pfpar = &pars;
   lik_pars.dpar = &p;
   lik_pars.es = es;
   if (pf_hist_fn != "") lik_pars.otraj = new ofstream(pf_hist_fn.c_str());
 
+  p.fun = &pf_likfun;
   p.funPars = &lik_pars;
 
 //  double state[] = { 100.0, 0.0, 0.1, 0.4, -2.3 };

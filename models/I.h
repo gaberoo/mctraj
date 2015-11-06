@@ -19,7 +19,7 @@ namespace MCTraj {
       {}
       virtual ~EpiPars() {}
 
-      void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
+      inline void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
         w.StartObject(); {
           w.String("name");  w.String("I");
           w.String("beta");  w.Double(beta);
@@ -29,11 +29,25 @@ namespace MCTraj {
         } w.EndObject();
       }
 
-      void from_parameters(const Parameters& p, size_t pos = 0) {
+      inline void from_parameters(const Parameters& p, size_t pos = 0) {
         beta = p.value("beta",pos);
         mu = p.value("mu",pos);
         psi = p.value("psi",pos);
         rho = p.value("rho",pos);
+      }
+
+      inline void from_state(const double* state, const char* scales) {
+        beta  = (scales[0] == 'l') ? exp(state[0]) : state[0];
+        mu    = (scales[1] == 'l') ? exp(state[1]) : state[1];
+        psi   = (scales[2] == 'l') ? exp(state[2]) : state[2];
+        rho   = (scales[3] == 'l') ? exp(state[3]) : state[3];
+      }
+
+      inline void to_state(double* state, const char* scales) {
+        state[0] = (scales[0] == 'l') ? log(beta) : beta;
+        state[1] = (scales[1] == 'l') ? log(mu)   : mu;
+        state[2] = (scales[2] == 'l') ? log(psi)  : psi;
+        state[3] = (scales[3] == 'l') ? log(rho)  : rho;
       }
 
       double beta;   // per-contact infection rate
@@ -92,6 +106,23 @@ namespace MCTraj {
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
       inline bool validState(const EpiState& es) const { return true; }
       void toTree(const Trajectory& traj, rng::RngStream* rng, vector<TreeNode>& tree) const;
+
+      inline void addPars(Pars* p) {
+        try {
+          IModel::EpiPars* pp = dynamic_cast<IModel::EpiPars*>(p);
+          pars.push_back(new IModel::EpiPars(*pp));
+        } catch (exception& e) {
+          cerr << "Error casting pointer!" << endl;
+          abort();
+        }
+      }
+
+      inline EpiState initState(const Parameters& p) const {
+        IModel::EpiPars epi = *dynamic_cast<IModel::EpiPars*>(pars.front());
+        EpiState init(IModel::nstates);
+        init[0] = p.nroot;
+        return init;
+      }
   };
 }
 

@@ -25,6 +25,8 @@ namespace MCTraj {
       string to_json() const;
 
       virtual void from_parameters(const Parameters& p, size_t pos = 0) = 0;
+      virtual void from_state(const double* state, const char* scales) = 0;
+      virtual void to_state(double* state, const char* scales) = 0;
 
     public:
       const Tree* tree;
@@ -49,12 +51,12 @@ namespace MCTraj {
         memcpy(typeMap,m.typeMap,100*sizeof(int));
       }
 
-      virtual ~Model() { delete[] typeMap; }
+      virtual ~Model() { 
+        delete[] typeMap; 
+        while (pars.size() > 0) { delete pars.back(); pars.pop_back(); }
+      }
 
       size_t n() const { return nstates; }
-      const void* p() const { 
-        return (pars.size() > 0) ? pars.at(pars_cnt) : NULL; 
-      }
       size_t ntrans() const { return transTypes.size(); }
       const TransitionType* getTType(size_t i) const { return transTypes[i]; }
       const TransitionType* getObsType(size_t i) const { return obsTypes[i]; }
@@ -74,17 +76,22 @@ namespace MCTraj {
                                  vector<double>& trueRates) const;
       double delTransRate(vector<double>& transRates, size_t i) const;
 
-      inline const Pars* getPars() const { 
+      const void* p() const { 
         return (pars.size() > 0) ? pars.at(pars_cnt) : NULL; 
       }
-      inline void addPars(const Pars* p) { pars.push_back(p); }
+      inline Pars* getPars() const { 
+        return (pars.size() > 0) ? pars.at(pars_cnt) : NULL; 
+      }
       inline string pars_json(size_t pos = 0) const { 
         return (pars.size() > 0) ? pars.at(pos)->to_json() : ""; 
       }
+
+      virtual void addPars(Pars* p) = 0;
+      // inline void addPars(const Pars* p) { pars.push_back(*p); }
       inline void incPars() {
         if ((int) pars.size() > pars_cnt+1) pars_cnt++;
       }
-      inline void setPars(const Pars* p, size_t i = 0) {
+      inline void setPars(Pars* p, size_t i = 0) {
         if (i < pars.size()) pars[i] = p;
       }
       
@@ -102,6 +109,7 @@ namespace MCTraj {
 
       virtual double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const = 0;
       virtual bool validState(const EpiState& es) const = 0;
+      virtual EpiState initState(const Parameters& p) const = 0;
 
       inline size_t nTransRates() const { return ntrans(); }
 
@@ -109,7 +117,7 @@ namespace MCTraj {
 
     protected:
       size_t nstates;
-      vector<const Pars*> pars;
+      vector<Pars*> pars;
       int pars_cnt;
       int* typeMap;
       vector<const TransitionType*> transTypes;

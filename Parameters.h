@@ -68,6 +68,12 @@ class Parameters {
       return x;
     }
 
+    inline string scales() const {
+      string out = "";
+      for (size_t i = 0; i < pars.size(); ++i) out += pars[i].scale;
+      return out;
+    }
+
     void init_free_map();
     inline size_t free(size_t i) const { return free_map[i]; }
     inline double lower(size_t j) const { return pars[free_map[j]].lo; }

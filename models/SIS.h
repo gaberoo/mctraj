@@ -12,12 +12,11 @@ namespace MCTraj {
     public:
       EpiPars() {}
       EpiPars(const EpiPars& p) 
-        : Pars(p), N(p.N), beta(p.beta), mu(p.mu), 
-          psi(p.psi)
+        : Pars(p), N(p.N), beta(p.beta), mu(p.mu), psi(p.psi)
       {}
       virtual ~EpiPars() {}
 
-      void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
+      inline void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const {
         w.StartObject(); {
           w.String("name");  w.String("SIS");
           w.String("N");     w.Double(N);
@@ -28,12 +27,29 @@ namespace MCTraj {
         } w.EndObject();
       }
 
-      void from_parameters(const Parameters& p, size_t pos = 0) {
+      inline void from_parameters(const Parameters& p, size_t pos = 0) {
         N = p.value("N",pos);
         beta = p.value("beta",pos);
         mu = p.value("mu",pos);
         psi = p.value("psi",pos);
         rho = p.value("rho",pos);
+      }
+
+      inline void from_state(const double* state, const char* scales) {
+        N     = (scales[0] == 'l') ? exp(state[0]) : state[0];
+        beta  = (scales[1] == 'l') ? exp(state[1]) : state[1];
+        mu    = (scales[2] == 'l') ? exp(state[2]) : state[2];
+        psi   = (scales[3] == 'l') ? exp(state[3]) : state[3];
+        rho   = (scales[4] == 'l') ? exp(state[4]) : state[4];
+      }
+
+      inline void to_state(double* state, const char* scales) {
+        cerr << scales << endl;
+        state[0] = (scales[0] == 'l') ? log(N)    : N;
+        state[1] = (scales[1] == 'l') ? log(beta) : beta;
+        state[2] = (scales[2] == 'l') ? log(mu)   : mu;
+        state[3] = (scales[3] == 'l') ? log(psi)  : psi;
+        state[4] = (scales[4] == 'l') ? log(rho)  : rho;
       }
 
       double N;
@@ -94,6 +110,25 @@ namespace MCTraj {
       double sample_rho(const EpiState& es, rng::RngStream* rng, void* pars = NULL) const;
       inline bool validState(const EpiState& es) const { return true; }
       void toTree(const Trajectory& traj, rng::RngStream* rng, vector<TreeNode>& tree) const;
+
+      inline void addPars(Pars* p) {
+        try {
+          SISModel::EpiPars* pp = dynamic_cast<SISModel::EpiPars*>(p);
+          pars.push_back(new SISModel::EpiPars(*pp));
+        } catch (exception& e) {
+          cerr << "Error casting pointer!" << endl;
+          abort();
+        }
+      }
+
+      inline EpiState initState(const Parameters& p) const {
+        SISModel::EpiPars epi = *dynamic_cast<SISModel::EpiPars*>(pars.front());
+        EpiState init(SISModel::nstates);
+        init[0] = (int) epi.N - p.nroot;
+        init[1] = p.nroot;
+        init[2] = p.nroot;
+        return init;
+      }
   };
 }
 
