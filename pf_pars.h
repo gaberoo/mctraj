@@ -6,16 +6,16 @@
 #include <cdream/dream.h>
 
 typedef struct {
-  Model* mpt;
-  const Tree* tree;
-  const PFPars* pars;
-  const EpiState* es;
-  rng::Rng* rng;
-  const Parameters* pfpar;
-  const PSO::Parameters* mpar;
-  const dream_pars* dpar;
-  ostream* otraj;
-  ostream* obranch;
+  Model* mpt = NULL;
+  const Tree* tree = NULL;
+  const PFPars* pars = NULL;
+  const EpiState* es = NULL;
+  rng::Rng* rng = NULL;
+  const Parameters* pfpar = NULL;
+  const PSO::Parameters* mpar = NULL;
+  const dream_pars* dpar = NULL;
+  ostream* otraj = NULL;
+  ostream* obranch = NULL;
 } pf_pars_t;
 
 // ===========================================================================

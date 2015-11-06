@@ -11,7 +11,6 @@ inline double pf_sis_pso(const PSO::Point& state, const void* pars) {
 
 double pf_sis(const double* state, const void* pars) 
 {
-
   pf_pars_t& p = *(pf_pars_t*) pars;
 
   const Pars* oldPt = p.mpt->getPars();
@@ -25,8 +24,13 @@ double pf_sis(const double* state, const void* pars)
   }
 
   const char* scale = NULL;
-  if (p.mpar != NULL) scale = p.mpar->scale.data();
-  else if (p.dpar != NULL) scale = p.dpar->scale;
+  if (p.mpar != NULL) {
+    scale = p.mpar->scale.data();
+  } else if (p.dpar != NULL) {
+    scale = p.dpar->scale;
+  } else {
+    return -INFINITY;
+  }
 
   SISModel::EpiPars epi(*oldPars);
   epi.N     = (scale[0] == 'l') ? exp(state[0]) : state[0];
