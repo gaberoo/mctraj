@@ -32,23 +32,38 @@ namespace MCTraj {
   typedef int (*BranchFun)(const EpiState& es, rng::RngStream* rng, 
                            StateTransition& st, const void* pars);
 
-  typedef struct {
-    size_t num_particles = 10;
-    int print_particles = 0;
-    int vflag = 0;
-    int skip = 0;
-    int reps = 1;
-    int print_traj = 0;
-    int full_tree = 0;
-    int history = 0;
-    char model_type = 'S';
-    long unsigned seed = time(NULL);
-    double filter_time = 0.0;
-    double step_size = INFINITY;
-    bool adj_zero = true;
-  } PFPars;
+  class PFPars {
+    public:
+      PFPars()
+        : num_particles(10), print_particles(0),
+          vflag(0), skip(0), reps(1), print_traj(0),
+          full_tree(0), history(0), model_type('S'),
+          seed(time(NULL)), filter_time(0.0), 
+          step_size(INFINITY), adj_zero(true)
+      {}
+      virtual ~PFPars() {}
 
-  void pf_pars_read_json(PFPars* p, rapidjson::Value& json);
+      void from_json(rapidjson::Value& json);
+
+    public:
+      size_t num_particles;
+      int print_particles;
+      int vflag;
+      int skip;
+      int reps;
+      int print_traj;
+      int full_tree;
+      int history;
+      char model_type;
+      long unsigned seed;
+      double filter_time;
+      double step_size;
+      bool adj_zero;
+  };
+
+  inline void pf_pars_read_json(PFPars* p, rapidjson::Value& json) {
+    p->from_json(json);
+  }
 }
 
 

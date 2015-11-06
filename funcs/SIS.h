@@ -11,6 +11,7 @@ inline double pf_sis_pso(const PSO::Point& state, const void* pars) {
 
 double pf_sis(const double* state, const void* pars) 
 {
+
   pf_pars_t& p = *(pf_pars_t*) pars;
 
   const Pars* oldPt = p.mpt->getPars();
@@ -23,11 +24,15 @@ double pf_sis(const double* state, const void* pars)
     abort();
   }
 
+  const char* scale = NULL;
+  if (p.mpar != NULL) scale = p.mpar->scale.data();
+  else if (p.dpar != NULL) scale = p.dpar->scale;
+
   SISModel::EpiPars epi(*oldPars);
-  epi.N     = (p.mpar->scale[0] == 'l') ? exp(state[0]) : state[0];
-  epi.beta  = (p.mpar->scale[1] == 'l') ? exp(state[1]) : state[1];
-  epi.mu    = (p.mpar->scale[2] == 'l') ? exp(state[2]) : state[2];
-  epi.psi   = (p.mpar->scale[3] == 'l') ? exp(state[3]) : state[3];
+  epi.N     = (scale[0] == 'l') ? exp(state[0]) : state[0];
+  epi.beta  = (scale[1] == 'l') ? exp(state[1]) : state[1];
+  epi.mu    = (scale[2] == 'l') ? exp(state[2]) : state[2];
+  epi.psi   = (scale[3] == 'l') ? exp(state[3]) : state[3];
 
   if (p.pars->vflag) cerr << epi.to_json() << endl;
 

@@ -3,6 +3,7 @@
 
 #include "Parameters.h"
 #include <cpso/Parameters.h>
+#include <cdream/dream.h>
 
 typedef struct {
   Model* mpt;
@@ -12,6 +13,7 @@ typedef struct {
   rng::Rng* rng;
   const Parameters* pfpar;
   const PSO::Parameters* mpar;
+  const dream_pars* dpar;
   ostream* otraj;
   ostream* obranch;
 } pf_pars_t;

@@ -22,7 +22,6 @@ int main(int argc, char** argv) {
 
   TCLAP::ValueArg<string> json_fn("J","json","JSON input file",true,"","string",cmd);
   TCLAP::MultiSwitchArg vflag("v","verbose","Increase verbosity",cmd);
-  TCLAP::ValueArg<double> mT("T","maxTime","Maximum simulation time",false,100.0,"double",cmd);
 
   try {
     cmd.parse(argc,argv);
@@ -77,11 +76,22 @@ int main(int argc, char** argv) {
 
   Trajectory traj(*es,mpt);
 
+  double maxTime = p.sim_pars.maxTime;
   size_t ti = 0;
-  p.shifts.push_back(mT.getValue());
+  // convert shift times from backward to forward
+  for (ti = 0; ti < p.shifts.size(); ++ti) {
+    p.shifts[ti] = maxTime - p.shifts[ti];
+  }
+  // add last time point
+  p.shifts.push_back(maxTime);
+  // sort the intervals
   sort(p.shifts.begin(),p.shifts.end());
+  // simulate between the intervals
+  ti = 0;
   do {
-    traj.simulateTrajectory(p.shifts[ti],&vpars[ti],rng,false);
+    if (p.shifts[ti] > 0.0) {
+      traj.simulateTrajectory(p.shifts[ti],&vpars[ti],rng,false);
+    }
     mpt->incPars();
   } while (++ti < p.shifts.size());
 

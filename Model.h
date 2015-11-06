@@ -84,6 +84,9 @@ namespace MCTraj {
       inline void incPars() {
         if ((int) pars.size() > pars_cnt+1) pars_cnt++;
       }
+      inline void setPars(const Pars* p, size_t i = 0) {
+        if (i < pars.size()) pars[i] = p;
+      }
       
       inline double rho() const { 
         const Pars* p = getPars();

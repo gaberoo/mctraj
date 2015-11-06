@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
   // =========================================================================
 
   string json_input = read_json(json_fn.getValue());
+
   rapidjson::Document jpars;
   get_json(jpars,json_input);
 

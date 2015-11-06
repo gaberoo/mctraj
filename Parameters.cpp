@@ -137,6 +137,28 @@ void Parameters::from_json(rapidjson::Document& jpars) {
     cerr << "Exception while reading pars: " << e << endl;
     return;
   }
+
+  json_simpars(jpars);
 }
 
+// ===========================================================================
+
+void Parameters::json_simpars(rapidjson::Document& jpars) {
+  try {
+    rapidjson::Value::MemberIterator it;
+
+    it = jpars.FindMember("simulation");
+    if (it != jpars.MemberEnd()) {
+      if (! it->value.IsObject()) throw 201;
+      rapidjson::Value& d = it->value;
+
+      it = d.FindMember("maxTime");
+      if (! it->value.IsDouble()) throw 202;
+      sim_pars.maxTime = it->value.GetDouble();
+    }
+  } catch (int e) {
+    cerr << "Exception while reading SimPars: " << e << endl;
+    return;
+  }
+}
 

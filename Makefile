@@ -40,8 +40,8 @@ build/libmctraj.a: $(OBJS:%.o=build/%.o)
 debug/libmctraj.a: $(OBJS:%.o=debug/%.o)
 	ar rcs $@ $(OBJS:%.o=debug/%.o)
 
-cdream/dream.a: cdream/*.cpp
-	cd cdream; make dream.a
+cdream/libdream.a: cdream/*.cpp
+	cd cdream; make libdream.a
 
 cpso/libpso.a: cpso/*.cpp
 	cd cpso; make libpso.a
@@ -99,15 +99,15 @@ metrop_pf: metrop_pf.cpp libmctraj.a Tree.o
 build/pfSPSA: pfSPSA.cpp libmctraj.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-build/pfMH: pfMH.cpp build/libmctraj.a cdream/dream.a Tree.o
+build/pfMH: pfMH.cpp build/libmctraj.a cdream/libdream.a Tree.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 # DREAM
 
-build/pfDREAM: pfDREAM.cpp build/libmctraj.a cdream/dream.a Tree.o
+build/pfDREAM: pfDREAM.cpp build/libmctraj.a cdream/libdream.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
-debug/pfDREAM: pfDREAM.cpp debug/libmctraj.a cdream/dream.a Tree.o
+debug/pfDREAM: pfDREAM.cpp debug/libmctraj.a cdream/libdream.a
 	$(CPP) $(CPPFLAGS) -o $@ $^ -lgsl $(LDFLAGS)
 
 # PSO

@@ -23,6 +23,10 @@ double pf_i(const double* state, const void* pars)
     abort();
   }
 
+  const char* scale = NULL;
+  if (p.mpar != NULL) scale = p.mpar->scale.data();
+  else if (p.dpar != NULL) scale = p.dpar->scale;
+
   IModel::EpiPars epi(*oldPars);
   epi.beta  = (p.mpar->scale[0] == 'l') ? exp(state[0]) : state[0];
   epi.mu    = (p.mpar->scale[1] == 'l') ? exp(state[1]) : state[1];

@@ -26,9 +26,17 @@ class parameter_t {
     char scale;
 };
 
+typedef struct {
+  double maxTime;
+} SimPars;
+
 class Parameters {
   public:
-    Parameters() : model_type("") {}
+    Parameters() 
+      : model_type("") 
+    { 
+      sim_pars.maxTime = 100.0; 
+    }
     virtual ~Parameters() {}
 
     void from_json(rapidjson::Document&);
@@ -66,12 +74,17 @@ class Parameters {
     inline double upper(size_t j) const { return pars[free_map[j]].hi; }
     double limits(size_t j, double x, char trans = 'n') const;
 
+  protected:
+    void json_simpars(rapidjson::Document& jpars);
+
+  public:
     string model_type;
     int nroot;
     vector<double> shifts;
     vector<parameter_t> pars;
     map<string,int> name_map;
     vector<int> free_map;
+    SimPars sim_pars;
 };
 
 // ===========================================================================

@@ -13,6 +13,7 @@ using namespace std;
 #include "models/Models.h"
 using namespace MCTraj;
 
+#include "JSON.h"
 #include "pf_pars.h"
 #include "pso_pars.h"
 
@@ -40,51 +41,41 @@ int main(int argc, char** argv) {
   vector<string> fileNames = multi.getValue();
 
   // =========================================================================
-  // read JSON file
 
-  ifstream in;
-  string json_input;
-  if (json_fn.getValue() != "") {
-    in.open(json_fn.getValue().c_str());
-    in.seekg(0,ios::end);
-    json_input.reserve(in.tellg());
-    in.seekg(0,ios::beg);
-    json_input.assign(istreambuf_iterator<char>(in), 
-                      istreambuf_iterator<char>());
-  }
-
-  // =========================================================================
-  // Extract parameters from JSON
+  string json_input = read_json(json_fn.getValue());
 
   rapidjson::Document jpars;
+  get_json(jpars,json_input);
+
+  PFPars pf_pars;
+  Parameters p;
+  pso_pars_t ppso;
+
   try {
-    jpars.Parse<0>(json_input.c_str());
-    if (! jpars.IsObject()) throw 10;
-  } catch (int e) {
-    cerr << "Coudln't create JSON document:" << endl;
-    cerr << json_input << endl;
+    pf_pars_read_json(&pf_pars,jpars);
+  } catch (const char* str) {
+    cerr << "PFPars exception: " << str << endl;
   }
 
-  // =========================================================================
-  // Extract main PSO parameter structure
-
-  PSO::Parameters p;
-
-  cerr << "Reading parameters..." << flush;
   try {
     p.from_json(jpars);
   } catch (int e) {
-    cerr << "Coudln't create JSON document:" << endl;
-    cerr << json_input << endl;
+    cerr << "Coudln't create JSON document:" << endl << json_input << endl;
   } catch (const char* str) {
     cerr << "JSON exception: " << str << endl;
   }
-  cerr << "done" << endl;
 
-  // =========================================================================
   // PSO parameters
 
-  pso_pars_t ppso;
+  PSO::Parameters pso_pars;
+  try {
+    pso_pars.from_json(jpars);
+  } catch (int e) {
+    cerr << "Coudln't create JSON document:" << endl << json_input << endl;
+  } catch (const char* str) {
+    cerr << "JSON exception: " << str << endl;
+  }
+
   rapidjson::Value::MemberIterator it = jpars.FindMember("pso");
   if (it != jpars.MemberEnd()) ppso.from_json(it->value);
   if (hist_fn.getValue() != "") {
@@ -98,13 +89,6 @@ int main(int argc, char** argv) {
 
   // =========================================================================
 
-  PFPars pf_pars;
-  try {
-    pf_pars_read_json(&pf_pars,jpars);
-  } catch (const char* str) {
-    cerr << "PFPars exception: " << str << endl;
-  }
-
 #if defined(_OPENMP)
   int max_threads = omp_get_max_threads();
 #else
@@ -115,9 +99,7 @@ int main(int argc, char** argv) {
   rng->set_seed(time(NULL));
   rng->alloc(max_threads);
 
-  int nroot = 0;
-  it = jpars.FindMember("nroot");
-  if (it != jpars.MemberEnd()) nroot = it->value.GetInt();
+  int nroot = p.nroot;
 
   string pf_hist_fn = "";
   it = jpars.FindMember("pf");
@@ -136,54 +118,23 @@ int main(int argc, char** argv) {
 
   // =========================================================================
 
+  vector<Pars*> vpars;
   EpiState* es = NULL;
   Model* mpt = NULL;
-
-  int kase = 0;
+  choose_model(mpt,es,pf_pars,vpars,p);
 
   switch (pf_pars.model_type) {
     case 'I':
     case 0:
-      if (ppso.vflag > 1) cerr << "I model." << endl;
-      i_pars.beta = p.initVar(0);
-      i_pars.mu   = p.initVar(1);
-      i_pars.psi  = p.initVar(2);
-      i_pars.rho  = p.initVar(3);
-      mpt = new I(&i_pars);
-      es = new EpiState(IModel::nstates);
-      (*es)[0] = nroot;
-      (*es)[1] = nroot;
-      p.evalFunc = &pf_i_pso;
+      pso_pars.evalFunc = &pf_i_pso;
       break;
 
-    case 'R':
-    case 2:
-      kase = 1;
     case 'S':
     case 1:
+    case 'R':
+    case 2:
     default:
-      if (ppso.vflag > 1) cerr << "SIS/SIR model." << endl;
-      sis_pars.N    = p.initVar(0);
-      sis_pars.beta = p.initVar(1);
-      sis_pars.mu   = p.initVar(2);
-      sis_pars.psi  = p.initVar(3);
-      sis_pars.rho  = p.initVar(4);
-
-      if (kase == 1) mpt = new SIR(&sis_pars);
-      else mpt = new SIS(&sis_pars);
-
-      es = new EpiState(SISModel::nstates);
-      (*es)[0] = (int) sis_pars.N - nroot;
-      (*es)[1] = nroot;
-      (*es)[2] = nroot;
-
-      p.evalFunc = &pf_sis_pso;
-
-      break;
-
-    case 'E':
-    case 3:
-      cerr << "SEIS not yet implemented!" << endl;
+      pso_pars.evalFunc = &pf_sis_pso;
       break;
   }
 
@@ -192,16 +143,16 @@ int main(int argc, char** argv) {
   lik_pars.tree = &tree;
   lik_pars.pars = &pf_pars;
   lik_pars.rng  = rng;
-  lik_pars.mpar = &p;
+  lik_pars.mpar = &pso_pars;
   lik_pars.es   = es;
   if (pf_hist_fn != "") lik_pars.otraj = new ofstream(pf_hist_fn.c_str());
 
-  p.evalParams = &lik_pars;
+  pso_pars.evalParams = &lik_pars;
 
   // =========================================================================
   // Run PSO
 
-  PSO::Swarm s(ppso.num_particles,5,&p);
+  PSO::Swarm s(ppso.num_particles,5,&pso_pars);
 
   PSO::Point phi_p(5,1.49445);
   PSO::Point phi_g(5,1.49445);
