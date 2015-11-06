@@ -28,9 +28,9 @@ double pf_i(const double* state, const void* pars)
   else if (p.dpar != NULL) scale = p.dpar->scale;
 
   IModel::EpiPars epi(*oldPars);
-  epi.beta  = (p.mpar->scale[0] == 'l') ? exp(state[0]) : state[0];
-  epi.mu    = (p.mpar->scale[1] == 'l') ? exp(state[1]) : state[1];
-  epi.psi   = (p.mpar->scale[2] == 'l') ? exp(state[2]) : state[2];
+  epi.beta  = (scale[0] == 'l') ? exp(state[0]) : state[0];
+  epi.mu    = (scale[1] == 'l') ? exp(state[1]) : state[1];
+  epi.psi   = (scale[2] == 'l') ? exp(state[2]) : state[2];
 
   if (p.pars->vflag) cerr << epi.to_json() << endl;
 
