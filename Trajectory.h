@@ -128,6 +128,7 @@ namespace MCTraj {
 
       void json(rapidjson::Writer<rapidjson::StringBuffer>& w) const;
       string to_json() const;
+      string to_dense() const;
 
    protected:
       double time;                         // current process time

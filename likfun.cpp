@@ -34,7 +34,7 @@ double pf_likfun(int chain, int gen, const double* state, const void* pars)
     writer.StartObject();
     writer.String("gen"); writer.Int(gen);
     writer.String("chain"); writer.Int(chain);
-    writer.String("traj"); traj->json(writer);
+    writer.String("traj"); writer.String(traj->to_dense().c_str());
     writer.EndObject();
     *p.otraj << buffer.GetString() << endl;
   }

@@ -519,6 +519,31 @@ namespace MCTraj {
 
     w.EndArray();
   }
+
+  // =========================================================================
+
+  string Trajectory::to_dense() const {
+    EpiState x(initialState);
+    size_t ntrans = transitionCount();
+    double time = 0.0;
+
+    ostringstream out;
+
+    out << time << ":";
+    out << x[0];
+    for (size_t j = 1; j < x.numStates(); ++j) out << ":" << x[j];
+
+    for (size_t i = 0; i < ntrans; ++i) {
+      x += transitions[i].getTrans();
+      time += transitions[i].atTime();
+      out << ",";
+      out << time << ":";
+      out << x[0];
+      for (size_t j = 1; j < x.numStates(); ++j) out << ":" << x[j];
+    }
+
+    return out.str();
+  }
 }
 
 

@@ -110,11 +110,13 @@ int main(int argc, char** argv) {
   // =========================================================================
 
   string pf_hist_fn = "";
-  rapidjson::Value::MemberIterator it = jpars.FindMember("pf");
-  if (it != jpars.MemberEnd()) {
-    rapidjson::Value& d = it->value;
-    it = d.FindMember("hist_fn");
-    if (it != d.MemberEnd()) pf_hist_fn = it->value.GetString();
+  if (pf_pars.history) {
+    rapidjson::Value::MemberIterator it = jpars.FindMember("pf");
+    if (it != jpars.MemberEnd()) {
+      rapidjson::Value& d = it->value;
+      it = d.FindMember("hist_fn");
+      if (it != d.MemberEnd()) pf_hist_fn = it->value.GetString();
+    }
   }
 
   pf_pars_t lik_pars;
